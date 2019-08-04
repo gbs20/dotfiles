@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+PLATFORM=$(uname)
+
+if ! hash stow 2>/dev/null; then
+    echo The stow command seems to be missing, please install that before proceeding
+    exit
+fi
+
+case $PLATFORM in
+    Darwin)
+        brew tap caskroom/fonts
+        brew cask install font-hack-nerd-font
+        brew install cmake reattach-to-user-namespace wget
+        git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+        ~/.fzf/install
+        ;;
+    Linux)
+        sudo apt-get -y install zsh
+        sudo chsh -s /usr/bin/zsh "$USER"
+        sudo apt-get -y install curl wget
+        ;;
+esac
+
+cd "$HOME/dotfiles" || exit
+#git submodule update --init --recursive
+#sh -c "$(wget -q https://raw.githubusercontent.com/aaronkjones/noobs-term/master/noobs-term.sh -O -)"
+#npm install -g spaceship-prompt
+#mkdir ~/.zfunc
+#rustup completions zsh > ~/.zfunc/_rustup
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+git clone https://github.com/romkatv/powerlevel10k.git $ZSH_CUSTOM/themes/powerlevel10k
+
+#stow config
+stow emacs
+#stow git
+#stow i3
+#stow pt
+#stow tmux
+stow vim
+#stow weechat
+stow zsh
+
