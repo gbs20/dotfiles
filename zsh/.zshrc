@@ -1,5 +1,6 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
+export TERM=xterm-256color
 
 # Path to your oh-my-zsh installation.
 export ZSH="/home/gbshen/.oh-my-zsh"
@@ -68,7 +69,10 @@ COMPLETION_WAITING_DOTS="true"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(
+  git
+#  battery
+)
 
 # Theme
 #ZSH_THEME="powerlevel9k/powerlevel9k"

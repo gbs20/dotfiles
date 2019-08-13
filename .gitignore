@@ -21,6 +21,8 @@ emacs/.emacs.d/pyim/
 emacs/.emacs.d/snippets/
 
 vim/.vim/.netrwhist
+vim/.vim/autoload
+vim/.vim/plugged
 
 weechat/.weechat/logs/
 weechat/.weechat/sec.conf

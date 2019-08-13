@@ -1,3 +1,7 @@
+#+TITLE: My emacs configure
+#+AUTHOR: Jackiebin
+#+KEYWORDS: emacs, org-mode
+
 * Description
 #+BEGIN_SRC emacs-lisp
 ;; https://github.com/socketwiz/dotfiles/blob/master/emacs/
@@ -103,10 +107,12 @@
 (tool-bar-mode -1)
 (menu-bar-mode -1)
 (toggle-scroll-bar -1)
-;;(setq frame-title-format
-;;    '("" " BIN ☺ "
-;;     (:eval (if (buffer-file-name)
-;;        (abbreviate-file-name (buffer-file-name)) "%b"))))
+
+;;自定义buffer头,显示更多的buffer标题信息
+(setq frame-title-format
+      '("" " jackiebin ☺ "
+        (:eval (if (buffer-file-name)
+                   (abbreviate-file-name (buffer-file-name)) "%b"))))
 
 ;;保存时自动清除行尾空格及文件结尾空行
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
