@@ -65,24 +65,16 @@
 
 (defvar config-keep-backups t)
 
-;; Font settings
-;;(defvar config-font-family "Source Code Pro")
-;;(defvar config-font-height 160
-;;  "font-height is 1/10pt so 160 == 160/10 == 16pt")
-
+;; English Font
 (defvar config-font-family "Monaco")
-(defvar config-font-height 140
-  "font-height is 1/10pt so 160 == 160/10 == 16pt")
-
-;; Setting English Font
-;;(set-face-attribute 'default nil :font "Monaco 14")
-;;(set-face-attribute 'default nil :font "Consolas 14")
+(defvar config-font-height 120
+  "font-height is 1/10pt so 120 == 120/10 == 12pt")
 
 ;; Chinese Font
 (dolist (charset '(kana han symbol cjk-misc bopomofo))
   (set-fontset-font (frame-parameter nil 'font)
                     charset (font-spec :family "WenQuanYi Micro Hei Mono"
-                                       :size 16)))
+                                       :size 14)))
 
 (defvar config-indent-web-mode-spaces 2)
 
@@ -661,7 +653,7 @@
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
-  :init (setq markdown-command "multimarkdown"))
+  :init (setq markdown-command "/usr/bin/pandoc"))
 #+END_SRC
 
 * Language rust
