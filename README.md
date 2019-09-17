@@ -11,5 +11,6 @@ This is my dot files.
 1. C++
 - irony
 - llvm
-2. Markdown
-- pandoc
+- GNU global and ggtags
+2. Markdown: C-c C-s keywords
+- sudo pacman -S pandoc: C-c C-c keywords

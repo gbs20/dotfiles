@@ -172,7 +172,7 @@
 (setq package-archives '(("gnu"   . "https://elpa.emacs-china.org/gnu/")
                         ("melpa" . "https://elpa.emacs-china.org/melpa/")))
 ;;(setq package-archives '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-;;						("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+;;			("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -191,6 +191,9 @@
 
 ;; Parenthesis
 (show-paren-mode 1)
+
+;; Wrap selection with (, [, ", etc...
+(electric-pair-mode 1)
 
 ;; Enable narrow to region functionality
 (put 'narrow-to-region 'disabled nil)
@@ -266,6 +269,7 @@
 
 (global-set-key (kbd "<C-return>") 'open-line-below)
 (global-set-key (kbd "<C-S-return>") 'open-line-above)
+
 (global-set-key (kbd "C-S-n")
                 (lambda()
                   (interactive)
@@ -282,6 +286,33 @@
                 (lambda()
                   (interactive)
                   (ignore-errors (backward-char 5))))
+;;
+;; Copy or Cut one line if no content selected
+;;
+;; copy region or whole line
+(global-set-key "\M-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-ring-save (region-beginning)
+      (region-end))
+    (progn
+     (kill-ring-save (line-beginning-position)
+     (line-end-position))
+     (message "copied line")))))
+
+;; kill region or whole line
+(global-set-key "\C-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-region (region-beginning)
+   (region-end))
+    (progn
+     (kill-region (line-beginning-position)
+  (line-end-position))
+     (message "killed line")))))
+
 #+END_SRC
 
 * Core packages
@@ -523,49 +554,60 @@
 
 * Language cpp
 #+BEGIN_SRC emacs-lisp
-;; A flycheck checker for C/C++
-(use-package flycheck-irony
-  :after (irony)
-  :defer t)
+    ;; A flycheck checker for C/C++
+    (use-package flycheck-irony
+      :after (irony)
+      :defer t)
 
-;; Irony support for C/C++
-(use-package irony-eldoc
-  :after (irony)
-  :defer t
-  :init
-  (add-hook 'irony-mode-hook #'irony-eldoc))
+    ;; Irony support for C/C++
+    (use-package irony-eldoc
+      :after (irony)
+      :defer t
+      :init
+      (add-hook 'irony-mode-hook #'irony-eldoc))
 
-;; C++ minor mode, completion, syntax checking
-(use-package irony
-  :defer t
-  ;; Need to install the server on first run (M-x irony-install-server)
-  :commands irony-mode
-  :init
-  (add-hook 'c++-mode-hook 'irony-mode)
-  (add-hook 'c-mode-hook 'irony-mode)
-  (defun my-irony-mode-hook ()
-    (setq irony-additional-clang-options '("-std=c++14")))
-  (add-hook 'irony-mode-hook 'my-irony-mode-hook)
-  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
+    ;; C++ minor mode, completion, syntax checking
+    (use-package irony
+      :defer t
+      ;; Need to install the server on first run (M-x irony-install-server)
+      :commands irony-mode
+      :init
+      (add-hook 'c++-mode-hook 'irony-mode)
+      (add-hook 'c-mode-hook 'irony-mode)
+      (defun my-irony-mode-hook ()
+        (setq irony-additional-clang-options '("-std=c++14")))
+      (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+      (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
 
-;; Embedded platform development
-(use-package platformio-mode
-  :defer t
-  :commands (platformio-conditionally-enable)
-  :mode (("\\.ino\\'" . c++-mode))
-  :init)
+    (eval-after-load 'flycheck
+      '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
 
-(defun platformio-hook ()
-  (platformio-conditionally-enable))
+    (add-hook 'irony-mode-hook
+              (lambda ()
+                (irony-cdb-autosetup-compile-options)))
+    (add-hook 'c++-mode-hook 'flycheck-mode)
 
-(eval-after-load 'flycheck
-  '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
-
-(add-hook 'c++-mode-hook 'platformio-hook)
-(add-hook 'irony-mode-hook
-          (lambda ()
-            (irony-cdb-autosetup-compile-options)))
-(add-hook 'c++-mode-hook 'flycheck-mode)
+    ;; Emacs frontend to GNU GLobal source code tagging system
+    (use-package ggtags
+      :init
+      (ggtags-mode 1)
+      (add-hook 'c-mode-common-hook
+                (lambda ()
+                  (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+                    (ggtags-mode 1))))
+      :config
+      (dolist (map (list ggtags-mode-map dired-mode-map))
+        (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
+        (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
+        (define-key map (kbd "C-c g r") 'ggtags-find-reference)
+        (define-key map (kbd "C-c g f") 'ggtags-find-file)
+        (define-key map (kbd "C-c g c") 'ggtags-create-tags)
+        (define-key map (kbd "C-c g u") 'ggtags-update-tags)
+        (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
+        (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
+        (define-key map (kbd "M-,") 'pop-tag-mark)
+        (define-key map (kbd "C-c <") 'ggtags-prev-mark)
+        (define-key map (kbd "C-c >") 'ggtags-next-mark)))
 #+END_SRC
 * Language elisp
 #+BEGIN_SRC emacs-lisp
