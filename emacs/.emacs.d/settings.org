@@ -317,146 +317,157 @@
 
 * Core packages
 #+BEGIN_SRC emacs-lisp
-(use-package diminish)
+  (use-package diminish)
 
-;; Rainbow mode - displays color codes in their color
-(use-package rainbow-mode
-  :delight)
+  ;; Rainbow mode - displays color codes in their color
+  (use-package rainbow-mode
+    :delight)
 
-;; Theme
-(use-package cyberpunk-theme
-  :config
-  (load-theme 'cyberpunk t))
+  ;; Theme
+  (use-package cyberpunk-theme
+    :config
+    (load-theme 'cyberpunk t))
 
-;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
-;; https://github.com/emacs-jp/replace-colorthemes
-(use-package all-the-icons)
-(use-package all-the-icons-dired
-  :config
-  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
+  ;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
+  ;; https://github.com/emacs-jp/replace-colorthemes
+  (use-package all-the-icons)
+  (use-package all-the-icons-dired
+    :config
+    (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 
-;; Parenthesis
-(use-package highlight-parentheses
-  :diminish 'highlight-parentheses-mode
-  :config
-  (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
+  ;; Parenthesis
+  (use-package highlight-parentheses
+    :diminish 'highlight-parentheses-mode
+    :config
+    (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
 
-;; Undo-tree
-(use-package undo-tree
-  :config
-  (setq undo-tree-visualizer-timestamps t)
-  (setq undo-tree-visualizer-diff t)
-  (setq undo-tree-auto-save-history t)
-  ;; save all undo histories to this location
-  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
-  (defadvice undo-tree-make-history-save-file-name
-      (after undo-tree activate)
-    (setq ad-return-value (concat ad-return-value ".gz")))
-  (global-undo-tree-mode)
-  :defer t
-  :diminish 'undo-tree-mode)
+  ;; Undo-tree
+  (use-package undo-tree
+    :config
+    (setq undo-tree-visualizer-timestamps t)
+    (setq undo-tree-visualizer-diff t)
+    (setq undo-tree-auto-save-history t)
+    ;; save all undo histories to this location
+    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+    (defadvice undo-tree-make-history-save-file-name
+        (after undo-tree activate)
+      (setq ad-return-value (concat ad-return-value ".gz")))
+    (global-undo-tree-mode)
+    :defer t
+    :diminish 'undo-tree-mode)
 
-;; Company mode
-(use-package company
-  :diminish 'company-mode
-  :config
-  (setq company-tooltip-align-annotations t)
-  (add-hook 'after-init-hook 'global-company-mode))
+  ;; Company mode
+  (use-package company
+    :diminish 'company-mode
+    :config
+    (setq company-tooltip-align-annotations t)
+    (add-hook 'after-init-hook 'global-company-mode))
 
-;; Show the argument list of a function in the echo area
-(use-package eldoc
-  :diminish eldoc-mode
-  :commands turn-on-eldoc-mode
-  :defer t)
+  ;; Show the argument list of a function in the echo area
+  (use-package eldoc
+    :diminish eldoc-mode
+    :commands turn-on-eldoc-mode
+    :defer t)
 
-;; Flyspell
-(use-package flyspell
-  :config
-  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-  :diminish 'flyspell-mode)
-;; Correct the misspelled word in a popup menu
-(use-package flyspell-popup
-  :config
-  (define-key flyspell-mode-map (kbd "C-;") #'flyspell-popup-correct)
-  (define-key popup-menu-keymap (kbd "C-j") 'popup-next)
-  (define-key popup-menu-keymap (kbd "C-k") 'popup-previous)
-  (define-key popup-menu-keymap (kbd "C-l") 'popup-select))
+  ;; Flyspell
+  (use-package flyspell
+    :config
+    (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+    :diminish 'flyspell-mode)
+  ;; Correct the misspelled word in a popup menu
+  (use-package flyspell-popup
+    :config
+    (define-key flyspell-mode-map (kbd "C-;") #'flyspell-popup-correct)
+    (define-key popup-menu-keymap (kbd "C-j") 'popup-next)
+    (define-key popup-menu-keymap (kbd "C-k") 'popup-previous)
+    (define-key popup-menu-keymap (kbd "C-l") 'popup-select))
 
-;; Flycheck
-(use-package flycheck
-  :diminish flycheck-mode)
+  ;; Flycheck
+  (use-package flycheck
+    :diminish flycheck-mode)
 
-;; Yasnippet, a template system for emacs
-(use-package yasnippet
-  :bind (("TAB" . yas-expand))
-  :config
-  (yas-reload-all))
+  ;; Yasnippet, a template system for emacs
+  (use-package yasnippet
+    :bind (("TAB" . yas-expand))
+    :config
+    (yas-reload-all))
 
-;; Display available keybindings in a popup
-(use-package which-key
-  :config
-  (which-key-mode)
-  (setq which-key-idle-delay config-which-key-delay)
-  :diminish which-key-mode)
+  ;; Quickly switch windows in Emacs
+  (use-package ace-window
+    :ensure t
+    :init
+    (progn
+      (global-set-key [remap other-window] 'ace-window)
+      (custom-set-faces
+       '(aw-leading-char-face
+         ((t (:inherit ace-jump-face-foreguound :height 3.0 :foreground "deep sky blue")))))
+      ))
 
-;; Highlight numbers for prog modes
-(use-package highlight-numbers
-  :defer t
-  :init
-  (add-hook 'prog-mode-hook 'highlight-numbers-mode))
+  ;; Display available keybindings in a popup
+  (use-package which-key
+    :config
+    (which-key-mode)
+    (setq which-key-idle-delay config-which-key-delay)
+    :diminish which-key-mode)
 
-;; Respect editor configs
-(use-package editorconfig
-  :diminish editorconfig-mode
-  :config
-  (editorconfig-mode 1))
+  ;; Highlight numbers for prog modes
+  (use-package highlight-numbers
+    :defer t
+    :init
+    (add-hook 'prog-mode-hook 'highlight-numbers-mode))
 
-;; Syntax highlighting for docker files
-(use-package dockerfile-mode
-  :defer t)
+  ;; Respect editor configs
+  (use-package editorconfig
+    :diminish editorconfig-mode
+    :config
+    (editorconfig-mode 1))
 
-;; A better "help" buffer
-(use-package helpful)
+  ;; Syntax highlighting for docker files
+  (use-package dockerfile-mode
+    :defer t)
 
-;; Edit text area in chrome with emacs
-(use-package atomic-chrome
-  :config
-  (atomic-chrome-start-server)
-  (setq atomic-chrome-buffer-open-style 'frame))
+  ;; A better "help" buffer
+  (use-package helpful)
 
-;; Builds a list of recently opened files
-(use-package recentf
-  :config
-  (setq recentf-max-saved-items 10
-        recentf-max-menu-items 5
-        recentf-save-file (concat user-emacs-directory ".cache/recentf")
-        recentf-auto-cleanup 'never)
-  (recentf-mode 1)
+  ;; Edit text area in chrome with emacs
+  (use-package atomic-chrome
+    :config
+    (atomic-chrome-start-server)
+    (setq atomic-chrome-buffer-open-style 'frame))
 
-  (add-to-list 'recentf-exclude (expand-file-name package-user-dir))
-  (add-to-list 'recentf-exclude "COMMIT_EDITMSG\\'")
-  (add-to-list 'recentf-exclude (expand-file-name (concat user-emacs-directory ".cache/")))
-  (add-hook 'delete-terminal-functions (lambda (terminal) (recentf-save-list))))
+  ;; Builds a list of recently opened files
+  (use-package recentf
+    :config
+    (setq recentf-max-saved-items 10
+          recentf-max-menu-items 5
+          recentf-save-file (concat user-emacs-directory ".cache/recentf")
+          recentf-auto-cleanup 'never)
+    (recentf-mode 1)
 
-;; Display used hotkeys in another window
-(use-package command-log-mode
-  :diminish command-log-mode)
+    (add-to-list 'recentf-exclude (expand-file-name package-user-dir))
+    (add-to-list 'recentf-exclude "COMMIT_EDITMSG\\'")
+    (add-to-list 'recentf-exclude (expand-file-name (concat user-emacs-directory ".cache/")))
+    (add-hook 'delete-terminal-functions (lambda (terminal) (recentf-save-list))))
 
-;; Minor mode for dealing with pairs, such as quotes
-(use-package smartparens-config
-  :ensure smartparens
-  :config
-  (show-smartparens-global-mode t))
+  ;; Display used hotkeys in another window
+  (use-package command-log-mode
+    :diminish command-log-mode)
 
-;; Expand selected region by semantic units
-(use-package expand-region
-  :config
-  (pending-delete-mode t))
+  ;; Minor mode for dealing with pairs, such as quotes
+  (use-package smartparens-config
+    :ensure smartparens
+    :config
+    (show-smartparens-global-mode t))
 
-;; Doom modeline
-(use-package doom-modeline
-      :ensure t
-      :hook (after-init . doom-modeline-mode))
+  ;; Expand selected region by semantic units
+  (use-package expand-region
+    :config
+    (pending-delete-mode t))
+
+  ;; Doom modeline
+  (use-package doom-modeline
+        :ensure t
+        :hook (after-init . doom-modeline-mode))
 
 #+END_SRC
 
