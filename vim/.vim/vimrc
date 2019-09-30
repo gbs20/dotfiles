@@ -22,9 +22,16 @@ Plug 'vim-airline/vim-airline-themes'
 
 Plug 'yggdroot/indentline'
 
+" quoting/parenthesizing made simple
+Plug 'tpope/vim-surround'
+
+" Vim motions on speed!
+"Plug 'easymotion/vim-easymotion'
+
 " Initialize plugin system
 call plug#end()
 
+" Reload .vimrc and :PlugInstall to install plugins.
 "========================================================
 
 set fileencodings=utf-8,ucs-bom,gb18030,gbk,gb2312,cp936
@@ -44,10 +51,3 @@ set wrap
 set showcmd
 set wildmenu
 set hlsearch
-
-
-"map s <nop>  " s: 删除光标盖住的字符，进入插入模式
-"map S :w<CR> " S: 删除光标所在行，进入插入模式
-"map Q :q<CR> " Q: 还不清楚
-"map R :source $MYVIMRC<CR> " R: 进入替换模式，直至ESC离开 
-
