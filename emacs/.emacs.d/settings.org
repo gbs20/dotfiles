@@ -120,7 +120,6 @@
   ;; Package management
   ;;(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
   ;;(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-
   (setq package-archives '(("gnu"   . "https://elpa.emacs-china.org/gnu/")
                           ("melpa" . "https://elpa.emacs-china.org/melpa/")))
   ;;(setq package-archives '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
@@ -359,6 +358,8 @@
 
 * Core packages
 #+BEGIN_SRC emacs-lisp
+  (use-package all-the-icons)
+
   (use-package diminish)
 
   ;; Rainbow mode - displays color codes in their color
@@ -557,6 +558,13 @@
 #+END_SRC
 
 
+* require
+#+BEGIN_SRC emacs-lisp
+  (push (expand-file-name "~/.emacs.d/lisp") load-path)
+  (require 'init-eshell)
+
+#+END_SRC
+
 * org
 #+BEGIN_SRC emacs-lisp
 ;; Org mode, for keeping notes, todo lists, etc... in plain text
@@ -651,60 +659,74 @@
 
 * Language cpp
 #+BEGIN_SRC emacs-lisp
-    ;; A flycheck checker for C/C++
-    (use-package flycheck-irony
-      :after (irony)
-      :defer t)
+  ;; C/C++ Mode
+  (use-package cc-mode
+    :ensure nil
+    :bind (:map c-mode-base-map
+           ("C-c c" . compile))
+    ;; :hook (c-mode-common . (lambda ()
+    ;;                          (c-set-style "linux")
+    ;;                          (setq tab-width 4)
+    ;;                          (setq c-basic-offset 4)))
+    :config
+    (use-package modern-cpp-font-lock
+      :diminish
+      :init (modern-c++-font-lock-global-mode t)))
 
-    ;; Irony support for C/C++
-    (use-package irony-eldoc
-      :after (irony)
-      :defer t
-      :init
-      (add-hook 'irony-mode-hook #'irony-eldoc))
+  ;; A flycheck checker for C/C++
+  (use-package flycheck-irony
+    :after (irony)
+    :defer t)
 
-    ;; C++ minor mode, completion, syntax checking
-    (use-package irony
-      :defer t
-      ;; Need to install the server on first run (M-x irony-install-server)
-      :commands irony-mode
-      :init
-      (add-hook 'c++-mode-hook 'irony-mode)
-      (add-hook 'c-mode-hook 'irony-mode)
-      (defun my-irony-mode-hook ()
-        (setq irony-additional-clang-options '("-std=c++14")))
-      (add-hook 'irony-mode-hook 'my-irony-mode-hook)
-      (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
+  ;; Irony support for C/C++
+  (use-package irony-eldoc
+    :after (irony)
+    :defer t
+    :init
+    (add-hook 'irony-mode-hook #'irony-eldoc))
 
-    (eval-after-load 'flycheck
-      '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
+  ;; C++ minor mode, completion, syntax checking
+  (use-package irony
+    :defer t
+    ;; Need to install the server on first run (M-x irony-install-server)
+    :commands irony-mode
+    :init
+    (add-hook 'c++-mode-hook 'irony-mode)
+    (add-hook 'c-mode-hook 'irony-mode)
+    (defun my-irony-mode-hook ()
+      (setq irony-additional-clang-options '("-std=c++14")))
+    (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+    (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
 
-    (add-hook 'irony-mode-hook
+  (eval-after-load 'flycheck
+    '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
+
+  (add-hook 'irony-mode-hook
+            (lambda ()
+              (irony-cdb-autosetup-compile-options)))
+  (add-hook 'c++-mode-hook 'flycheck-mode)
+
+  ;; Emacs frontend to GNU GLobal source code tagging system
+  (use-package ggtags
+    :init
+    (ggtags-mode 1)
+    (add-hook 'c-mode-common-hook
               (lambda ()
-                (irony-cdb-autosetup-compile-options)))
-    (add-hook 'c++-mode-hook 'flycheck-mode)
-
-    ;; Emacs frontend to GNU GLobal source code tagging system
-    (use-package ggtags
-      :init
-      (ggtags-mode 1)
-      (add-hook 'c-mode-common-hook
-                (lambda ()
-                  (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-                    (ggtags-mode 1))))
-      :config
-      (dolist (map (list ggtags-mode-map dired-mode-map))
-        (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
-        (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
-        (define-key map (kbd "C-c g r") 'ggtags-find-reference)
-        (define-key map (kbd "C-c g f") 'ggtags-find-file)
-        (define-key map (kbd "C-c g c") 'ggtags-create-tags)
-        (define-key map (kbd "C-c g u") 'ggtags-update-tags)
-        (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
-        (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
-        (define-key map (kbd "M-,") 'pop-tag-mark)
-        (define-key map (kbd "C-c <") 'ggtags-prev-mark)
-        (define-key map (kbd "C-c >") 'ggtags-next-mark)))
+                (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+                  (ggtags-mode 1))))
+    :config
+    (dolist (map (list ggtags-mode-map dired-mode-map))
+      (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
+      (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
+      (define-key map (kbd "C-c g r") 'ggtags-find-reference)
+      (define-key map (kbd "C-c g f") 'ggtags-find-file)
+      (define-key map (kbd "C-c g c") 'ggtags-create-tags)
+      (define-key map (kbd "C-c g u") 'ggtags-update-tags)
+      (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
+      (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
+      (define-key map (kbd "M-,") 'pop-tag-mark)
+      (define-key map (kbd "C-c <") 'ggtags-prev-mark)
+      (define-key map (kbd "C-c >") 'ggtags-next-mark)))
 #+END_SRC
 
 * Language elisp
