@@ -660,51 +660,55 @@
 * Language cpp
 #+BEGIN_SRC emacs-lisp
   ;; C/C++ Mode
-  (use-package cc-mode
-    :ensure nil
-    :bind (:map c-mode-base-map
-           ("C-c c" . compile))
-    ;; :hook (c-mode-common . (lambda ()
-    ;;                          (c-set-style "linux")
-    ;;                          (setq tab-width 4)
-    ;;                          (setq c-basic-offset 4)))
-    :config
-    (use-package modern-cpp-font-lock
-      :diminish
-      :init (modern-c++-font-lock-global-mode t)))
+  ;; (use-package cc-mode
+  ;;   :ensure nil
+  ;;   :bind (:map c-mode-base-map
+  ;;          ("C-c c" . compile))
+  ;;   ;; :hook (c-mode-common . (lambda ()
+  ;;   ;;                          (c-set-style "linux")
+  ;;   ;;                          (setq tab-width 4)
+  ;;   ;;                          (setq c-basic-offset 4)))
+  ;;   :config
+  ;;   (use-package modern-cpp-font-lock
+  ;;     :diminish
+  ;;     :init (modern-c++-font-lock-global-mode t)))
 
-  ;; A flycheck checker for C/C++
-  (use-package flycheck-irony
-    :after (irony)
-    :defer t)
+  ;; ;; A flycheck checker for C/C++
+  ;; (use-package flycheck-irony
+  ;;   :after (irony)
+  ;;   :defer t)
 
-  ;; Irony support for C/C++
-  (use-package irony-eldoc
-    :after (irony)
-    :defer t
-    :init
-    (add-hook 'irony-mode-hook #'irony-eldoc))
+  ;; ;; Irony support for C/C++
+  ;; (use-package irony-eldoc
+  ;;   :after (irony)
+  ;;   :defer t
+  ;;   :init
+  ;;   (add-hook 'irony-mode-hook #'irony-eldoc))
 
-  ;; C++ minor mode, completion, syntax checking
-  (use-package irony
-    :defer t
-    ;; Need to install the server on first run (M-x irony-install-server)
-    :commands irony-mode
-    :init
-    (add-hook 'c++-mode-hook 'irony-mode)
-    (add-hook 'c-mode-hook 'irony-mode)
-    (defun my-irony-mode-hook ()
-      (setq irony-additional-clang-options '("-std=c++14")))
-    (add-hook 'irony-mode-hook 'my-irony-mode-hook)
-    (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
+  ;; ;; C++ minor mode, completion, syntax checking
+  ;; (use-package irony
+  ;;   :defer t
+  ;;   ;; Need to install the server on first run (M-x irony-install-server)
+  ;;   :commands irony-mode
+  ;;   :init
+  ;;   (add-hook 'c++-mode-hook 'irony-mode)
+  ;;   (add-hook 'c-mode-hook 'irony-mode)
+  ;;   (defun my-irony-mode-hook ()
+  ;;     (setq irony-additional-clang-options '("-std=c++14")))
+  ;;   (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+  ;;   (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
 
-  (eval-after-load 'flycheck
-    '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
+  ;; (eval-after-load 'flycheck
+  ;;   '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
 
-  (add-hook 'irony-mode-hook
-            (lambda ()
-              (irony-cdb-autosetup-compile-options)))
-  (add-hook 'c++-mode-hook 'flycheck-mode)
+  ;; (add-hook 'irony-mode-hook
+  ;;           (lambda ()
+  ;;             (irony-cdb-autosetup-compile-options)))
+  ;; (add-hook 'c++-mode-hook 'flycheck-mode)
+
+  (use-package modern-cpp-font-lock
+    :diminish
+    :init (modern-c++-font-lock-global-mode t))
 
   ;; Emacs frontend to GNU GLobal source code tagging system
   (use-package ggtags
@@ -727,6 +731,47 @@
       (define-key map (kbd "M-,") 'pop-tag-mark)
       (define-key map (kbd "C-c <") 'ggtags-prev-mark)
       (define-key map (kbd "C-c >") 'ggtags-next-mark)))
+
+  ;; Emacs client for the Language Server Protocol
+  (use-package lsp-mode
+    :config
+    (setq lsp-prefer-flymake nil) ;; Prefer using lsp-ui (flycheck) over flymake.
+    ;; `-background-index' requires clangd v8+!
+    ;; It tells clangd that it can use 4 concurrent jobs and to make a complete background index on disk.
+    (setq lsp-clients-clangd-args '("-j=4" "-background-index" "-log=error"))
+
+    :hook (c-mode . lsp)
+    :hook (c++-mode . lsp)
+    :commands lsp)
+
+  ;; flycheck -- syntax checking
+  (use-package lsp-ui
+    :requires lsp-mode flycheck
+    :config
+    (setq lsp-ui-doc-enable t
+          lsp-ui-doc-use-childframe t
+          lsp-ui-doc-position 'top
+          lsp-ui-doc-include-signature t
+          lsp-ui-sideline-enable nil
+          lsp-ui-flycheck-enable t
+          lsp-ui-flycheck-list-position 'right
+          lsp-ui-flycheck-live-reporting t
+          lsp-ui-peek-enable t
+          lsp-ui-peek-list-width 60
+          lsp-ui-peek-peek-height 25)
+    (add-hook 'lsp-mode-hook 'lsp-ui-mode))
+
+  ;; Code completion
+  (use-package company-lsp
+    :requires company
+    :config
+    (push 'company-lsp company-backends) ;; add company-lsp as a backend
+
+     ;; Disable client-side cache because the LSP server does a better job.
+    (setq company-transformers nil
+          company-lsp-async t
+          company-lsp-cache-candidates nil))
+
 #+END_SRC
 
 * Language elisp
