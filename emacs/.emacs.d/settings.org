@@ -76,7 +76,7 @@
 
   ;; Hide ui elements
   (tool-bar-mode -1)
-  (menu-bar-mode -1)
+  ;;(menu-bar-mode -1)
   (toggle-scroll-bar -1)
 
   ;; Permanently force Emacs to indent with spaces, never with TABs
@@ -172,6 +172,16 @@
 
 * Core function
 #+BEGIN_SRC emacs-lisp
+  ;; indent whole buffer
+  (defun iwb ()
+    "indent whole buffer"
+    (interactive)
+    (delete-trailing-whitespace)
+    (indent-region (point-min) (point-max) nil)
+    (untabify (point-min) (point-max)))
+
+  (global-set-key (kbd "C-c n") 'iwb)
+
   ;;opening new lines can be finichy
   (defun open-line-below()
       "open line below."
@@ -286,27 +296,21 @@
 
 #+END_SRC
 
-* Core keybindings
+* Personal keymap
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "<f5>") #'revert-buffer)
 (global-set-key (kbd "C-=") #'er/expand-region)
-(global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c C-.") #'helpful-at-point)
-(global-set-key (kbd "C-c r") #'counsel-recentf)
-(global-set-key (kbd "M-x") 'counsel-M-x)
 (global-set-key (kbd "C-h b") #'describe-bindings)
 (global-set-key (kbd "C-h f") #'helpful-callable)
 (global-set-key (kbd "C-h k") #'helpful-key)
 (global-set-key (kbd "C-h v") #'helpful-variable)
-(global-set-key (kbd "C-r") #'swiper)
-(global-set-key (kbd "C-s") #'swiper)
 (global-set-key (kbd "C-x C-b") #'ibuffer)
 (global-set-key (kbd "C-x C-e") #'pp-eval-last-sexp)
-(global-set-key (kbd "C-x C-f") #'counsel-find-file)
-(global-set-key (kbd "C-x g") #'magit-status)
-(global-set-key (kbd "C-x M-g") #'magit-dispatch)
+
 (global-set-key (kbd "M-i") #'imenu)
+
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
 
 (global-set-key (kbd "<C-return>") 'open-line-below)
 (global-set-key (kbd "<C-S-return>") 'open-line-above)
@@ -360,16 +364,12 @@
 #+BEGIN_SRC emacs-lisp
   (use-package all-the-icons)
 
-  (use-package diminish)
+  (use-package diminish
+    :ensure t)
 
   ;; Rainbow mode - displays color codes in their color
   (use-package rainbow-mode
     :delight)
-
-  ;; Theme
-  (use-package cyberpunk-theme
-    :config
-    (load-theme 'cyberpunk t))
 
   ;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
   ;; https://github.com/emacs-jp/replace-colorthemes
@@ -415,6 +415,7 @@
   ;; Flyspell
   (use-package flyspell
     :config
+    (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
     (add-hook 'prog-mode-hook 'flyspell-prog-mode)
     :diminish 'flyspell-mode)
   ;; Correct the misspelled word in a popup menu
@@ -427,13 +428,21 @@
 
   ;; Flycheck
   (use-package flycheck
-    :diminish flycheck-mode)
+    :diminish flycheck-mode
+    :ensure t
+    :init
+    (global-flycheck-mode t))
 
   ;; Yasnippet, a template system for emacs
   (use-package yasnippet
-    :bind (("TAB" . yas-expand))
-    :config
-    (yas-reload-all))
+    :ensure t
+    :init
+      (yas-global-mode 1))
+
+  (use-package yasnippet-snippets
+    :ensure t)
+  (use-package yasnippet-classic-snippets
+    :ensure t)
 
   ;; Quickly switch windows in Emacs
   (use-package ace-window
@@ -507,10 +516,48 @@
     :config
     (pending-delete-mode t))
 
+  ;; Hungry deletion
+  (use-package hungry-delete
+    :diminish
+    :hook (after-init . global-hungry-delete-mode)
+    :config (setq-default hungry-delete-chars-to-skip " \t\f\v"))
+
+  ;; Theme
+  (use-package cyberpunk-theme
+    :config
+    (load-theme 'cyberpunk t))
+  ;;(load-theme 'solarized-dark t)
+
   ;; Doom modeline
-  (use-package doom-modeline
+  ;;(use-package doom-modeline
+  ;;  :ensure t
+  ;;  :hook (after-init . doom-modeline-mode))
+
+
+  ;; modeline
+;;  (use-package spaceline
+;;    :ensure t
+;;    :init
+;;    (setq powerline-default-separator 'utf-8)
+;;
+;;    :config
+;;    (require 'spaceline-config)
+;;    (spaceline-spacemacs-theme)
+;;    )
+
+  ;; Reference: https://github.com/hlissner/.emacs.d/blob/master/core/core-modeline.el
+  (use-package f
+    :ensure t)
+  (use-package moody
     :ensure t
-    :hook (after-init . doom-modeline-mode))
+    :config
+    (setq x-underline-at-descent-line t)
+    (moody-replace-mode-line-buffer-identification)
+    (moody-replace-vc-mode))
+  (use-package minions
+    :ensure t
+    :config (minions-mode 1))
+
   (use-package pyim
     :ensure nil
     :demand t
@@ -589,6 +636,9 @@
     :config
     (unless (char-displayable-p ?❗)
       (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
+
+(global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c c") #'org-capture)
 #+END_SRC
 
 * git
@@ -599,6 +649,9 @@
   (setq magit-refresh-status-buffer nil)
   :diminish 'auto-revert-mode
   :defer t)
+
+(global-set-key (kbd "C-x g") #'magit-status)
+(global-set-key (kbd "C-x M-g") #'magit-dispatch)
 
 ;; Show diffs in the gutter
 (use-package diff-hl
@@ -613,7 +666,17 @@
 * ivy
 #+BEGIN_SRC emacs-lisp
 ;; Generic completion frontend
-(use-package counsel)
+(use-package counsel
+  :ensure t
+  :bind
+  (("M-x" . counsel-M-x)
+   ("M-y" . counsel-yank-pop)
+   :map ivy-minibuffer-map
+   ("M-y" . ivy-next-line)))
+
+(global-set-key (kbd "C-x C-f") #'counsel-find-file)
+(global-set-key (kbd "C-c r") #'counsel-recentf)
+
 (use-package counsel-projectile
   :config
   (counsel-projectile-mode t)
@@ -628,6 +691,10 @@
   (setq ivy-re-builders-alist
         '((swiper . ivy--regex-plus)
           (t . ivy--regex-fuzzy))))
+
+(global-set-key (kbd "C-r") #'swiper)
+(global-set-key (kbd "C-s") #'swiper)
+
 #+END_SRC
 
 * projectile
@@ -734,32 +801,71 @@
 
   ;; Emacs client for the Language Server Protocol
   (use-package lsp-mode
+    :ensure t
+    :commands lsp
+    :custom
+    (lsp-auto-guess-root nil)
     :config
     (setq lsp-prefer-flymake nil) ;; Prefer using lsp-ui (flycheck) over flymake.
     ;; `-background-index' requires clangd v8+!
     ;; It tells clangd that it can use 4 concurrent jobs and to make a complete background index on disk.
     (setq lsp-clients-clangd-args '("-j=4" "-background-index" "-log=error"))
-
-    :hook (c-mode . lsp)
-    :hook (c++-mode . lsp)
-    :commands lsp)
+    :bind (:map lsp-mode-map ("C-c C-f" . lsp-format-buffer))
+    :hook ((c-mode c++-mode) . lsp))
 
   ;; flycheck -- syntax checking
   (use-package lsp-ui
+    :after lsp-mode
     :requires lsp-mode flycheck
+    :diminish
+    :commands lsp-ui-mode
+    :custom-face
+    (lsp-ui-doc-background ((t (:background nil))))
+    (lsp-ui-doc-header ((t (:inherit (font-lock-string-face italic)))))
+    :bind (:map lsp-ui-mode-map
+                ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+                ([remap xref-find-references] . lsp-ui-peek-find-references)
+                ("C-c u" . lsp-ui-imenu))
+    :custom
+    (lsp-ui-doc-enable t)
+    (lsp-ui-doc-header t)
+    (lsp-ui-doc-include-signature t)
+    (lsp-ui-doc-use-childeframe t)
+    (lsp-ui-doc-position 'top)
+    (lsp-ui-doc-border (face-foreground 'default))
+    (lsp-ui-sideline-enable nil)
+    (lsp-ui-sideline-ignore-duplicate t)
+    (lsp-ui-sideline-show-code-actions nil)
+    (lsp-ui-flycheck-enable t)
+    (lsp-ui-flycheck-list-position 'right)
+    (lsp-ui-flycheck-live-reporting t)
+    (lsp-ui-peek-enable t)
+    (lsp-ui-peek-list-width 60)
+    (lsp-ui-peek-list-height 25)
     :config
-    (setq lsp-ui-doc-enable t
-          lsp-ui-doc-use-childframe t
-          lsp-ui-doc-position 'top
-          lsp-ui-doc-include-signature t
-          lsp-ui-sideline-enable nil
-          lsp-ui-flycheck-enable t
-          lsp-ui-flycheck-list-position 'right
-          lsp-ui-flycheck-live-reporting t
-          lsp-ui-peek-enable t
-          lsp-ui-peek-list-width 60
-          lsp-ui-peek-peek-height 25)
-    (add-hook 'lsp-mode-hook 'lsp-ui-mode))
+    ;; Use lsp-ui-doc-webkit only in GUI
+    (setq lsp-ui-doc-use-webkit t)
+    ;; WORKAROUND Hide mode-line of the lsp-ui-imenu buffer
+    ;; https://github.com/emacs-lsp/lsp-ui/issues/243
+    (defadvice lsp-ui-imenu (after hide-lsp-ui-imenu-mode-line activate)
+      (setq mode-line-format nil)))
+
+  ;; flycheck -- syntax checking
+  ;; (use-package lsp-ui
+  ;;   :requires lsp-mode flycheck
+  ;;   :config
+  ;;   (setq lsp-ui-doc-enable t
+  ;;         lsp-ui-doc-use-childframe t
+  ;;         lsp-ui-doc-position 'top
+  ;;         lsp-ui-doc-include-signature t
+  ;;         lsp-ui-sideline-enable nil
+  ;;         lsp-ui-flycheck-enable t
+  ;;         lsp-ui-flycheck-list-position 'right
+  ;;         lsp-ui-flycheck-live-reporting t
+  ;;         lsp-ui-peek-enable t
+  ;;         lsp-ui-peek-list-width 60
+  ;;         lsp-ui-peek-peek-height 25)
+  ;;   (add-hook 'lsp-mode-hook 'lsp-ui-mode))
 
   ;; Code completion
   (use-package company-lsp
