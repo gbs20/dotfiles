@@ -46,14 +46,14 @@
 
   ;; English Font
   (defvar config-font-family "Monaco")
-  (defvar config-font-height 120
+  (defvar config-font-height 100
     "font-height is 1/10pt so 120 == 120/10 == 12pt")
 
   ;; Chinese Font
   (dolist (charset '(kana han symbol cjk-misc bopomofo))
     (set-fontset-font (frame-parameter nil 'font)
                       charset (font-spec :family "WenQuanYi Micro Hei Mono"
-                                         :size 14)))
+                                         :size 12)));;14
 
   (defvar config-indent-web-mode-spaces 2)
 
@@ -697,6 +697,81 @@
 
 #+END_SRC
 
+* Hydra
+#+BEGIN_SRC emacs-lisp
+  (use-package hydra
+    :commands (hydra-default-pre
+               hydra-keyboard-quit
+               hydra--call-interactively-remap-maybe
+               hydra-show-hint
+               hydra-set-transient-map))
+
+  (defhydra hydra-zoom (global-map "<f2>")
+    "zoom"
+    ("g" text-scale-increase "in")
+    ("l" text-scale-decrease "out"))
+
+  (use-package pretty-hydra
+    :defines (display-line-numbers-mode linum-mode)
+    :bind ("<f6>" . toggles-hydra/body)
+    :init
+    (cl-defun pretty-hydra-title (title &optional icon-type icon-name
+                                        &key face height v-adjust)
+      "Add an icon in the hydra title."
+      (let ((face (or face `(:foreground ,(face-background 'highlight))))
+            (height (or height 1.0))
+            (v-adjust (or v-adjust 0.0)))
+        (concat
+         (when (and (display-graphic-p) icon-type icon-name)
+           (let ((f (intern (format "all-the-icons-%s" icon-type))))
+             (when (fboundp f)
+               (concat
+                (apply f (list icon-name :face face :height height :v-adjust v-adjust))
+                " "))))
+         (propertize title 'face face))))
+    ;; Global toggles
+    (pretty-hydra-define toggles-hydra (:title (pretty-hydra-title "Toggles" 'faicon "toggle-on")
+                                        :color amaranth :quit-key "q")
+      ("Basic"
+       (("n" (if (fboundp 'display-line-numbers-mode)
+                 (display-line-numbers-mode (if display-line-numbers-mode -1 1))
+               (linum-mode (if linum-mode -1 1)))
+         "line number" :toggle (if (fboundp 'display-line-numbers-mode)
+                                   display-line-numbers-mode
+                                 linum-mode))
+        ("a" aggressive-indent-mode "aggressive indent" :toggle t)
+        ("h" hungry-delete-mode "hungry delete" :toggle t)
+        ("e" electric-pair-mode "electric pair" :toggle t)
+        ("c" flyspell-mode "spell check" :toggle t)
+        ("S" prettify-symbols-mode "pretty symbol" :toggle t)
+        ("L" page-break-lines-mode "page break lines" :toggle t)
+        ("M" doom-modeline-mode "modern mode-line" :toggle t))
+       "Highlight"
+       (("l" global-hl-line-mode "line" :toggle t)
+        ("P" show-paren-mode "paren" :toggle t)
+        ("s" symbol-overlay-mode "symbol" :toggle t)
+        ("r" rainbow-mode "rainbow" :toggle t)
+        ("w" (setq show-trailing-whitespace (not show-trailing-whitespace))
+         "whitespace" :toggle show-trailing-whitespace)
+        ("d" rainbow-delimiters-mode "delimiter" :toggle t)
+        ("i" highlight-indent-guides-mode "indent" :toggle t)
+        ("T" hl-todo-mode "todo" :toggle t))
+       "Coding"
+       (("f" flycheck-mode "flycheck" :toggle t)
+        ("F" flymake-mode "flymake" :toggle t)
+        ("o" origami-mode "folding" :toggle t)
+        ("O" hs-minor-mode "hideshow" :toggle t)
+        ("u" subword-mode "subword" :toggle t)
+        ("W" which-function-mode "which function" :toggle t)
+        ("E" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
+        ("Q" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
+       "Version Control"
+       (("v" diff-hl-mode "gutter" :toggle t)
+        ("V" diff-hl-flydiff-mode "live gutter" :toggle t)
+        ("m" diff-hl-margin-mode "margin gutter" :toggle t)
+        ("D" diff-hl-dired-mode "dired gutter" :toggle t)))))
+#+END_SRC
+
 * projectile
 #+BEGIN_SRC emacs-lisp
 ;; ripgrep
@@ -726,52 +801,12 @@
 
 * Language cpp
 #+BEGIN_SRC emacs-lisp
-  ;; C/C++ Mode
-  ;; (use-package cc-mode
-  ;;   :ensure nil
-  ;;   :bind (:map c-mode-base-map
-  ;;          ("C-c c" . compile))
-  ;;   ;; :hook (c-mode-common . (lambda ()
-  ;;   ;;                          (c-set-style "linux")
-  ;;   ;;                          (setq tab-width 4)
-  ;;   ;;                          (setq c-basic-offset 4)))
-  ;;   :config
-  ;;   (use-package modern-cpp-font-lock
-  ;;     :diminish
-  ;;     :init (modern-c++-font-lock-global-mode t)))
-
-  ;; ;; A flycheck checker for C/C++
-  ;; (use-package flycheck-irony
-  ;;   :after (irony)
-  ;;   :defer t)
-
   ;; ;; Irony support for C/C++
   ;; (use-package irony-eldoc
   ;;   :after (irony)
   ;;   :defer t
   ;;   :init
   ;;   (add-hook 'irony-mode-hook #'irony-eldoc))
-
-  ;; ;; C++ minor mode, completion, syntax checking
-  ;; (use-package irony
-  ;;   :defer t
-  ;;   ;; Need to install the server on first run (M-x irony-install-server)
-  ;;   :commands irony-mode
-  ;;   :init
-  ;;   (add-hook 'c++-mode-hook 'irony-mode)
-  ;;   (add-hook 'c-mode-hook 'irony-mode)
-  ;;   (defun my-irony-mode-hook ()
-  ;;     (setq irony-additional-clang-options '("-std=c++14")))
-  ;;   (add-hook 'irony-mode-hook 'my-irony-mode-hook)
-  ;;   (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
-
-  ;; (eval-after-load 'flycheck
-  ;;   '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
-
-  ;; (add-hook 'irony-mode-hook
-  ;;           (lambda ()
-  ;;             (irony-cdb-autosetup-compile-options)))
-  ;; (add-hook 'c++-mode-hook 'flycheck-mode)
 
   (use-package modern-cpp-font-lock
     :diminish
@@ -799,6 +834,10 @@
       (define-key map (kbd "C-c <") 'ggtags-prev-mark)
       (define-key map (kbd "C-c >") 'ggtags-next-mark)))
 
+  ;; A client for Language Server Protocol servers
+  (use-package eglot
+    :hook (prog-mode . eglot-ensure))
+
   ;; Emacs client for the Language Server Protocol
   (use-package lsp-mode
     :ensure t
@@ -811,6 +850,7 @@
     ;; It tells clangd that it can use 4 concurrent jobs and to make a complete background index on disk.
     (setq lsp-clients-clangd-args '("-j=4" "-background-index" "-log=error"))
     :bind (:map lsp-mode-map ("C-c C-f" . lsp-format-buffer))
+;;    :bind (:map lsp-mode-map ("C-c C-d" . lsp-describe-thing-at-point))
     :hook ((c-mode c++-mode) . lsp))
 
   ;; flycheck -- syntax checking
@@ -850,22 +890,18 @@
     (defadvice lsp-ui-imenu (after hide-lsp-ui-imenu-mode-line activate)
       (setq mode-line-format nil)))
 
-  ;; flycheck -- syntax checking
-  ;; (use-package lsp-ui
-  ;;   :requires lsp-mode flycheck
-  ;;   :config
-  ;;   (setq lsp-ui-doc-enable t
-  ;;         lsp-ui-doc-use-childframe t
-  ;;         lsp-ui-doc-position 'top
-  ;;         lsp-ui-doc-include-signature t
-  ;;         lsp-ui-sideline-enable nil
-  ;;         lsp-ui-flycheck-enable t
-  ;;         lsp-ui-flycheck-list-position 'right
-  ;;         lsp-ui-flycheck-live-reporting t
-  ;;         lsp-ui-peek-enable t
-  ;;         lsp-ui-peek-list-width 60
-  ;;         lsp-ui-peek-peek-height 25)
-  ;;   (add-hook 'lsp-mode-hook 'lsp-ui-mode))
+   ;; C/C++/Objective-C support
+   (use-package ccls
+     :defines projectile-project-root-files-top-down-recurring
+     :hook ((c-mode c++-mode objc-mode cuda-mode) . (lambda ()
+                                                      (require 'ccls)
+                                                      (lsp-deferred)))
+     :config
+     (with-eval-after-load 'projectile
+       (setq projectile-project-root-files-top-down-recurring
+             (append '("compile_commands.json"
+                       ".ccls")
+                     projectile-project-root-files-top-down-recurring))))
 
   ;; Code completion
   (use-package company-lsp
