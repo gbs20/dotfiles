@@ -2,14 +2,12 @@
 #+AUTHOR: Jackiebin
 #+KEYWORDS: emacs, org-mode
 
-* Description
-#+BEGIN_SRC emacs-lisp
-;; https://github.com/socketwiz/dotfiles/blob/master/emacs/
-;; <s TAB : insert source block
-;; M-x org-edit-src-code : edit source block
-#+END_SRC
+* Introduction
+This is my version of an configuration file for GNU Emacs.
 
-* coding system
+I modeled this set of files based off of the socketwiz's dotfiles at https://github.com/socketwiz/dotfiles/blob/master/emacs/.
+
+* Coding system
 #+BEGIN_SRC emacs-lisp
   (set-language-environment 'Chinese-GB)
   (set-default buffer-file-coding-system 'utf-8-unix)
@@ -296,70 +294,6 @@
 
 #+END_SRC
 
-* Personal keymap
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<f5>") #'revert-buffer)
-(global-set-key (kbd "C-=") #'er/expand-region)
-(global-set-key (kbd "C-c C-.") #'helpful-at-point)
-(global-set-key (kbd "C-h b") #'describe-bindings)
-(global-set-key (kbd "C-h f") #'helpful-callable)
-(global-set-key (kbd "C-h k") #'helpful-key)
-(global-set-key (kbd "C-h v") #'helpful-variable)
-(global-set-key (kbd "C-x C-b") #'ibuffer)
-(global-set-key (kbd "C-x C-e") #'pp-eval-last-sexp)
-
-(global-set-key (kbd "M-i") #'imenu)
-
-(global-set-key (kbd "C-x k") 'kill-this-buffer)
-
-(global-set-key (kbd "<C-return>") 'open-line-below)
-(global-set-key (kbd "<C-S-return>") 'open-line-above)
-
-(global-set-key (kbd "C-S-n")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (next-line 5))))
-(global-set-key (kbd "C-S-p")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (previous-line 5))))
-(global-set-key (kbd "C-S-f")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (forword-char 5))))
-(global-set-key (kbd "C-S-b")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (backward-char 5))))
-;;
-;; Copy or Cut one line if no content selected
-;;
-;; copy region or whole line
-(global-set-key "\M-w"
-(lambda ()
-  (interactive)
-  (if mark-active
-      (kill-ring-save (region-beginning)
-      (region-end))
-    (progn
-     (kill-ring-save (line-beginning-position)
-     (line-end-position))
-     (message "copied line")))))
-
-;; kill region or whole line
-(global-set-key "\C-w"
-(lambda ()
-  (interactive)
-  (if mark-active
-      (kill-region (region-beginning)
-   (region-end))
-    (progn
-     (kill-region (line-beginning-position)
-  (line-end-position))
-     (message "killed line")))))
-
-#+END_SRC
-
 * Core packages
 #+BEGIN_SRC emacs-lisp
   (use-package all-the-icons)
@@ -444,7 +378,7 @@
   (use-package yasnippet-classic-snippets
     :ensure t)
 
-  ;; Quickly switch windows in Emacs
+  ;; Windows management: Quickly switch windows in Emacs
   (use-package ace-window
     :ensure t
     :init
@@ -454,6 +388,10 @@
        '(aw-leading-char-face
          ((t (:inherit ace-jump-face-foreguound :height 3.0 :foreground "deep sky blue")))))
       ))
+  (use-package ace-jump-mode
+    :ensure t
+    :config
+    (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
 
   ;; Display available keybindings in a popup
   (use-package which-key
@@ -604,15 +542,82 @@
 
 #+END_SRC
 
+* Personal keymap
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<f5>") #'revert-buffer)
+(global-set-key (kbd "C-=") #'er/expand-region)
+(global-set-key (kbd "C-c C-.") #'helpful-at-point)
+(global-set-key (kbd "C-h b") #'describe-bindings)
+(global-set-key (kbd "C-h f") #'helpful-callable)
+(global-set-key (kbd "C-h k") #'helpful-key)
+(global-set-key (kbd "C-h v") #'helpful-variable)
+(global-set-key (kbd "C-x C-b") #'ibuffer)
+(global-set-key (kbd "C-x C-e") #'pp-eval-last-sexp)
+
+(global-set-key (kbd "M-i") #'imenu)
+
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+
+(global-set-key (kbd "<C-return>") 'open-line-below)
+(global-set-key (kbd "<C-S-return>") 'open-line-above)
+
+(global-set-key (kbd "C-S-n")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (next-line 5))))
+(global-set-key (kbd "C-S-p")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (previous-line 5))))
+(global-set-key (kbd "C-S-f")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (forword-char 5))))
+(global-set-key (kbd "C-S-b")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (backward-char 5))))
+;;
+;; Copy or Cut one line if no content selected
+;;
+;; copy region or whole line
+(global-set-key "\M-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-ring-save (region-beginning)
+      (region-end))
+    (progn
+     (kill-ring-save (line-beginning-position)
+     (line-end-position))
+     (message "copied line")))))
+
+;; kill region or whole line
+(global-set-key "\C-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-region (region-beginning)
+   (region-end))
+    (progn
+     (kill-region (line-beginning-position)
+  (line-end-position))
+     (message "killed line")))))
+
+#+END_SRC
+
 
 * require
 #+BEGIN_SRC emacs-lisp
   (push (expand-file-name "~/.emacs.d/lisp") load-path)
   (require 'init-eshell)
-
 #+END_SRC
 
+
 * org
+<s TAB : insert source block
+M-x org-edit-src-code : edit source block
+** The org package
 #+BEGIN_SRC emacs-lisp
 ;; Org mode, for keeping notes, todo lists, etc... in plain text
 (use-package org
@@ -620,8 +625,6 @@
   (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
   (setq org-agenda-include-diary t)
   (setq org-src-fontify-natively t)
-  (setq org-agenda-files (list "~/org/agenda"
-                               "~/org/agenda/projects/"))
   (setq org-default-notes-file "~/org/agenda/organizer.org")
 
   ;; Prettify UI
@@ -636,7 +639,14 @@
     :config
     (unless (char-displayable-p ?❗)
       (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
-
+#+END_SRC
+** Agenda and capture templates
+#+BEGIN_SRC emacs-lisp
+  (setq org-agenda-files (list "~/org/agenda"
+                               "~/org/agenda/projects/"))
+#+END_SRC
+** Keybindings
+#+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") #'org-capture)
 #+END_SRC
