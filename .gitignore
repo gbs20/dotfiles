@@ -8,6 +8,7 @@ emacs/.emacs.d/eshell
 emacs/.emacs.d/ido.last
 emacs/.emacs.d/recentf
 emacs/.emacs.d/smex-items
+emacs/.emacs.d/amx-items
 emacs/.emacs.d/undo/
 emacs/.emacs.d/url/
 emacs/.emacs.d/network-security.data
@@ -21,6 +22,7 @@ emacs/.emacs.d/transient
 emacs/.emacs.d/%backup%~
 emacs/.emacs.d/pyim/
 emacs/.emacs.d/snippets/
+emacs/.emacs.d/.mc-lists.el
 
 vim/.vim/.netrwhist
 vim/.vim/autoload

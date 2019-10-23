@@ -298,6 +298,7 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
 #+BEGIN_SRC emacs-lisp
   (use-package all-the-icons)
 
+  ;; Diminished modes are minor modes with no modeline display
   (use-package diminish
     :ensure t)
 
@@ -366,6 +367,34 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :ensure t
     :init
     (global-flycheck-mode t))
+
+  ;; Automatically reload files was modified by external program
+  (use-package autorevert
+    :ensure nil
+    :diminish
+    :hook (after-init . global-auto-revert-mode))
+
+  ;; Expand selected region by semantic units
+  (use-package expand-region
+    :config
+    (pending-delete-mode t)
+    :bind ("C-=" . er/expand-region))
+
+  ;; Multiple cursors
+  (use-package multiple-cursors
+    :bind (("C-S-c C-S-c"   . mc/edit-lines)
+           ("C->"           . mc/mark-next-like-this)
+           ("C-<"           . mc/mark-previous-like-this)
+           ("C-c C-<"       . mc/mark-all-like-this)
+           ("C-M->"         . mc/skip-to-next-like-this)
+           ("C-M-<"         . mc/skip-to-previous-like-this)
+           ("s-<mouse-1>"   . mc/add-cursor-on-click)
+           ("C-S-<mouse-1>" . mc/add-cursor-on-click)
+           :map mc/keymap
+           ("C-|" . mc/vertical-align-with-space)))
+  ;; Smartly select region, rectangle, multi cursors
+  (use-package smart-region
+    :hook (after-init . smart-region-on))
 
   ;; Yasnippet, a template system for emacs
   (use-package yasnippet
@@ -449,11 +478,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :config
     (show-smartparens-global-mode t))
 
-  ;; Expand selected region by semantic units
-  (use-package expand-region
-    :config
-    (pending-delete-mode t))
-
   ;; Hungry deletion
   (use-package hungry-delete
     :diminish
@@ -461,10 +485,11 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :config (setq-default hungry-delete-chars-to-skip " \t\f\v"))
 
   ;; Theme
-  (use-package cyberpunk-theme
+  (use-package monokai-theme
     :config
-    (load-theme 'cyberpunk t))
+    (load-theme 'monokai t))
   ;;(load-theme 'solarized-dark t)
+  ;;(load-theme 'cyberpunk t)
 
   ;; Doom modeline
   ;;(use-package doom-modeline
@@ -545,7 +570,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
 * Personal keymap
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "<f5>") #'revert-buffer)
-(global-set-key (kbd "C-=") #'er/expand-region)
 (global-set-key (kbd "C-c C-.") #'helpful-at-point)
 (global-set-key (kbd "C-h b") #'describe-bindings)
 (global-set-key (kbd "C-h f") #'helpful-callable)
@@ -683,6 +707,10 @@ M-x org-edit-src-code : edit source block
    ("M-y" . counsel-yank-pop)
    :map ivy-minibuffer-map
    ("M-y" . ivy-next-line)))
+(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+;; Enhance M-x
+(use-package amx
+  :init (setq amx-history-length 20))
 
 (global-set-key (kbd "C-x C-f") #'counsel-find-file)
 (global-set-key (kbd "C-c r") #'counsel-recentf)
