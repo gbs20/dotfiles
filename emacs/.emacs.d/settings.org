@@ -368,34 +368,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :init
     (global-flycheck-mode t))
 
-  ;; Automatically reload files was modified by external program
-  (use-package autorevert
-    :ensure nil
-    :diminish
-    :hook (after-init . global-auto-revert-mode))
-
-  ;; Expand selected region by semantic units
-  (use-package expand-region
-    :config
-    (pending-delete-mode t)
-    :bind ("C-=" . er/expand-region))
-
-  ;; Multiple cursors
-  (use-package multiple-cursors
-    :bind (("C-S-c C-S-c"   . mc/edit-lines)
-           ("C->"           . mc/mark-next-like-this)
-           ("C-<"           . mc/mark-previous-like-this)
-           ("C-c C-<"       . mc/mark-all-like-this)
-           ("C-M->"         . mc/skip-to-next-like-this)
-           ("C-M-<"         . mc/skip-to-previous-like-this)
-           ("s-<mouse-1>"   . mc/add-cursor-on-click)
-           ("C-S-<mouse-1>" . mc/add-cursor-on-click)
-           :map mc/keymap
-           ("C-|" . mc/vertical-align-with-space)))
-  ;; Smartly select region, rectangle, multi cursors
-  (use-package smart-region
-    :hook (after-init . smart-region-on))
-
   ;; Yasnippet, a template system for emacs
   (use-package yasnippet
     :ensure t
@@ -477,50 +449,45 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :ensure smartparens
     :config
     (show-smartparens-global-mode t))
-
-  ;; Hungry deletion
+#+END_SRC
+** edit
+#+BEGIN_SRC emacs-lisp
+ ;; Hungry deletion
   (use-package hungry-delete
     :diminish
     :hook (after-init . global-hungry-delete-mode)
     :config (setq-default hungry-delete-chars-to-skip " \t\f\v"))
 
-  ;; Theme
-  (use-package monokai-theme
+  ;; Automatically reload files was modified by external program
+  (use-package autorevert
+    :ensure nil
+    :diminish
+    :hook (after-init . global-auto-revert-mode))
+
+  ;; Expand selected region by semantic units
+  (use-package expand-region
     :config
-    (load-theme 'monokai t))
-  ;;(load-theme 'solarized-dark t)
-  ;;(load-theme 'cyberpunk t)
+    (pending-delete-mode t)
+    :bind ("C-=" . er/expand-region))
 
-  ;; Doom modeline
-  ;;(use-package doom-modeline
-  ;;  :ensure t
-  ;;  :hook (after-init . doom-modeline-mode))
-
-
-  ;; modeline
-;;  (use-package spaceline
-;;    :ensure t
-;;    :init
-;;    (setq powerline-default-separator 'utf-8)
-;;
-;;    :config
-;;    (require 'spaceline-config)
-;;    (spaceline-spacemacs-theme)
-;;    )
-
-  ;; Reference: https://github.com/hlissner/.emacs.d/blob/master/core/core-modeline.el
-  (use-package f
-    :ensure t)
-  (use-package moody
-    :ensure t
-    :config
-    (setq x-underline-at-descent-line t)
-    (moody-replace-mode-line-buffer-identification)
-    (moody-replace-vc-mode))
-  (use-package minions
-    :ensure t
-    :config (minions-mode 1))
-
+  ;; Multiple cursors
+  (use-package multiple-cursors
+    :bind (("C-S-c C-S-c"   . mc/edit-lines)
+           ("C->"           . mc/mark-next-like-this)
+           ("C-<"           . mc/mark-previous-like-this)
+           ("C-c C-<"       . mc/mark-all-like-this)
+           ("C-M->"         . mc/skip-to-next-like-this)
+           ("C-M-<"         . mc/skip-to-previous-like-this)
+           ("s-<mouse-1>"   . mc/add-cursor-on-click)
+           ("C-S-<mouse-1>" . mc/add-cursor-on-click)
+           :map mc/keymap
+           ("C-|" . mc/vertical-align-with-space)))
+  ;; Smartly select region, rectangle, multi cursors
+  (use-package smart-region
+    :hook (after-init . smart-region-on))
+#+END_SRC
+** chinese input
+#+BEGIN_SRC emacs-lisp
   (use-package pyim
     :ensure nil
     :demand t
@@ -564,8 +531,47 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :bind
     (("M-j" . pyim-convert-string-at-point) ;与 pyim-probe-dynamic-english 配合
      ("C-;" . pyim-delete-word-from-personal-buffer)))
-
 #+END_SRC
+** modeline
+#+BEGIN_SRC emacs-lisp
+;; Theme
+  (use-package monokai-theme
+    :config
+    (load-theme 'monokai t))
+  ;;(load-theme 'solarized-dark t)
+  ;;(load-theme 'cyberpunk t)
+
+  ;; Doom modeline
+  ;;(use-package doom-modeline
+  ;;  :ensure t
+  ;;  :hook (after-init . doom-modeline-mode))
+
+
+  ;; modeline
+;;  (use-package spaceline
+;;    :ensure t
+;;    :init
+;;    (setq powerline-default-separator 'utf-8)
+;;
+;;    :config
+;;    (require 'spaceline-config)
+;;    (spaceline-spacemacs-theme)
+;;    )
+
+  ;; Reference: https://github.com/hlissner/.emacs.d/blob/master/core/core-modeline.el
+  (use-package f
+    :ensure t)
+  (use-package moody
+    :ensure t
+    :config
+    (setq x-underline-at-descent-line t)
+    (moody-replace-mode-line-buffer-identification)
+    (moody-replace-vc-mode))
+  (use-package minions
+    :ensure t
+    :config (minions-mode 1))
+#+END_SRC
+
 
 * Personal keymap
 #+BEGIN_SRC emacs-lisp
@@ -629,7 +635,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
      (message "killed line")))))
 
 #+END_SRC
-
 
 * require
 #+BEGIN_SRC emacs-lisp
@@ -956,6 +961,10 @@ M-x org-edit-src-code : edit source block
 
 * Language elisp
 #+BEGIN_SRC emacs-lisp
+;; String manipulation routines for emacs lisp
+(use-package s
+  :ensure t)
+
 ;; Minor mode for performing structured editing of S-expression data
 (use-package paredit
   :init
@@ -965,10 +974,37 @@ M-x org-edit-src-code : edit source block
   (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
   (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
   (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
+  :bind (("C-c d" . paredit-forward-down))
   :config
   (eldoc-add-command
    'paredit-backward-delete
    'paredit-close-round))
+
+;; Ensure paredit is used EVERYWHERE!
+(use-package paredit-everywhere
+  :ensure t
+  :diminish paredit-everywhere-mode
+  :config
+  (add-hook 'list-mode-hook #'paredit-everywhere-mode))
+
+(use-package highlight-parentheses
+  :ensure t
+  :diminish highlight-parentheses-mode
+  :config
+  (add-hook 'emacs-lisp-mode-hook
+            (lambda()
+              (highlight-parentheses-mode)
+              )))
+
+(use-package rainbow-delimiters
+  :ensure t
+  :config
+  (add-hook 'lisp-mode-hook
+            (lambda()
+              (rainbow-delimiters-mode)
+              )))
+
+(global-highlight-parentheses-mode)
 #+END_SRC
 
 * Language javascript
@@ -1122,3 +1158,75 @@ M-x org-edit-src-code : edit source block
   :init
   (elpy-enable))
 #+END_SRC
+
+* Language go
+Go code helpers. [[https://tleyden.github.io/blog/2014/05/22/configure-emacs-as-a-go-editor-from-scratch/][see also]]
+
+#+begin_src shell :tangle no
+go get -u github.com/nsf/gocode
+go get -u github.com/rogpeppe/godef
+go get -u golang.org/x/tools/cmd/guru
+go get -u golang.org/x/tools/cmd/goimports
+#+end_src
+
+Completion
+#+begin_src emacs-lisp
+
+  (use-package company-go
+    :ensure t
+    :config
+    (setq company-tooltip-limit 20)                      ; bigger popup window
+    (setq company-idle-delay .3)                         ; decrease delay before autocompletion popup shows
+    (setq company-echo-delay 0)                          ; remove annoying blinking
+    (setq company-begin-commands '(self-insert-command)) ; start autocompletion only after typing
+    (add-hook 'go-mode-hook (lambda ()
+                              (set (make-local-variable 'company-backends) '(company-go))
+                              (company-mode))))
+#+end_src
+
+Go uses tabs, so lets set the indent to a sane mode
+
+#+begin_src emacs-lisp
+(setq-default tab-width 4)
+#+end_src
+
+Packages that you need for a nice Go setup
+
+#+begin_src emacs-lisp
+  (use-package go-mode
+    :ensure t
+    :bind (("C-c t t" . go-test-current-test)
+           ("C-c t p" . go-test-current-project)
+           ("C-c t c" . go-test-current-coverage)
+           ("C-c t f" . go-test-current-file))
+    :config
+    (setq gofmt-command "goimports")
+    (add-hook 'before-save-hook 'gofmt-before-save))
+
+  (use-package go-guru
+    :ensure t)
+
+  (use-package go-errcheck
+    :ensure t)
+
+  ;; Yasnippets
+  (use-package go-snippets
+    :ensure t)
+
+  ;; eldoc integration
+  (use-package go-eldoc
+    :ensure t)
+
+  ;; (use-package gocode
+  ;;   :ensure t)
+
+  ;; (use-package godef
+  ;;   :ensure t)
+
+  (use-package gotest
+    :ensure t)
+
+  (use-package flycheck-golangci-lint
+    :ensure t
+    :hook (go-mode . flycheck-golangci-lint-setup))
+#+end_src
