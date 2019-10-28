@@ -1007,6 +1007,13 @@ M-x org-edit-src-code : edit source block
 (global-highlight-parentheses-mode)
 #+END_SRC
 
+* Language scheme
+#+BEGIN_SRC emacs-lisp
+(use-package geiser
+  :config
+  (setq geiser-active-implementations '(mit guile)))
+#+END_SRC
+
 * Language javascript
 #+BEGIN_SRC emacs-lisp
 (defun configure-web-mode-flycheck-checkers ()
