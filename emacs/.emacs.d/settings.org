@@ -55,6 +55,7 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
 
   (defvar config-indent-web-mode-spaces 2)
 
+  ;; Should set before loading `use-package'
   (setq use-package-always-ensure t)
   (setq gc-cons-threshold most-positive-fixnum)
 
@@ -67,24 +68,8 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
   ;; Draw underline lower
   (setq x-underline-at-descent-line t)
 
-  ;; Prevent the startup window
-  (setq inhibit-startup-message t)
-  ;; Setup fullscreen when startup
-  (setq initial-frame-alist (quote ((fullscreen . maximized))))
-
-  ;; Hide ui elements
-  (tool-bar-mode -1)
-  ;;(menu-bar-mode -1)
-  (toggle-scroll-bar -1)
-
   ;; Permanently force Emacs to indent with spaces, never with TABs
   (setq-default  indent-tabs-mode nil)
-
-  ;;自定义buffer头,显示更多的buffer标题信息
-  (setq frame-title-format
-        '("" " jackiebin ☺ "
-          (:eval (if (buffer-file-name)
-                     (abbreviate-file-name (buffer-file-name)) "%b"))))
 
   ;;保存时自动清除行尾空格及文件结尾空行
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -94,6 +79,9 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
 
   ;; Save ALL backup files to this location
   (setq backup-directory-alist `(("." . "~/.emacs.d/backups")))
+
+  ;; I also find the #...# auto-save files annoying, so let's disable that by adding
+  ;; (setq auto-save-default nil)
 
   ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
   (setq scroll-conservatively 101)
@@ -334,13 +322,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :defer t
     :diminish 'undo-tree-mode)
 
-  ;; Company mode
-  (use-package company
-    :diminish 'company-mode
-    :config
-    (setq company-tooltip-align-annotations t)
-    (add-hook 'after-init-hook 'global-company-mode))
-
   ;; Show the argument list of a function in the echo area
   (use-package eldoc
     :diminish eldoc-mode
@@ -372,6 +353,11 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :config
     (setq flycheck-emacs-lisp-load-path 'inherit)
 
+    ;; Force flycheck to always use c++11 support.
+    ;; We use the clang language backend so this is set to clang
+    (add-hook 'c++-mode-hook
+        (lambda() (setq flycheck-clang-language-standard "c++11")))
+
     ;; Only check while saving and opening files
     (setq flycheck-check-syntax-automatically '(save mode-enabled))
 
@@ -394,17 +380,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
             :config (setq flycheck-pos-tip-timeout 30)))
       (use-package flycheck-popup-tip
         :hook (flycheck-mode . flycheck-popup-tip-mode))))
-
-  ;; Yasnippet, a template system for emacs
-  (use-package yasnippet
-    :ensure t
-    :init
-      (yas-global-mode 1))
-
-  (use-package yasnippet-snippets
-    :ensure t)
-  (use-package yasnippet-classic-snippets
-    :ensure t)
 
   ;; Windows management: Quickly switch windows in Emacs
   (use-package ace-window
@@ -477,6 +452,7 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :config
     (show-smartparens-global-mode t))
 #+END_SRC
+
 ** edit
 #+BEGIN_SRC emacs-lisp
  ;; Hungry deletion
@@ -559,45 +535,299 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     (("M-j" . pyim-convert-string-at-point) ;与 pyim-probe-dynamic-english 配合
      ("C-;" . pyim-delete-word-from-personal-buffer)))
 #+END_SRC
-** modeline
+
+
+* Completion
+This part focuses on completion configuration. Language specific configurations are not done here
+but in the dedicate language configuration part. This section is just for global configuration.
+
+** Ivy/swipper/counsel
+I do prefer vertical completion, which is why I use extensively Ivy and extensions.
+
+#+begin_src emacs-lisp
+;; Generic completion frontend
+(use-package counsel
+  :ensure t
+  :bind
+  (("M-x" . counsel-M-x)
+   ("M-y" . counsel-yank-pop)
+   :map ivy-minibuffer-map
+   ("M-y" . ivy-next-line)))
+(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+;; Enhance M-x
+(use-package amx
+  :init (setq amx-history-length 20))
+
+(global-set-key (kbd "C-x C-f") #'counsel-find-file)
+(global-set-key (kbd "C-c r") #'counsel-recentf)
+
+(use-package counsel-projectile
+  :config
+  (counsel-projectile-mode t)
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
+(use-package flx)
+(use-package ivy-hydra)
+(use-package ivy
+  :diminish 'ivy-mode
+  :config
+  (ivy-mode t)
+  (setq ivy-display-style 'fancy
+        ivy-use-virtual-buffers t
+        enable-recursive-minibuffers t
+        ivy-use-selectable-prompt t)
+  ;; make everything fuzzy except swiper
+  (setq ivy-re-builders-alist
+        '((swiper . ivy--regex-plus)
+          (t . ivy--regex-fuzzy))))
+
+(global-set-key (kbd "C-r") #'swiper)
+(global-set-key (kbd "C-s") #'swiper)
+
+  (use-package ivy-rich
+    :ensure t
+    :config
+    (ivy-rich-mode 1)
+    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+#+end_src
+** Helm
+** Company
+In order to have inline completion, really important for coding, I use company. However I adapted
+some facing attributes. Each language is also adding its backend when needed. Therefore, only global
+configuration here.
+
+#+begin_src emacs-lisp
+  ;; Company mode
+;;  (use-package company
+;;    :diminish 'company-mode
+;;    :config
+;;    (setq company-tooltip-align-annotations t)
+;;    (add-hook 'after-init-hook 'global-company-mode))
+
+  (use-package company
+    :ensure t
+    :hook
+    (emacs-lisp-mode . (lambda () (add-to-list (make-local-variable 'company-backends) '(company-elisp))))
+    :config
+
+    ;; Global
+    (setq company-idle-delay 1
+          company-minimum-prefix-length 1
+          company-show-numbers t
+          company-tooltip-limit 20)
+
+    ;; Facing
+    (unless (face-attribute 'company-tooltip :background)
+      (set-face-attribute 'company-tooltip nil :background "black" :foreground "gray40")
+      (set-face-attribute 'company-tooltip-selection nil :inherit 'company-tooltip :background "gray15")
+      (set-face-attribute 'company-preview nil :background "black")
+      (set-face-attribute 'company-preview-common nil :inherit 'company-preview :foreground "gray40")
+      (set-face-attribute 'company-scrollbar-bg nil :inherit 'company-tooltip :background "gray20")
+      (set-face-attribute 'company-scrollbar-fg nil :background "gray40"))
+
+    ;; Default backends
+    (setq company-backends '(company-capf company-files))
+
+    ;; Activating globally
+    (global-company-mode t))
+
+  (use-package company-quickhelp
+    :ensure t
+    :after company
+    :config
+    (company-quickhelp-mode 1))
+#+end_src
+** Templating
+I use templates for 2 use cases: the buffer edition and the file specific templates. Both are relying on *yasnippet*.
+
+*** Edition templates
+The default configuration of yasnippet consists of activating it and plugging it with company.
+Ivy-yasnippet is used for snippet discovery.
 #+BEGIN_SRC emacs-lisp
-;; Theme
+  ;; Yasnippet, a template system for emacs
+;;  (use-package yasnippet
+;;    :ensure t
+;;    :config
+    ;; Adding yasnippet support to company
+;;    (add-to-list 'company-backends '(company-yasnippet))
+;;    :init
+;;    (yas-global-mode 1))
+
+;;  (use-package yasnippet-snippets
+;;    :ensure t)
+;;  (use-package yasnippet-classic-snippets
+;;    :ensure t)
+;;  (use-package ivy-yasnippet
+;;    :ensure t)
+  (use-package yasnippet
+    :ensure t
+    :config
+
+    ;; Adding yasnippet support to company
+    (eval-after-load 'company
+      '(lambda ()
+         (add-to-list 'company-backends 'company-yasnippet)))
+
+    ;; Add third parties snippets
+    (defvar third-parties-snippet-dir (format "%s/third_parties/snippets" user-emacs-directory)
+      "Directory containing my own snippets")
+
+    (defun third-parties-snippets-initialize ()
+      (add-to-list 'yas-snippet-dirs 'third-parties-snippet-dir t)
+      (yas-load-directory third-parties-snippet-dir t))
+
+    (eval-after-load 'yasnippet '(third-parties-snippets-initialize))
+
+    ;; Activate global
+    (yas-global-mode))
+
+  ;; Load official snippets
+  (use-package yasnippet-snippets
+    :ensure t)
+  (use-package yasnippet-classic-snippets
+    :ensure t)
+
+  ;; Connect with ivy to have a list on demand
+  (use-package ivy-yasnippet
+    :ensure t)
+
+#+END_SRC
+*** Filetype templates
+This part is using yatemplate (an over-layer of yasnippet) coupled with auto-insert to have a set of
+file type dedicated templates. The templates are available in =third_parties/templates= directory.
+
+#+begin_src emacs-lisp
+  (use-package yatemplate
+    :ensure t
+    ;;:tags '("COMPLETION")
+    :after yasnippet
+    :config
+
+    ;; Define template directory
+    (setq yatemplate-dir (concat user-emacs-directory "/third_parties/templates"))
+
+    ;; Coupling with auto-insert
+    (setq auto-insert-alist nil)
+    (yatemplate-fill-alist)
+    ;; (add-hook 'find-file-hook 'auto-insert)
+    )
+#+end_src
+
+* Visual
+** Mode line
+#+BEGIN_SRC emacs-lisp
+  (use-package fancy-battery
+    :ensure t
+    :config
+    (fancy-battery-mode))
+  (use-package anzu
+    :ensure t
+    :config
+    (global-anzu-mode +1))
+;;  (use-package f
+;;    :ensure t)
+  (use-package minions
+    :ensure t
+    :config (minions-mode 1))
+  (use-package doom-modeline
+    :ensure t
+    :hook (after-init . doom-modeline-mode)
+
+    :init
+    (setq doom-modeline-icon t
+          doom-modeline-major-mode-icon t
+          doom-modeline-buffer-file-name-style 'truncate-upto-project
+          doom-modeline-persp-name t
+          doom-modeline-checker-simple-format t
+
+          ;; Whether display environment version or not
+          doom-modeline-env-version t
+
+          ;; Or for individual languages
+          doom-modeline-env-enable-python t
+          doom-modeline-env-enable-ruby t
+          doom-modeline-env-enable-perl t
+          doom-modeline-env-enable-go t
+          doom-modeline-env-enable-elixir t
+          doom-modeline-env-enable-rust t
+
+          ;; Change the executables to use for the language version string
+          doom-modeline-env-python-executable "python"
+          doom-modeline-env-ruby-executable "ruby"
+          doom-modeline-env-perl-executable "perl"
+          doom-modeline-env-go-executable "go"
+          doom-modeline-env-elixir-executable "iex"
+          doom-modeline-env-rust-executable "rustc"
+
+          ;; Whether display irc notifications or not. Requires `circe' package.
+          doom-modeline-irc t
+          doom-modeline-irc-stylize 'identity
+
+          ;; Versioning (github)
+          doom-modeline-github t
+
+          ;;
+          doom-modeline-checker-simple-format t)
+
+    (defface egoge-display-time
+      '((((type x w32 mac))
+         ;; #060525 is the background colour of my default face.
+         (:foreground "#060525" :inherit bold))
+        (((type tty))
+         (:foreground "blue")))
+      "Face used to display the time in the mode line.")
+
+    ;; This causes the current time in the mode line to be displayed in
+    ;; `egoge-display-time-face' to make it stand out visually.
+    (setq display-time-string-forms
+          '((propertize (concat "[" 24-hours ":" minutes "] ")
+                        'face 'egoge-display-time)))
+
+    (display-time)
+    )
+#+END_SRC
+** Global theme
+#+BEGIN_SRC emacs-lisp
   (use-package monokai-theme
     :config
     (load-theme 'monokai t))
   ;;(load-theme 'solarized-dark t)
   ;;(load-theme 'cyberpunk t)
-
-  ;; Doom modeline
-  ;;(use-package doom-modeline
-  ;;  :ensure t
-  ;;  :hook (after-init . doom-modeline-mode))
-
-
-  ;; modeline
-;;  (use-package spaceline
-;;    :ensure t
-;;    :init
-;;    (setq powerline-default-separator 'utf-8)
-;;
-;;    :config
-;;    (require 'spaceline-config)
-;;    (spaceline-spacemacs-theme)
-;;    )
-
-  ;; Reference: https://github.com/hlissner/.emacs.d/blob/master/core/core-modeline.el
-  (use-package f
-    :ensure t)
-  (use-package moody
-    :ensure t
-    :config
-    (setq x-underline-at-descent-line t)
-    (moody-replace-mode-line-buffer-identification)
-    (moody-replace-vc-mode))
-  (use-package minions
-    :ensure t
-    :config (minions-mode 1))
 #+END_SRC
+** Frame
+*** Title
+#+begin_src emacs-lisp
+  (defun frame-title-format ()
+    "Return frame title with current project name, where applicable."
+    (let ((file buffer-file-name))
+      (if file
+          (if (and (bound-and-true-p projectile-mode)
+                   (projectile-project-p))
+              (concat
+               (format "[%s] " (projectile-project-name))
+               (replace-regexp-in-string (format "^%s" (projectile-project-p)) "" (file-truename file)))
+            (abbreviate-file-name file))
+        "%b")))
+
+  (when (display-graphic-p)
+    (setq frame-title-format '((:eval (frame-title-format)))))
+
+  ;;自定义buffer头,显示更多的buffer标题信息
+  ;;(setq frame-title-format
+  ;;      '("" " jackiebin ☺ "
+  ;;        (:eval (if (buffer-file-name)
+  ;;                   (abbreviate-file-name (buffer-file-name)) "%b"))))
+
+#+end_src
+*** Remove unused part
+#+begin_src emacs-lisp
+  (tool-bar-mode -1)
+  ;;(menu-bar-mode -1)
+  (scroll-bar-mode -1);;(toggle-scroll-bar -1)
+  ;; Prevent the startup window
+  (setq inhibit-startup-message t)
+  ;; Setup fullscreen when startup
+  (setq initial-frame-alist (quote ((fullscreen . maximized))))
+#+end_src
 
 
 * Personal keymap
@@ -695,6 +925,20 @@ M-x org-edit-src-code : edit source block
     :config
     (unless (char-displayable-p ?❗)
       (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
+  ;; Indentation
+  (use-package highlight-indent-guides
+    :ensure t
+    :commands (highlight-indent-guides-mode)
+    :hook
+    (prog-mode . highlight-indent-guides-mode)
+    :config
+    (setq highlight-indent-guides-method 'column))
+  ;; Show current function
+  (which-function-mode 1)
+  ;;Faces/Colors
+  (use-package rainbow-mode
+    :ensure t
+    :commands (rainbow-mode))
 #+END_SRC
 ** Agenda and capture templates
 #+BEGIN_SRC emacs-lisp
@@ -732,38 +976,38 @@ M-x org-edit-src-code : edit source block
 * ivy
 #+BEGIN_SRC emacs-lisp
 ;; Generic completion frontend
-(use-package counsel
-  :ensure t
-  :bind
-  (("M-x" . counsel-M-x)
-   ("M-y" . counsel-yank-pop)
-   :map ivy-minibuffer-map
-   ("M-y" . ivy-next-line)))
-(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+;;(use-package counsel
+;;  :ensure t
+;;  :bind
+;;  (("M-x" . counsel-M-x)
+;;   ("M-y" . counsel-yank-pop)
+;;   :map ivy-minibuffer-map
+;;   ("M-y" . ivy-next-line)))
+;;(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
 ;; Enhance M-x
-(use-package amx
-  :init (setq amx-history-length 20))
+;;(use-package amx
+;;  :init (setq amx-history-length 20))
 
-(global-set-key (kbd "C-x C-f") #'counsel-find-file)
-(global-set-key (kbd "C-c r") #'counsel-recentf)
+;;(global-set-key (kbd "C-x C-f") #'counsel-find-file)
+;;(global-set-key (kbd "C-c r") #'counsel-recentf)
 
-(use-package counsel-projectile
-  :config
-  (counsel-projectile-mode t)
-  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
-(use-package flx)
-(use-package ivy-hydra)
-(use-package ivy
-  :diminish 'ivy-mode
-  :config
-  (ivy-mode t)
-  ;; make everything fuzzy except swiper
-  (setq ivy-re-builders-alist
-        '((swiper . ivy--regex-plus)
-          (t . ivy--regex-fuzzy))))
+;;(use-package counsel-projectile
+;;  :config
+;;  (counsel-projectile-mode t)
+;;  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
+;;(use-package flx)
+;;(use-package ivy-hydra)
+;;(use-package ivy
+;;  :diminish 'ivy-mode
+;;  :config
+;;  (ivy-mode t)
+;;  ;; make everything fuzzy except swiper
+;;  (setq ivy-re-builders-alist
+;;        '((swiper . ivy--regex-plus)
+;;          (t . ivy--regex-fuzzy))))
 
-(global-set-key (kbd "C-r") #'swiper)
-(global-set-key (kbd "C-s") #'swiper)
+;;(global-set-key (kbd "C-r") #'swiper)
+;;(global-set-key (kbd "C-s") #'swiper)
 
 #+END_SRC
 
@@ -878,9 +1122,23 @@ M-x org-edit-src-code : edit source block
   ;;   :init
   ;;   (add-hook 'irony-mode-hook #'irony-eldoc))
 
+  ;; C/C++ Mode
+  (use-package cc-mode
+    :ensure nil
+    :bind (:map c-mode-base-map
+           ("C-c c" . compile))
+    :hook (c-mode-common . (lambda ()
+                             (c-set-style "linux")
+                             (setq tab-width 4)
+                             (setq c-basic-offset 4)))
+  :config
   (use-package modern-cpp-font-lock
     :diminish
-    :init (modern-c++-font-lock-global-mode t))
+    :init (modern-c++-font-lock-global-mode t)))
+
+  ;;(use-package modern-cpp-font-lock
+  ;;  :diminish
+  ;;  :init (modern-c++-font-lock-global-mode t))
 
   ;; Emacs frontend to GNU GLobal source code tagging system
   (use-package ggtags
@@ -905,8 +1163,8 @@ M-x org-edit-src-code : edit source block
       (define-key map (kbd "C-c >") 'ggtags-next-mark)))
 
   ;; A client for Language Server Protocol servers
-  (use-package eglot
-    :hook (prog-mode . eglot-ensure))
+  ;;(use-package eglot
+    ;;:hook (prog-mode . eglot-ensure))
 
   ;; Emacs client for the Language Server Protocol
   (use-package lsp-mode
