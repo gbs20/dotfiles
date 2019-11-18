@@ -1,5 +1,5 @@
 
-(package-initialize)
+;; (package-initialize)
 
 (require 'org)
 (org-babel-load-file

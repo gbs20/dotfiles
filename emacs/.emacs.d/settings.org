@@ -33,166 +33,145 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
   ;; 说明：使用此配置，新建文件会采用UTF-8(无BOM)格式编码，行末以unix方式("\n")结尾，打开已有的文件，修改，保存还是按原有编码方式保存。
 #+END_SRC
 
+* Package management
+The first part of the configuration is to prepare the package management. I am using =use-package= as
+the central tool to deal with configuration of the packages.
 
-* Core
+** Emacs package configuration
+In this section, we are configuring the repositories and emacs internal package management. The only
+specificity here is that the TLS algorithm is specific for 26.2.1.
+
 #+BEGIN_SRC emacs-lisp
+  (require 'package)
+
+  (when (and (= emacs-major-version 26)
+             (= emacs-minor-version 2)
+             (= emacs-build-number 1))
+    (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3"))
+
+  (setq package-enable-at-startup nil
+        package-check-signature nil
+        package-archives '(;;("GNU ELPA"     . "https://elpa.gnu.org/packages/")
+                           ;;("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                           ("GNU ELPA"   . "https://elpa.emacs-china.org/gnu/")
+                           ;;("MELPA"        . "https://melpa.org/packages/")
+                           ;;("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+                           ("MELPA" . "https://elpa.emacs-china.org/melpa/")
+                           ("ORGMODE"      . "http://orgmode.org/elpa/"))
+        package-archive-priorities  '(("ORGMODE"      . 15)
+                                      ("MELPA"        . 10)
+                                      ("GNU ELPA"     . 5))
+        package-check-signature nil)
+
   (package-initialize)
+#+END_SRC
 
-  (defvar config-which-key-delay 1.4)
+** Load use-package
+Here, we are initializing =use-package= in the classic way.
 
-  (defvar config-keep-backups t)
-
-  ;; English Font
-  (defvar config-font-family "Monaco")
-  (defvar config-font-height 100
-    "font-height is 1/10pt so 120 == 120/10 == 12pt")
-
-  ;; Chinese Font
-  (dolist (charset '(kana han symbol cjk-misc bopomofo))
-    (set-fontset-font (frame-parameter nil 'font)
-                      charset (font-spec :family "WenQuanYi Micro Hei Mono"
-                                         :size 12)));;14
-
-  (defvar config-indent-web-mode-spaces 2)
-
-  ;; Should set before loading `use-package'
-  (setq use-package-always-ensure t)
-  (setq gc-cons-threshold most-positive-fixnum)
-
-  ;; Set regex syntax to string for re-builder
-  (setq reb-re-syntax 'string)
-
-  ;; Hide column numbers
-  (setq column-number-mode t)
-
-  ;; Draw underline lower
-  (setq x-underline-at-descent-line t)
-
-  ;; Permanently force Emacs to indent with spaces, never with TABs
-  (setq-default  indent-tabs-mode nil)
-
-  ;;保存时自动清除行尾空格及文件结尾空行
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
-
-  ;; Keep backups
-  (setq make-backup-files config-keep-backups)
-
-  ;; Save ALL backup files to this location
-  (setq backup-directory-alist `(("." . "~/.emacs.d/backups")))
-
-  ;; I also find the #...# auto-save files annoying, so let's disable that by adding
-  ;; (setq auto-save-default nil)
-
-  ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
-  (setq scroll-conservatively 101)
-
-  ;; Automatically scroll the compilation buffer
-  (setq compilation-scroll-output t)
-
-  ;; Give focus to new help windows
-  (setq help-window-select t)
-  ;; Put apropos in current buffer so it can be read and exited with minimum effort
-  (add-to-list 'display-buffer-alist
-              '("*Apropos*" display-buffer-same-window)
-              '("*Info*" display-buffer-same-window))
-
-  ;; Add /usr/local/bin to the path
-  (setq exec-path (append exec-path '("/usr/local/bin")))
-
-  ;; Turn on line numbers
-  (global-display-line-numbers-mode)
-  ;;(menu-bar-display-line-numbers-mode 'relative)
-
-  ;; Package management
-  ;;(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-  ;;(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-  (setq package-archives '(("gnu"   . "https://elpa.emacs-china.org/gnu/")
-                          ("melpa" . "https://elpa.emacs-china.org/melpa/")))
-  ;;(setq package-archives '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-  ;;			("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
-
+#+BEGIN_SRC emacs-lisp
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
 
-  ;; Always hightlight current line
-  (global-hl-line-mode t)
+  (eval-when-compile
+    (require 'use-package))
 
-  ;; Y or n is enough for me
-  (fset 'yes-or-no-p 'y-or-n-p)
-
-  ;; Font
-  (set-face-attribute 'default nil
-                      :family config-font-family
-                      :height config-font-height)
-
-  ;; Parenthesis
-  (show-paren-mode 1)
-
-  ;; Wrap selection with (, [, ", etc...
-  (electric-pair-mode 1)
-
-  ;; Enable narrow to region functionality
-  (put 'narrow-to-region 'disabled nil)
-
-  ;; Frequently accessed files (C-x r j <letter>)
-  ;; jump-to-register
-  (set-register ?i '(file . "~/.emacs.d/settings.org"))
-  (set-register ?o '(file . "~/org/agenda/organizer.org"))
-  (set-register ?w '(file . "~/org/wiki/index.org"))
-
-  ;; Colorize compilation-mode
-  (defun my-colorize-compilation-buffer ()
-      (when (eq major-mode 'compilation-mode)
-          (ansi-color-apply-on-region compilation-filter-start (point-max))))
-
-  (add-hook 'compilation-filter-hook 'my-colorize-compilation-buffer)
-
-  ;; When on OSX, change meta to cmd key
-  ;; Amethyst, an OSX app I use is mucking around with Option-Shift
-  (when (eq system-type 'darwin)
-    (setq mac-command-modifier 'meta)
-    (setq mac-option-modifier nil))
-
+  ;; (eval-when-compile
+  ;;   (setq use-package-expand-minimally byte-compile-current-file))
 #+END_SRC
 
-* Core function
+** Quelpa
+ Quelpa is super useful for developer package management. Adding the adaptation for the use-package
+ makes it configuration file proof.
+
+ #+begin_src emacs-lisp
+   (use-package quelpa-use-package
+     :ensure t
+     :init
+     (setq quelpa-update-melpa-p nil))
+ #+end_src
+** Hydra
+I use hydra a lot so it is easier to add its support directly in the use-package configuration part.
+
 #+BEGIN_SRC emacs-lisp
-  ;; indent whole buffer
-  (defun iwb ()
-    "indent whole buffer"
-    (interactive)
-    (delete-trailing-whitespace)
-    (indent-region (point-min) (point-max) nil)
-    (untabify (point-min) (point-max)))
+  (use-package hydra
+    :commands (hydra-default-pre
+               hydra-keyboard-quit
+               hydra--call-interactively-remap-maybe
+               hydra-show-hint
+               hydra-set-transient-map))
 
-  (global-set-key (kbd "C-c n") 'iwb)
+  (defhydra hydra-zoom (global-map "<f2>")
+    "zoom"
+    ("g" text-scale-increase "in")
+    ("l" text-scale-decrease "out"))
 
-  ;;opening new lines can be finichy
-  (defun open-line-below()
-      "open line below."
-      (interactive)
-      (end-of-line)
-      (newline)
-      (indent-for-tab-command))
-  (defun open-line-above()
-      "open line above."
-      (interactive)
-      (beginning-of-line)
-      (newline)
-      (forword-line -1)
-      (indent-for-tab-command))
+  (use-package pretty-hydra
+    :defines (display-line-numbers-mode linum-mode)
+    :bind ("<f6>" . toggles-hydra/body)
+    :init
+    (cl-defun pretty-hydra-title (title &optional icon-type icon-name
+                                        &key face height v-adjust)
+      "Add an icon in the hydra title."
+      (let ((face (or face `(:foreground ,(face-background 'highlight))))
+            (height (or height 1.0))
+            (v-adjust (or v-adjust 0.0)))
+        (concat
+         (when (and (display-graphic-p) icon-type icon-name)
+           (let ((f (intern (format "all-the-icons-%s" icon-type))))
+             (when (fboundp f)
+               (concat
+                (apply f (list icon-name :face face :height height :v-adjust v-adjust))
+                " "))))
+         (propertize title 'face face))))
+    ;; Global toggles
+    (pretty-hydra-define toggles-hydra (:title (pretty-hydra-title "Toggles" 'faicon "toggle-on")
+                                        :color amaranth :quit-key "q")
+      ("Basic"
+       (("n" (if (fboundp 'display-line-numbers-mode)
+                 (display-line-numbers-mode (if display-line-numbers-mode -1 1))
+               (linum-mode (if linum-mode -1 1)))
+         "line number" :toggle (if (fboundp 'display-line-numbers-mode)
+                                   display-line-numbers-mode
+                                 linum-mode))
+        ("a" aggressive-indent-mode "aggressive indent" :toggle t)
+        ("h" hungry-delete-mode "hungry delete" :toggle t)
+        ("e" electric-pair-mode "electric pair" :toggle t)
+        ("c" flyspell-mode "spell check" :toggle t)
+        ("S" prettify-symbols-mode "pretty symbol" :toggle t)
+        ("L" page-break-lines-mode "page break lines" :toggle t)
+        ("M" doom-modeline-mode "modern mode-line" :toggle t))
+       "Highlight"
+       (("l" global-hl-line-mode "line" :toggle t)
+        ("P" show-paren-mode "paren" :toggle t)
+        ("s" symbol-overlay-mode "symbol" :toggle t)
+        ("r" rainbow-mode "rainbow" :toggle t)
+        ("w" (setq show-trailing-whitespace (not show-trailing-whitespace))
+         "whitespace" :toggle show-trailing-whitespace)
+        ("d" rainbow-delimiters-mode "delimiter" :toggle t)
+        ("i" highlight-indent-guides-mode "indent" :toggle t)
+        ("T" hl-todo-mode "todo" :toggle t))
+       "Coding"
+       (("f" flycheck-mode "flycheck" :toggle t)
+        ("F" flymake-mode "flymake" :toggle t)
+        ("o" origami-mode "folding" :toggle t)
+        ("O" hs-minor-mode "hideshow" :toggle t)
+        ("u" subword-mode "subword" :toggle t)
+        ("W" which-function-mode "which function" :toggle t)
+        ("E" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
+        ("Q" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
+       "Version Control"
+       (("v" diff-hl-mode "gutter" :toggle t)
+        ("V" diff-hl-flydiff-mode "live gutter" :toggle t)
+        ("m" diff-hl-margin-mode "margin gutter" :toggle t)
+        ("D" diff-hl-dired-mode "dired gutter" :toggle t)))))
+#+END_SRC
 
-  ;; Use a hook so the message doesn't get clobbered by other messages.
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (message "Emacs ready in %s with %d garbage collections."
-                       (format "%.2f seconds"
-                               (float-time
-                                (time-subtract after-init-time before-init-time)))
-                       gcs-done)))
-
-  ;; Update
+** Paradox to enhance package list management
+Finally, I use paradox to enhance the package listing experience.
+#+BEGIN_SRC emacs-lisp
+ ;; Update
   ;; A modern Packages Menu
   (use-package paradox
     :init
@@ -282,10 +261,167 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
 
 #+END_SRC
 
+* Core
+#+BEGIN_SRC emacs-lisp
+  ;;(package-initialize)
+
+  (defvar config-which-key-delay 1.4)
+
+  (defvar config-keep-backups t)
+
+  ;; English Font
+  (defvar config-font-family "Monaco")
+  (defvar config-font-height 100
+    "font-height is 1/10pt so 120 == 120/10 == 12pt")
+
+  ;; Chinese Font
+  (dolist (charset '(kana han symbol cjk-misc bopomofo))
+    (set-fontset-font (frame-parameter nil 'font)
+                      charset (font-spec :family "WenQuanYi Micro Hei Mono"
+                                         :size 12)));;14
+
+  (defvar config-indent-web-mode-spaces 2)
+
+  ;; Should set before loading `use-package'
+  (setq use-package-always-ensure t)
+  (setq gc-cons-threshold most-positive-fixnum)
+
+  ;; Set regex syntax to string for re-builder
+  (setq reb-re-syntax 'string)
+
+  ;; Hide column numbers
+  (setq column-number-mode t)
+
+  ;; Draw underline lower
+  (setq x-underline-at-descent-line t)
+
+  ;; Permanently force Emacs to indent with spaces, never with TABs
+  (setq-default  indent-tabs-mode nil)
+
+  ;;保存时自动清除行尾空格及文件结尾空行
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+  ;; Keep backups
+  (setq make-backup-files config-keep-backups)
+
+  ;; Save ALL backup files to this location
+  (setq backup-directory-alist `(("." . "~/.emacs.d/backups")))
+
+  ;; I also find the #...# auto-save files annoying, so let's disable that by adding
+  ;; (setq auto-save-default nil)
+
+  ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
+  (setq scroll-conservatively 101)
+
+  ;; Automatically scroll the compilation buffer
+  (setq compilation-scroll-output t)
+
+  ;; Give focus to new help windows
+  (setq help-window-select t)
+  ;; Put apropos in current buffer so it can be read and exited with minimum effort
+  (add-to-list 'display-buffer-alist
+              '("*Apropos*" display-buffer-same-window)
+              '("*Info*" display-buffer-same-window))
+
+  ;; Add /usr/local/bin to the path
+  (setq exec-path (append exec-path '("/usr/local/bin")))
+
+  ;; Turn on line numbers
+  (global-display-line-numbers-mode)
+  ;;(menu-bar-display-line-numbers-mode 'relative)
+
+  ;; Package management
+  ;;(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+  ;;(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+;;  (setq package-archives '(("gnu"   . "https://elpa.emacs-china.org/gnu/")
+;;                          ("melpa" . "https://elpa.emacs-china.org/melpa/")))
+  ;;(setq package-archives '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+  ;;			("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+
+;;  (unless (package-installed-p 'use-package)
+;;    (package-refresh-contents)
+;;    (package-install 'use-package))
+
+  ;; Always hightlight current line
+  (global-hl-line-mode t)
+
+  ;; Y or n is enough for me
+  (fset 'yes-or-no-p 'y-or-n-p)
+
+  ;; Font
+  (set-face-attribute 'default nil
+                      :family config-font-family
+                      :height config-font-height)
+
+  ;; Parenthesis
+  (show-paren-mode 1)
+
+  ;; Wrap selection with (, [, ", etc...
+  (electric-pair-mode 1)
+
+  ;; Enable narrow to region functionality
+  (put 'narrow-to-region 'disabled nil)
+
+  ;; Frequently accessed files (C-x r j <letter>)
+  ;; jump-to-register
+  (set-register ?i '(file . "~/.emacs.d/settings.org"))
+  (set-register ?o '(file . "~/org/agenda/organizer.org"))
+  (set-register ?w '(file . "~/org/wiki/index.org"))
+
+  ;; Colorize compilation-mode
+  (defun my-colorize-compilation-buffer ()
+      (when (eq major-mode 'compilation-mode)
+          (ansi-color-apply-on-region compilation-filter-start (point-max))))
+
+  (add-hook 'compilation-filter-hook 'my-colorize-compilation-buffer)
+
+  ;; When on OSX, change meta to cmd key
+  ;; Amethyst, an OSX app I use is mucking around with Option-Shift
+  (when (eq system-type 'darwin)
+    (setq mac-command-modifier 'meta)
+    (setq mac-option-modifier nil))
+
+#+END_SRC
+
+* Core function
+#+BEGIN_SRC emacs-lisp
+  ;; indent whole buffer
+  (defun iwb ()
+    "indent whole buffer"
+    (interactive)
+    (delete-trailing-whitespace)
+    (indent-region (point-min) (point-max) nil)
+    (untabify (point-min) (point-max)))
+
+  (global-set-key (kbd "C-c n") 'iwb)
+
+  ;;opening new lines can be finichy
+  (defun open-line-below()
+      "open line below."
+      (interactive)
+      (end-of-line)
+      (newline)
+      (indent-for-tab-command))
+  (defun open-line-above()
+      "open line above."
+      (interactive)
+      (beginning-of-line)
+      (newline)
+      (forword-line -1)
+      (indent-for-tab-command))
+
+  ;; Use a hook so the message doesn't get clobbered by other messages.
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (message "Emacs ready in %s with %d garbage collections."
+                       (format "%.2f seconds"
+                               (float-time
+                                (time-subtract after-init-time before-init-time)))
+                       gcs-done)))
+#+END_SRC
+
 * Core packages
 #+BEGIN_SRC emacs-lisp
-  (use-package all-the-icons)
-
   ;; Diminished modes are minor modes with no modeline display
   (use-package diminish
     :ensure t)
@@ -293,13 +429,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
   ;; Rainbow mode - displays color codes in their color
   (use-package rainbow-mode
     :delight)
-
-  ;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
-  ;; https://github.com/emacs-jp/replace-colorthemes
-  (use-package all-the-icons)
-  (use-package all-the-icons-dired
-    :config
-    (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
 
   ;; Parenthesis
   (use-package highlight-parentheses
@@ -452,7 +581,6 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
     :config
     (show-smartparens-global-mode t))
 #+END_SRC
-
 ** edit
 #+BEGIN_SRC emacs-lisp
  ;; Hungry deletion
@@ -537,6 +665,13 @@ I modeled this set of files based off of the socketwiz's dotfiles at https://git
 #+END_SRC
 
 
+* Daemon mode
+Now that we are ready to actually configure emacs properly, let's first start the server!
+
+#+begin_src emacs-lisp
+  (server-start)
+#+end_src
+
 * Completion
 This part focuses on completion configuration. Language specific configurations are not done here
 but in the dedicate language configuration part. This section is just for global configuration.
@@ -590,6 +725,25 @@ I do prefer vertical completion, which is why I use extensively Ivy and extensio
     (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 #+end_src
 ** Helm
+I use Helm for some specific cases which requires an important visibility space completion.
+
+#+begin_src emacs-lisp
+  (use-package helm
+    :ensure t
+    :functions helm-show-completion-default-display-function
+    :config
+    (setq helm-scroll-amount 4 ; scroll 4 lines other window using M-<next>/M-<prior>
+          helm-quick-update t ; do not display invisible candidates
+          helm-idle-delay 0.01 ; be idle for this many seconds, before updating in delayed sources.
+          helm-input-idle-delay 0.01 ; be idle for this many seconds, before updating candidate buffer
+          helm-show-completion-display-function #'helm-show-completion-default-display-function
+          helm-split-window-default-side 'below ;; open helm buffer in another window
+          helm-split-window-inside-p t ;; open helm buffer inside current window, not occupy whole other window
+          helm-candidate-number-limit 200 ; limit the number of displayed canidates
+          helm-move-to-line-cycle-in-source nil ; move to end or beginning of source when reaching top or bottom of source.
+          )
+    )
+#+end_src
 ** Company
 In order to have inline completion, really important for coding, I use company. However I adapted
 some facing attributes. Each language is also adding its backend when needed. Therefore, only global
@@ -711,6 +865,22 @@ file type dedicated templates. The templates are available in =third_parties/tem
     ;; (add-hook 'find-file-hook 'auto-insert)
     )
 #+end_src
+** Prescient
+Prescient helps to sort candidates by last used first and then sorting by length.
+
+#+begin_src emacs-lisp
+  (use-package prescient
+    :ensure t
+    :config (prescient-persist-mode))
+
+  (use-package ivy-prescient
+    :ensure t
+    :config (ivy-prescient-mode))
+
+  (use-package company-prescient
+    :ensure t
+    :config (company-prescient-mode))
+#+end_src
 
 * Visual
 ** Mode line
@@ -829,6 +999,23 @@ file type dedicated templates. The templates are available in =third_parties/tem
   (setq initial-frame-alist (quote ((fullscreen . maximized))))
 #+end_src
 
+** Icons
+#+begin_src emacs-lisp
+  ;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
+  ;; https://github.com/emacs-jp/replace-colorthemes
+  ;;(use-package all-the-icons-dired
+  ;;  :config
+  ;;  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
+
+  (use-package all-the-icons
+    :ensure t)
+
+  (use-package all-the-icons-dired
+    :ensure t)
+
+  (use-package all-the-icons-ivy
+    :ensure t)
+#+end_src
 
 * Personal keymap
 #+BEGIN_SRC emacs-lisp
@@ -900,6 +1087,78 @@ file type dedicated templates. The templates are available in =third_parties/tem
 #+END_SRC
 
 
+* File/Directory management
+** Treemacs
+*** Global
+#+begin_src emacs-lisp
+  (use-package treemacs
+    :ensure t
+    :bind (:map global-map
+                ([f8]        . treemacs))
+    :functions (treemacs-follow-mode treemacs-filewatch-mode)
+
+    :config
+    (setq treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
+          treemacs-deferred-git-apply-delay      0.5
+          treemacs-display-in-side-window        t
+          treemacs-eldoc-display                 t
+          treemacs-file-event-delay              5000
+          treemacs-file-follow-delay             0.2
+          treemacs-follow-after-init             t
+          treemacs-git-integration               t
+          treemacs-git-command-pipe              ""
+          treemacs-goto-tag-strategy             'refetch-index
+          treemacs-indentation                   2
+          treemacs-indentation-string            " "
+          treemacs-is-never-other-window         nil
+          treemacs-max-git-entries               5000
+          treemacs-missing-project-action        'ask
+          treemacs-no-png-images                 nil
+          treemacs-no-delete-other-windows       t
+          treemacs-project-follow-cleanup        nil
+          treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+          treemacs-position                      'left
+          treemacs-recenter-distance             0.1
+          treemacs-recenter-after-file-follow    nil
+          treemacs-recenter-after-tag-follow     nil
+          treemacs-recenter-after-project-jump   'always
+          treemacs-recenter-after-project-expand 'on-distance
+          treemacs-show-cursor                   nil
+          treemacs-show-hidden-files             t
+          treemacs-silent-filewatch              nil
+          treemacs-silent-refresh                nil
+          treemacs-sorting                       'alphabetic-desc
+          treemacs-space-between-root-nodes      t
+          treemacs-tag-follow-cleanup            t
+          treemacs-tag-follow-delay              1.5
+          treemacs-width                         35)
+
+    (treemacs-follow-mode t)
+    (treemacs-filewatch-mode t))
+#+end_src
+*** Projectile
+#+begin_src emacs-lisp
+  (use-package treemacs-projectile
+    :ensure t
+    :functions treemacs-projectile-create-header
+    :after treemacs projectile
+    :config
+    (setq treemacs-header-function #'treemacs-projectile-create-header))
+#+end_src
+*** Magit
+#+begin_src emacs-lisp
+  (use-package treemacs-magit
+    :after treemacs magit
+    :ensure t)
+#+end_src
+*** Icons
+#+begin_src emacs-lisp
+  (use-package treemacs-icons-dired
+    :ensure t
+    :commands (treemacs-icons-dired-mode)
+    :hook
+    (dired-mode . treemacs-icons-dired-mode))
+#+end_src
 * org
 <s TAB : insert source block
 M-x org-edit-src-code : edit source block
@@ -973,118 +1232,7 @@ M-x org-edit-src-code : edit source block
 
 
 
-* ivy
-#+BEGIN_SRC emacs-lisp
-;; Generic completion frontend
-;;(use-package counsel
-;;  :ensure t
-;;  :bind
-;;  (("M-x" . counsel-M-x)
-;;   ("M-y" . counsel-yank-pop)
-;;   :map ivy-minibuffer-map
-;;   ("M-y" . ivy-next-line)))
-;;(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-;; Enhance M-x
-;;(use-package amx
-;;  :init (setq amx-history-length 20))
-
-;;(global-set-key (kbd "C-x C-f") #'counsel-find-file)
-;;(global-set-key (kbd "C-c r") #'counsel-recentf)
-
-;;(use-package counsel-projectile
-;;  :config
-;;  (counsel-projectile-mode t)
-;;  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
-;;(use-package flx)
-;;(use-package ivy-hydra)
-;;(use-package ivy
-;;  :diminish 'ivy-mode
-;;  :config
-;;  (ivy-mode t)
-;;  ;; make everything fuzzy except swiper
-;;  (setq ivy-re-builders-alist
-;;        '((swiper . ivy--regex-plus)
-;;          (t . ivy--regex-fuzzy))))
-
-;;(global-set-key (kbd "C-r") #'swiper)
-;;(global-set-key (kbd "C-s") #'swiper)
-
-#+END_SRC
-
 * Hydra
-#+BEGIN_SRC emacs-lisp
-  (use-package hydra
-    :commands (hydra-default-pre
-               hydra-keyboard-quit
-               hydra--call-interactively-remap-maybe
-               hydra-show-hint
-               hydra-set-transient-map))
-
-  (defhydra hydra-zoom (global-map "<f2>")
-    "zoom"
-    ("g" text-scale-increase "in")
-    ("l" text-scale-decrease "out"))
-
-  (use-package pretty-hydra
-    :defines (display-line-numbers-mode linum-mode)
-    :bind ("<f6>" . toggles-hydra/body)
-    :init
-    (cl-defun pretty-hydra-title (title &optional icon-type icon-name
-                                        &key face height v-adjust)
-      "Add an icon in the hydra title."
-      (let ((face (or face `(:foreground ,(face-background 'highlight))))
-            (height (or height 1.0))
-            (v-adjust (or v-adjust 0.0)))
-        (concat
-         (when (and (display-graphic-p) icon-type icon-name)
-           (let ((f (intern (format "all-the-icons-%s" icon-type))))
-             (when (fboundp f)
-               (concat
-                (apply f (list icon-name :face face :height height :v-adjust v-adjust))
-                " "))))
-         (propertize title 'face face))))
-    ;; Global toggles
-    (pretty-hydra-define toggles-hydra (:title (pretty-hydra-title "Toggles" 'faicon "toggle-on")
-                                        :color amaranth :quit-key "q")
-      ("Basic"
-       (("n" (if (fboundp 'display-line-numbers-mode)
-                 (display-line-numbers-mode (if display-line-numbers-mode -1 1))
-               (linum-mode (if linum-mode -1 1)))
-         "line number" :toggle (if (fboundp 'display-line-numbers-mode)
-                                   display-line-numbers-mode
-                                 linum-mode))
-        ("a" aggressive-indent-mode "aggressive indent" :toggle t)
-        ("h" hungry-delete-mode "hungry delete" :toggle t)
-        ("e" electric-pair-mode "electric pair" :toggle t)
-        ("c" flyspell-mode "spell check" :toggle t)
-        ("S" prettify-symbols-mode "pretty symbol" :toggle t)
-        ("L" page-break-lines-mode "page break lines" :toggle t)
-        ("M" doom-modeline-mode "modern mode-line" :toggle t))
-       "Highlight"
-       (("l" global-hl-line-mode "line" :toggle t)
-        ("P" show-paren-mode "paren" :toggle t)
-        ("s" symbol-overlay-mode "symbol" :toggle t)
-        ("r" rainbow-mode "rainbow" :toggle t)
-        ("w" (setq show-trailing-whitespace (not show-trailing-whitespace))
-         "whitespace" :toggle show-trailing-whitespace)
-        ("d" rainbow-delimiters-mode "delimiter" :toggle t)
-        ("i" highlight-indent-guides-mode "indent" :toggle t)
-        ("T" hl-todo-mode "todo" :toggle t))
-       "Coding"
-       (("f" flycheck-mode "flycheck" :toggle t)
-        ("F" flymake-mode "flymake" :toggle t)
-        ("o" origami-mode "folding" :toggle t)
-        ("O" hs-minor-mode "hideshow" :toggle t)
-        ("u" subword-mode "subword" :toggle t)
-        ("W" which-function-mode "which function" :toggle t)
-        ("E" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
-        ("Q" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
-       "Version Control"
-       (("v" diff-hl-mode "gutter" :toggle t)
-        ("V" diff-hl-flydiff-mode "live gutter" :toggle t)
-        ("m" diff-hl-margin-mode "margin gutter" :toggle t)
-        ("D" diff-hl-dired-mode "dired gutter" :toggle t)))))
-#+END_SRC
 
 * projectile
 #+BEGIN_SRC emacs-lisp

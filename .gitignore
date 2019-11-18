@@ -24,6 +24,7 @@ emacs/.emacs.d/pyim/
 emacs/.emacs.d/snippets/
 emacs/.emacs.d/.mc-lists.el
 emacs/.emacs.d/third_parties
+emacs/.emacs.d/var/
 
 vim/.vim/.netrwhist
 vim/.vim/autoload
