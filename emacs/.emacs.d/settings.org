@@ -67,12 +67,15 @@ Here, we are initializing =use-package= in the classic way.
 I use hydra a lot so it is easier to add its support directly in the use-package configuration part.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package hydra
-    :commands (hydra-default-pre
-               hydra-keyboard-quit
-               hydra--call-interactively-remap-maybe
-               hydra-show-hint
-               hydra-set-transient-map))
+  (use-package hydra :ensure t)
+  (use-package use-package-hydra
+    :ensure t
+    :functions
+    (hydra-default-pre
+     hydra-keyboard-quit
+     hydra--call-interactively-remap-maybe
+     hydra-show-hint
+     hydra-set-transient-map))
 
   (defhydra hydra-zoom (global-map "<f2>")
     "zoom"
@@ -403,6 +406,7 @@ Finally, I use paradox to enhance the package listing experience.
 #+END_SRC
 
 * Core packages
+** Global
 #+BEGIN_SRC emacs-lisp
   ;; Diminished modes are minor modes with no modeline display
   (use-package diminish
@@ -438,20 +442,6 @@ Finally, I use paradox to enhance the package listing experience.
     :diminish eldoc-mode
     :commands turn-on-eldoc-mode
     :defer t)
-
-  ;; Flyspell
-  (use-package flyspell
-    :config
-    (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
-    (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-    :diminish 'flyspell-mode)
-  ;; Correct the misspelled word in a popup menu
-  (use-package flyspell-popup
-    :config
-    (define-key flyspell-mode-map (kbd "C-;") #'flyspell-popup-correct)
-    (define-key popup-menu-keymap (kbd "C-j") 'popup-next)
-    (define-key popup-menu-keymap (kbd "C-k") 'popup-previous)
-    (define-key popup-menu-keymap (kbd "C-l") 'popup-select))
 
   (defconst emacs/>=26p
     (>= emacs-major-version 26)
@@ -557,11 +547,112 @@ Finally, I use paradox to enhance the package listing experience.
   (use-package command-log-mode
     :diminish command-log-mode)
 
+  ;;I use some minor modes based on some filetypes.
+  ;; This package is an helper which facilitates these activations.
+  (use-package auto-minor-mode
+    :ensure t)
+
   ;; Minor mode for dealing with pairs, such as quotes
   (use-package smartparens-config
     :ensure smartparens
     :config
     (show-smartparens-global-mode t))
+#+END_SRC
+** Language checking
+Writing a text is difficult enough, having some helpers to check and correct the language is necessary for me.
+
+*** Spelling
+Configuration of the (fly) spelling for emacs. For spelling, I am using aspell.
+
+#+begin_src emacs-lisp
+  ;; Flyspell
+;;  (use-package flyspell
+;;    :config
+;;    (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
+;;    (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+;;    :diminish 'flyspell-mode)
+  ;; Correct the misspelled word in a popup menu
+;;  (use-package flyspell-popup
+;;    :config
+;;    (define-key flyspell-mode-map (kbd "C-;") #'flyspell-popup-correct)
+;;    (define-key popup-menu-keymap (kbd "C-j") 'popup-next)
+;;    (define-key popup-menu-keymap (kbd "C-k") 'popup-previous)
+;;    (define-key popup-menu-keymap (kbd "C-l") 'popup-select))
+
+  (use-package flyspell
+    :ensure t
+    :config
+
+    ;; Set programms
+    (setq-default ispell-program-name "aspell")
+    (setq-default ispell-list-command "--list")
+
+    ;; Some skipping
+    (add-to-list 'ispell-skip-region-alist '("^#+begin_src" . "^#+end_src"))
+
+    ;; Refresh flyspell after directory change
+    (defun flyspell-buffer-after-pdict-save (&rest _)
+      (flyspell-buffer))
+    (advice-add 'ispell-pdict-save :after #'flyspell-buffer-after-pdict-save)
+
+    ;; Popup
+    (defun flyspell-emacs-popup-textual (event poss word)
+      "A textual flyspell popup menu."
+      (require 'popup)
+      (let* ((corrects (if flyspell-sort-corrections
+                           (sort (car (cdr (cdr poss))) 'string<)
+                         (car (cdr (cdr poss)))))
+             (cor-menu (if (consp corrects)
+                           (mapcar (lambda (correct)
+                                     (list correct correct))
+                                   corrects)
+                         '()))
+             (affix (car (cdr (cdr (cdr poss)))))
+             show-affix-info
+             (base-menu  (let ((save (if (and (consp affix) show-affix-info)
+                                         (list
+                                          (list (concat "Save affix: " (car affix))
+                                                'save)
+                                          '("Accept (session)" session)
+                                          '("Accept (buffer)" buffer))
+                                       '(("Save word" save)
+                                         ("Accept (session)" session)
+                                         ("Accept (buffer)" buffer)))))
+                           (if (consp cor-menu)
+                               (append cor-menu (cons "" save))
+                             save)))
+             (menu (mapcar
+                    (lambda (arg) (if (consp arg) (car arg) arg))
+                    base-menu)))
+        (cadr (assoc (popup-menu* menu :scroll-bar t) base-menu))))
+
+
+    (defun flyspell-emacs-popup-choose (org-fun event poss word)
+      (if (window-system)
+          (funcall org-fun event poss word)
+        (flyspell-emacs-popup-textual event poss word)))
+
+    (eval-after-load "flyspell"
+      '(progn
+         (advice-add 'flyspell-emacs-popup :around #'flyspell-emacs-popup-choose)))
+    )
+#+end_src
+*** English checking
+lang-tool is actually supported by emacs through a dedicated mode which allows to have syntax and
+typography checking.
+$ sudo pacman -S languagetool
+To check current buffer and show warnings.
+M-x langtool-check
+To finish checking. All langtool marker is removed.
+M-x langtool-check-done
+#+BEGIN_SRC emacs-lisp
+  (use-package langtool
+    :ensure quelpa
+    :quelpa (langtool :fetcher github :repo "mhayashi1120/Emacs-langtool")
+    :init
+    (setq langtool-java-classpath
+          "/usr/share/languagetool:/usr/share/java/languagetool/*"))
+    ;;(setq langtool-language-tool-server-jar "~/work/tools/src/languagetool/languagetool/languagetool-server.jar"))
 #+END_SRC
 ** edit
 #+BEGIN_SRC emacs-lisp
@@ -678,10 +769,6 @@ I do prefer vertical completion, which is why I use extensively Ivy and extensio
 (global-set-key (kbd "C-x C-f") #'counsel-find-file)
 (global-set-key (kbd "C-c r") #'counsel-recentf)
 
-(use-package counsel-projectile
-  :config
-  (counsel-projectile-mode t)
-  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
 (use-package flx)
 (use-package ivy-hydra)
 (use-package ivy
@@ -830,6 +917,7 @@ Ivy-yasnippet is used for snippet discovery.
 *** Filetype templates
 This part is using yatemplate (an over-layer of yasnippet) coupled with auto-insert to have a set of
 file type dedicated templates. The templates are available in =third_parties/templates= directory.
+=M-x auto-insert= will put some predefined text at the beginning of the buffer.
 
 #+begin_src emacs-lisp
   (use-package yatemplate
@@ -1069,6 +1157,57 @@ Prescient helps to sort candidates by last used first and then sorting by length
 #+END_SRC
 
 
+* org
+<s TAB : insert source block
+M-x org-edit-src-code : edit source block
+** The org package
+#+BEGIN_SRC emacs-lisp
+;; Org mode, for keeping notes, todo lists, etc... in plain text
+(use-package org
+  :config
+  (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
+  (setq org-agenda-include-diary t)
+  (setq org-src-fontify-natively t)
+  (setq org-default-notes-file "~/org/agenda/organizer.org")
+
+  ;; Prettify UI
+  (use-package org-bullets
+    :if (char-displayable-p ?◉)
+    :hook (org-mode . org-bullets-mode))
+
+  (use-package org-fancy-priorities
+    :diminish
+    :defines org-fancy-priorities-list
+    :hook (org-mode . org-fancy-priorities-mode)
+    :config
+    (unless (char-displayable-p ?❗)
+      (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
+  ;; Indentation
+  (use-package highlight-indent-guides
+    :ensure t
+    :commands (highlight-indent-guides-mode)
+    :hook
+    (prog-mode . highlight-indent-guides-mode)
+    :config
+    (setq highlight-indent-guides-method 'column))
+  ;; Show current function
+  (which-function-mode 1)
+  ;;Faces/Colors
+  (use-package rainbow-mode
+    :ensure t
+    :commands (rainbow-mode))
+#+END_SRC
+** Agenda and capture templates
+#+BEGIN_SRC emacs-lisp
+  (setq org-agenda-files (list "~/org/agenda"
+                               "~/org/agenda/projects/"))
+#+END_SRC
+** Keybindings
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c c") #'org-capture)
+#+END_SRC
+
 * File/Directory management
 ** Treemacs
 *** Global
@@ -1141,78 +1280,9 @@ Prescient helps to sort candidates by last used first and then sorting by length
     :hook
     (dired-mode . treemacs-icons-dired-mode))
 #+end_src
-* org
-<s TAB : insert source block
-M-x org-edit-src-code : edit source block
-** The org package
-#+BEGIN_SRC emacs-lisp
-;; Org mode, for keeping notes, todo lists, etc... in plain text
-(use-package org
-  :config
-  (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
-  (setq org-agenda-include-diary t)
-  (setq org-src-fontify-natively t)
-  (setq org-default-notes-file "~/org/agenda/organizer.org")
-
-  ;; Prettify UI
-  (use-package org-bullets
-    :if (char-displayable-p ?◉)
-    :hook (org-mode . org-bullets-mode))
-
-  (use-package org-fancy-priorities
-    :diminish
-    :defines org-fancy-priorities-list
-    :hook (org-mode . org-fancy-priorities-mode)
-    :config
-    (unless (char-displayable-p ?❗)
-      (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
-  ;; Indentation
-  (use-package highlight-indent-guides
-    :ensure t
-    :commands (highlight-indent-guides-mode)
-    :hook
-    (prog-mode . highlight-indent-guides-mode)
-    :config
-    (setq highlight-indent-guides-method 'column))
-  ;; Show current function
-  (which-function-mode 1)
-  ;;Faces/Colors
-  (use-package rainbow-mode
-    :ensure t
-    :commands (rainbow-mode))
-#+END_SRC
-** Agenda and capture templates
-#+BEGIN_SRC emacs-lisp
-  (setq org-agenda-files (list "~/org/agenda"
-                               "~/org/agenda/projects/"))
-#+END_SRC
-** Keybindings
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c c") #'org-capture)
-#+END_SRC
-
-* git
-#+BEGIN_SRC emacs-lisp
-;; A git interface for emacs
-(use-package magit
-  :config
-  (setq magit-refresh-status-buffer nil)
-  :diminish 'auto-revert-mode
-  :defer t)
-
-(global-set-key (kbd "C-x g") #'magit-status)
-(global-set-key (kbd "C-x M-g") #'magit-dispatch)
-
-;; Show diffs in the gutter
-(use-package diff-hl
-  :config
-  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
-  (global-diff-hl-mode t)
-  (diff-hl-flydiff-mode t))
-#+END_SRC
-
-* projectile
+* Project management
+** Configuration projectile
+The commands are based on http://endlessparentheses.com/improving-projectile-with-extra-commands.html?source=rss
 #+BEGIN_SRC emacs-lisp
 ;; ripgrep
 (use-package rg)
@@ -1236,6 +1306,86 @@ M-x org-edit-src-code : edit source block
   :bind
   (:map projectile-mode-map ("C-c p s p" . rg-project))
   :diminish 'projectile-mode)
+#+END_SRC
+** Completion
+#+BEGIN_SRC emacs-lisp
+  (use-package counsel-projectile
+    :ensure t
+    :after projectile
+    :functions
+    (counsel-projectile-find-file-in-directory
+     counsel-projectile-ibuffer
+     counsel-projectile-kill-buffers
+     counsel-projectile-multi-occur
+     counsel-projectile-recentf
+     counsel-projectile-remove-known-project
+     counsel-projectile-cleanup-known-projects
+     counsel-projectile-cache-current-file
+     counsel-projectile-invalidate-cache
+     ggtags-update-tags ;; FIXME: a require should be put somewhere maybe
+     )
+
+    :hydra
+    (hydra-projectile (:color teal :hint nil)
+                      "
+         PROJECTILE: %(projectile-project-root)
+
+         Find File            Search/Tags          Buffers                Cache
+    ------------------------------------------------------------------------------------------
+    _s-f_: file            _a_: ag                _i_: Ibuffer           _c_: cache clear
+     _ff_: file dwim       _g_: update gtags      _b_: switch to buffer  _x_: remove known project
+     _fd_: file curr dir   _o_: multi-occur     _s-k_: Kill all buffers  _X_: cleanup non-existing
+      _r_: recent file                                               ^^^^_z_: cache current
+      _d_: dir
+
+    "
+                      ("<ESC>" nil "quit")
+                      ("<" hydra-project/body "back")
+                      ("a"   counsel-projectile-ag)
+                      ("b"   counsel-projectile-switch-to-buffer)
+                      ("c"   counsel-projectile-invalidate-cache)
+                      ("d"   counsel-projectile-find-dir)
+                      ("s-f" counsel-projectile-find-file)
+                      ("ff"  counsel-projectile-find-file-dwim)
+                      ("fd"  counsel-projectile-find-file-in-directory)
+                      ("g"   ggtags-update-tags)
+                      ("s-g" ggtags-update-tags)
+                      ("i"   counsel-projectile-ibuffer)
+                      ("K"   counsel-projectile-kill-buffers)
+                      ("s-k" counsel-projectile-kill-buffers)
+                      ("m"   counsel-projectile-multi-occur)
+                      ("o"   counsel-projectile-multi-occur)
+                      ("s-p" counsel-projectile-switch-project "switch project")
+                      ("p"   counsel-projectile-switch-project)
+                      ("s"   counsel-projectile-switch-project)
+                      ("r"   counsel-projectile-recentf)
+                      ("x"   counsel-projectile-remove-known-project)
+                      ("X"   counsel-projectile-cleanup-known-projects)
+                      ("z"   counsel-projectile-cache-current-file)
+                      ("q"   nil "cancel" :color blue)))
+;;(use-package counsel-projectile
+;;  :config
+;;  (counsel-projectile-mode t)
+;;  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
+#+END_SRC
+* Version control
+#+BEGIN_SRC emacs-lisp
+;; A git interface for emacs
+(use-package magit
+  :config
+  (setq magit-refresh-status-buffer nil)
+  :diminish 'auto-revert-mode
+  :defer t)
+
+(global-set-key (kbd "C-x g") #'magit-status)
+(global-set-key (kbd "C-x M-g") #'magit-dispatch)
+
+;; Show diffs in the gutter
+(use-package diff-hl
+  :config
+  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
+  (global-diff-hl-mode t)
+  (diff-hl-flydiff-mode t))
 #+END_SRC
 
 
@@ -1336,6 +1486,20 @@ M-x org-edit-src-code : edit source block
     (lsp-ui-peek-enable t)
     (lsp-ui-peek-list-width 60)
     (lsp-ui-peek-list-height 25)
+
+     :config
+     (add-to-list 'lsp-ui-doc-frame-parameters '(right-fringe . 8))
+
+     ;; `C-g'to close doc
+     (advice-add #'keyboard-quit :before #'lsp-ui-doc-hide)
+
+     ;; Reset `lsp-ui-doc-background' after loading theme
+     (add-hook 'after-load-theme-hook
+               (lambda ()
+                 (setq lsp-ui-doc-border (face-foreground 'default))
+                 (set-face-background 'lsp-ui-doc-background
+                                      (face-background 'tooltip))))
+
     :config
     ;; Use lsp-ui-doc-webkit only in GUI
     (setq lsp-ui-doc-use-webkit t)

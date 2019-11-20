@@ -10,6 +10,12 @@ This is my dot files.
 ## Emacs
 1. Packages
 - Hydra
+- flycheck: Syntax checking
+- flyspell: Spell checking
+- langtool: English checking
+- yatemplate: filetype template
+> M-x auto-insert
+- Ivy/swipper/counsel/company/helm
 2. C++
 - lsp
 - ccls: sudo pacman -S ccls
