@@ -520,9 +520,6 @@ Finally, I use paradox to enhance the package listing experience.
   (use-package dockerfile-mode
     :defer t)
 
-  ;; A better "help" buffer
-  (use-package helpful)
-
   ;; Edit text area in chrome with emacs
   (use-package atomic-chrome
     :config
@@ -1208,6 +1205,28 @@ M-x org-edit-src-code : edit source block
 (global-set-key (kbd "C-c c") #'org-capture)
 #+END_SRC
 
+* ibuffer
+#+BEGIN_SRC emacs-lisp
+(defun ibuffer-clean ()
+  "Clean automatically created buffers"
+  (interactive)
+  (ibuffer-unmark-all ?*)
+  (ibuffer-mark-by-mode 'help-mode)
+  (ibuffer-mark-by-mode 'magit-mode)
+  (ibuffer-mark-by-mode 'occur-mode)
+  (ibuffer-mark-by-mode 'grep-mode)
+  (ibuffer-mark-by-mode 'dired-mode)
+  (ibuffer-mark-by-mode 'completion-list-mode)
+  (ibuffer-mark-by-mode 'compilation-mode)
+  (ibuffer-mark-by-mode 'Man-mode)
+  (ibuffer-mark-by-mode 'browse-kill-ring-mode)
+  (ibuffer-mark-by-name-regexp "*anything*")
+  (ibuffer-mark-by-name-regexp "*ESS*")
+  (ibuffer-mark-by-name-regexp "*Shell Command Output*")
+  (ibuffer-mark-by-name-regexp "*Compile-Log*")
+  (ibuffer-mark-by-name-regexp "*vc-diff*")
+  (ibuffer-do-delete))
+#+END_SRC
 * File/Directory management
 ** Treemacs
 *** Global
@@ -1811,4 +1830,50 @@ Packages that you need for a nice Go setup
   (use-package flycheck-golangci-lint
     :ensure t
     :hook (go-mode . flycheck-golangci-lint-setup))
+#+end_src
+* Documentation
+** Emacs
+*** Key binding
+#+begin_src emacs-lisp
+  (use-package helm-descbinds
+    :ensure t
+    :commands (helm-descbinds)
+    :bind
+    ("C-h b" . helm-descbinds))
+#+end_src
+*** Apropos
+#+begin_src emacs-lisp
+  (use-package apropos-fn+var
+    :ensure t
+    :disabled t
+    :config
+    (setq apropos-do-all t))
+#+end_src
+*** Info
+#+begin_src emacs-lisp
+  (use-package info-buffer
+    :ensure t)
+
+  (use-package info+
+    :ensure t
+    :disabled t)
+#+end_src
+*** Help
+#+begin_src emacs-lisp
+  ;; A better "help" buffer
+  (use-package helpful
+    :ensure t)
+#+end_src
+** Diverse
+*** Man
+#+begin_src emacs-lisp
+  (use-package man
+    :ensure t
+    :config
+    (setq Man-notify-method 'pushy)
+    (setq woman-manpath
+          `(
+            "/usr/share/man/" "/usr/local/man/" ;; System
+            ,(format "%s/local/man" user-emacs-directory) ;; Private environment
+            )))
 #+end_src
