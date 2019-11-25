@@ -235,6 +235,140 @@ Finally, I use paradox to enhance the package listing experience.
   (defalias 'jackiebin-update-org 'update-org)
 
 #+END_SRC
+* Visual
+** Mode line
+#+BEGIN_SRC emacs-lisp
+  (use-package fancy-battery
+    :ensure t
+    :config
+    (fancy-battery-mode))
+  (use-package anzu
+    :ensure t
+    :config
+    (global-anzu-mode +1))
+;;  (use-package f
+;;    :ensure t)
+  (use-package minions
+    :ensure t
+    :config (minions-mode 1))
+  (use-package doom-modeline
+    :ensure t
+    :hook (after-init . doom-modeline-mode)
+
+    :init
+    (setq doom-modeline-icon t
+          doom-modeline-major-mode-icon t
+          doom-modeline-buffer-file-name-style 'truncate-upto-project
+          doom-modeline-persp-name t
+          doom-modeline-checker-simple-format t
+
+          ;; Whether display environment version or not
+          doom-modeline-env-version t
+
+          ;; Or for individual languages
+          doom-modeline-env-enable-python t
+          doom-modeline-env-enable-ruby t
+          doom-modeline-env-enable-perl t
+          doom-modeline-env-enable-go t
+          doom-modeline-env-enable-elixir t
+          doom-modeline-env-enable-rust t
+
+          ;; Change the executables to use for the language version string
+          doom-modeline-env-python-executable "python"
+          doom-modeline-env-ruby-executable "ruby"
+          doom-modeline-env-perl-executable "perl"
+          doom-modeline-env-go-executable "go"
+          doom-modeline-env-elixir-executable "iex"
+          doom-modeline-env-rust-executable "rustc"
+
+          ;; Whether display irc notifications or not. Requires `circe' package.
+          doom-modeline-irc t
+          doom-modeline-irc-stylize 'identity
+
+          ;; Versioning (github)
+          doom-modeline-github t
+
+          ;;
+          doom-modeline-checker-simple-format t)
+
+    (defface egoge-display-time
+      '((((type x w32 mac))
+         ;; #060525 is the background colour of my default face.
+         (:foreground "#060525" :inherit bold))
+        (((type tty))
+         (:foreground "blue")))
+      "Face used to display the time in the mode line.")
+
+    ;; This causes the current time in the mode line to be displayed in
+    ;; `egoge-display-time-face' to make it stand out visually.
+    (setq display-time-string-forms
+          '((propertize (concat "[" 24-hours ":" minutes "] ")
+                        'face 'egoge-display-time)))
+
+    (display-time)
+    )
+#+END_SRC
+** Global theme
+#+BEGIN_SRC emacs-lisp
+  (use-package monokai-theme
+    :config
+    (load-theme 'monokai t))
+  ;;(load-theme 'solarized-dark t)
+  ;;(load-theme 'cyberpunk t)
+#+END_SRC
+** Frame
+*** Title
+#+begin_src emacs-lisp
+  (defun frame-title-format ()
+    "Return frame title with current project name, where applicable."
+    (let ((file buffer-file-name))
+      (if file
+          (if (and (bound-and-true-p projectile-mode)
+                   (projectile-project-p))
+              (concat
+               (format "[%s] " (projectile-project-name))
+               (replace-regexp-in-string (format "^%s" (projectile-project-p)) "" (file-truename file)))
+            (abbreviate-file-name file))
+        "%b")))
+
+  (when (display-graphic-p)
+    (setq frame-title-format '((:eval (frame-title-format)))))
+
+  ;;自定义buffer头,显示更多的buffer标题信息
+  ;;(setq frame-title-format
+  ;;      '("" " jackiebin ☺ "
+  ;;        (:eval (if (buffer-file-name)
+  ;;                   (abbreviate-file-name (buffer-file-name)) "%b"))))
+
+#+end_src
+*** Remove unused part
+#+begin_src emacs-lisp
+  (tool-bar-mode -1)
+  ;;(menu-bar-mode -1)
+  (scroll-bar-mode -1);;(toggle-scroll-bar -1)
+  ;; Prevent the startup window
+  (setq inhibit-startup-message t)
+  ;; Setup fullscreen when startup
+  (setq initial-frame-alist (quote ((fullscreen . maximized))))
+#+end_src
+
+** Icons
+#+begin_src emacs-lisp
+  ;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
+  ;; https://github.com/emacs-jp/replace-colorthemes
+  ;;(use-package all-the-icons-dired
+  ;;  :config
+  ;;  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
+
+  (use-package all-the-icons
+    :ensure t)
+
+  (use-package all-the-icons-dired
+    :ensure t)
+
+  (use-package all-the-icons-ivy
+    :ensure t)
+#+end_src
 
 * Core
 #+BEGIN_SRC emacs-lisp
@@ -947,141 +1081,6 @@ Prescient helps to sort candidates by last used first and then sorting by length
   (use-package company-prescient
     :ensure t
     :config (company-prescient-mode))
-#+end_src
-
-* Visual
-** Mode line
-#+BEGIN_SRC emacs-lisp
-  (use-package fancy-battery
-    :ensure t
-    :config
-    (fancy-battery-mode))
-  (use-package anzu
-    :ensure t
-    :config
-    (global-anzu-mode +1))
-;;  (use-package f
-;;    :ensure t)
-  (use-package minions
-    :ensure t
-    :config (minions-mode 1))
-  (use-package doom-modeline
-    :ensure t
-    :hook (after-init . doom-modeline-mode)
-
-    :init
-    (setq doom-modeline-icon t
-          doom-modeline-major-mode-icon t
-          doom-modeline-buffer-file-name-style 'truncate-upto-project
-          doom-modeline-persp-name t
-          doom-modeline-checker-simple-format t
-
-          ;; Whether display environment version or not
-          doom-modeline-env-version t
-
-          ;; Or for individual languages
-          doom-modeline-env-enable-python t
-          doom-modeline-env-enable-ruby t
-          doom-modeline-env-enable-perl t
-          doom-modeline-env-enable-go t
-          doom-modeline-env-enable-elixir t
-          doom-modeline-env-enable-rust t
-
-          ;; Change the executables to use for the language version string
-          doom-modeline-env-python-executable "python"
-          doom-modeline-env-ruby-executable "ruby"
-          doom-modeline-env-perl-executable "perl"
-          doom-modeline-env-go-executable "go"
-          doom-modeline-env-elixir-executable "iex"
-          doom-modeline-env-rust-executable "rustc"
-
-          ;; Whether display irc notifications or not. Requires `circe' package.
-          doom-modeline-irc t
-          doom-modeline-irc-stylize 'identity
-
-          ;; Versioning (github)
-          doom-modeline-github t
-
-          ;;
-          doom-modeline-checker-simple-format t)
-
-    (defface egoge-display-time
-      '((((type x w32 mac))
-         ;; #060525 is the background colour of my default face.
-         (:foreground "#060525" :inherit bold))
-        (((type tty))
-         (:foreground "blue")))
-      "Face used to display the time in the mode line.")
-
-    ;; This causes the current time in the mode line to be displayed in
-    ;; `egoge-display-time-face' to make it stand out visually.
-    (setq display-time-string-forms
-          '((propertize (concat "[" 24-hours ":" minutes "] ")
-                        'face 'egoge-display-time)))
-
-    (display-time)
-    )
-#+END_SRC
-** Global theme
-#+BEGIN_SRC emacs-lisp
-  (use-package monokai-theme
-    :config
-    (load-theme 'monokai t))
-  ;;(load-theme 'solarized-dark t)
-  ;;(load-theme 'cyberpunk t)
-#+END_SRC
-** Frame
-*** Title
-#+begin_src emacs-lisp
-  (defun frame-title-format ()
-    "Return frame title with current project name, where applicable."
-    (let ((file buffer-file-name))
-      (if file
-          (if (and (bound-and-true-p projectile-mode)
-                   (projectile-project-p))
-              (concat
-               (format "[%s] " (projectile-project-name))
-               (replace-regexp-in-string (format "^%s" (projectile-project-p)) "" (file-truename file)))
-            (abbreviate-file-name file))
-        "%b")))
-
-  (when (display-graphic-p)
-    (setq frame-title-format '((:eval (frame-title-format)))))
-
-  ;;自定义buffer头,显示更多的buffer标题信息
-  ;;(setq frame-title-format
-  ;;      '("" " jackiebin ☺ "
-  ;;        (:eval (if (buffer-file-name)
-  ;;                   (abbreviate-file-name (buffer-file-name)) "%b"))))
-
-#+end_src
-*** Remove unused part
-#+begin_src emacs-lisp
-  (tool-bar-mode -1)
-  ;;(menu-bar-mode -1)
-  (scroll-bar-mode -1);;(toggle-scroll-bar -1)
-  ;; Prevent the startup window
-  (setq inhibit-startup-message t)
-  ;; Setup fullscreen when startup
-  (setq initial-frame-alist (quote ((fullscreen . maximized))))
-#+end_src
-
-** Icons
-#+begin_src emacs-lisp
-  ;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
-  ;; https://github.com/emacs-jp/replace-colorthemes
-  ;;(use-package all-the-icons-dired
-  ;;  :config
-  ;;  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
-
-  (use-package all-the-icons
-    :ensure t)
-
-  (use-package all-the-icons-dired
-    :ensure t)
-
-  (use-package all-the-icons-ivy
-    :ensure t)
 #+end_src
 
 * Personal keymap
