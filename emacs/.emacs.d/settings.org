@@ -867,6 +867,42 @@ M-x langtool-check-done
     (("M-j" . pyim-convert-string-at-point) ;与 pyim-probe-dynamic-english 配合
      ("C-;" . pyim-delete-word-from-personal-buffer)))
 #+END_SRC
+** Navigation
+This part is dedicated to the configuration for buffer (even large) navigation.
+*** Scrolling (and fast please !)
+#+begin_src emacs-lisp
+  (use-package fast-scroll
+    :ensure t
+    :hook
+    (fast-scroll-start      . (lambda () (flycheck-mode -1)))
+    (fast-scroll-end        . (lambda () (flycheck-mode 1)))
+
+    :config
+    (fast-scroll-config)
+    (fast-scroll-mode 1))
+#+end_src
+*** Preview
+First, instead of jumping we simply can preview the jump.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package goto-line-preview
+    :ensure t
+    :commands (goto-line-preview)
+    :bind
+    (("M-g g" . goto-line-preview)))
+#+END_SRC
+
+*** Remember last jump
+Also, I tend to jump a lot for quick modification. So remembering the jump is absolute crucial in my
+workflow.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package goto-last-point
+    :ensure t
+    :functions (goto-last-point-mode)
+    ;;:bind ("C-<" . goto-last-point)
+    :config (goto-last-point-mode))
+#+END_SRC
 
 
 * Daemon mode
