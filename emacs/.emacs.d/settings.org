@@ -51,6 +51,10 @@ Here, we are initializing =use-package= in the classic way.
 
   ;; (eval-when-compile
   ;;   (setq use-package-expand-minimally byte-compile-current-file))
+
+  ;; Should set before loading `use-package'
+  (setq use-package-always-ensure t)
+  (setq gc-cons-threshold most-positive-fixnum)
 #+END_SRC
 
 ** Quelpa
@@ -236,6 +240,19 @@ Finally, I use paradox to enhance the package listing experience.
 
 #+END_SRC
 * Visual
+** Font
+#+BEGIN_SRC emacs-lisp
+  ;; English Font
+  (defvar config-font-family "Monaco")
+  (defvar config-font-height 100
+    "font-height is 1/10pt so 120 == 120/10 == 12pt")
+
+  ;; Chinese Font
+  (dolist (charset '(kana han symbol cjk-misc bopomofo))
+    (set-fontset-font (frame-parameter nil 'font)
+                      charset (font-spec :family "WenQuanYi Micro Hei Mono"
+                                         :size 12)));;14
+#+END_SRC
 ** Mode line
 #+BEGIN_SRC emacs-lisp
   (use-package fancy-battery
@@ -369,30 +386,22 @@ Finally, I use paradox to enhance the package listing experience.
   (use-package all-the-icons-ivy
     :ensure t)
 #+end_src
-
+** which-key
+#+BEGIN_SRC emacs-lisp
+  (defvar config-which-key-delay 1.4)
+  ;; Display available keybindings in a popup
+  (use-package which-key
+    :config
+    (which-key-mode)
+    (setq which-key-idle-delay config-which-key-delay)
+    :diminish which-key-mode)
+#+END_SRC
 * Core
 ** global
 #+BEGIN_SRC emacs-lisp
-  (defvar config-which-key-delay 1.4)
-
   (defvar config-keep-backups t)
 
-  ;; English Font
-  (defvar config-font-family "Monaco")
-  (defvar config-font-height 100
-    "font-height is 1/10pt so 120 == 120/10 == 12pt")
-
-  ;; Chinese Font
-  (dolist (charset '(kana han symbol cjk-misc bopomofo))
-    (set-fontset-font (frame-parameter nil 'font)
-                      charset (font-spec :family "WenQuanYi Micro Hei Mono"
-                                         :size 12)));;14
-
   (defvar config-indent-web-mode-spaces 2)
-
-  ;; Should set before loading `use-package'
-  (setq use-package-always-ensure t)
-  (setq gc-cons-threshold most-positive-fixnum)
 
   ;; Set regex syntax to string for re-builder
   (setq reb-re-syntax 'string)
@@ -405,9 +414,6 @@ Finally, I use paradox to enhance the package listing experience.
 
   ;; Permanently force Emacs to indent with spaces, never with TABs
   (setq-default  indent-tabs-mode nil)
-
-  ;;保存时自动清除行尾空格及文件结尾空行
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
   ;; Keep backups
   (setq make-backup-files config-keep-backups)
@@ -495,6 +501,14 @@ Finally, I use paradox to enhance the package listing experience.
                                 (time-subtract after-init-time before-init-time)))
                        gcs-done)))
 #+END_SRC
+** Minor-mode activation
+I use some minor modes based on some filetypes. This package is an helper which facilitates these
+activations.
+
+#+begin_src emacs-lisp
+  (use-package auto-minor-mode
+    :ensure t)
+#+end_src
 ** Encoding
 #+BEGIN_SRC emacs-lisp
   (set-language-environment 'Chinese-GB)
@@ -612,13 +626,6 @@ Finally, I use paradox to enhance the package listing experience.
     :ensure t
     :config
     (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
-
-  ;; Display available keybindings in a popup
-  (use-package which-key
-    :config
-    (which-key-mode)
-    (setq which-key-idle-delay config-which-key-delay)
-    :diminish which-key-mode)
 
   ;; Highlight numbers for prog modes
   (use-package highlight-numbers
@@ -896,8 +903,9 @@ fill-column for example.
     :config
     (require 'vlf-setup))
 
-  ;; Delete trailing-whitespace
+  ;; 保存时自动清除行尾空格及文件结尾空行
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
 
   ;; Unify the buffer name style
   (eval-after-load "uniquify"
@@ -1620,13 +1628,6 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
 
 * Language cpp
 #+BEGIN_SRC emacs-lisp
-  ;; ;; Irony support for C/C++
-  ;; (use-package irony-eldoc
-  ;;   :after (irony)
-  ;;   :defer t
-  ;;   :init
-  ;;   (add-hook 'irony-mode-hook #'irony-eldoc))
-
   ;; C/C++ Mode
   (use-package cc-mode
     :ensure nil
@@ -1636,16 +1637,6 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
                              (c-set-style "linux")
                              (setq tab-width 4)
                              (setq c-basic-offset 4))))
-
-  ;; Emacs minor mode for automatic clang-format application
-;;  (use-package clang-format+
-;;    :quelpa (clang-format+
-;;             :fetcher github
-;;             :repo "SavchenkoValeriy/emacs-clang-format-plus"))
-  ;; LLVM(default), Google, Chromium, Mozilla, WebKit, file(read from .clang-format), '{key1:value1, key2:valu2, ...}' .
-  ;; See http://clang.llvm.org/docs/ClangFormat.html, http://clang.llvm.org/docs/ClangFormatStyleOptions.html
-  ;; (setq clang-format-style-option "google")
-;;  (add-hook 'c-mode-common-hook #'clang-format+-mode)
 
   (use-package modern-cpp-font-lock
     :diminish
