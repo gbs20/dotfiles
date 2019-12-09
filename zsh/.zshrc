@@ -71,7 +71,7 @@ COMPLETION_WAITING_DOTS="true"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
   git
-  autojump
+#  autojump
 #  battery
 )
 
@@ -200,6 +200,15 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+#############################################################################################################
+#### Aliases / Helpers
+#############################################################################################################
+# Some
+alias vi='vim'
+
+# Coloring some command
+alias grep='grep --color=auto'
+
 # define function: colorize the pager's output
 myman() {
     env \
@@ -213,4 +222,10 @@ myman() {
     man "${@}"
 }
 #alias man=myman
+
+#############################################################################################################
+#### Basics
+############################################################################################################
+export EDITOR=vim
+
 
