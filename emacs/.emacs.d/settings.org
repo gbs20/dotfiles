@@ -2,8 +2,8 @@
 #+AUTHOR: Jackiebin
 #+KEYWORDS: emacs, org-mode
 
-This is my version of an configuration file for GNU Emacs. I modeled this set of files based off of some dotfiles on the Internet.
-It is under version control and available, among other configurations, at this repository: https://github.com/jackiebin/dotfiles .
+This is my version of an configuration file for GNU Emacs. I modeled this set of files based off of seblemaguer's dotfiles,
+at this repository: https://github.com/seblemaguer/dotfiles
 
 * Package management
 The first part of the configuration is to prepare the package management. I am using =use-package= as
@@ -399,8 +399,6 @@ Finally, I use paradox to enhance the package listing experience.
 * Core
 ** global
 #+BEGIN_SRC emacs-lisp
-  (defvar config-keep-backups t)
-
   (defvar config-indent-web-mode-spaces 2)
 
   ;; Set regex syntax to string for re-builder
@@ -414,15 +412,6 @@ Finally, I use paradox to enhance the package listing experience.
 
   ;; Permanently force Emacs to indent with spaces, never with TABs
   (setq-default  indent-tabs-mode nil)
-
-  ;; Keep backups
-  (setq make-backup-files config-keep-backups)
-
-  ;; Save ALL backup files to this location
-  (setq backup-directory-alist `(("." . "~/.emacs.d/backups")))
-
-  ;; I also find the #...# auto-save files annoying, so let's disable that by adding
-  ;; (setq auto-save-default nil)
 
   ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
   (setq scroll-conservatively 101)
@@ -573,59 +562,44 @@ activations.
     :commands turn-on-eldoc-mode
     :defer t)
 
-  (defconst emacs/>=26p
-    (>= emacs-major-version 26)
-    "Emacs is 26 or above.")
-
-  ;; Flycheck
-  (use-package flycheck
-    :diminish flycheck-mode
-    :hook (after-init . global-flycheck-mode)
-    :config
-    (setq flycheck-emacs-lisp-load-path 'inherit)
-
-    ;; Force flycheck to always use c++11 support.
-    ;; We use the clang language backend so this is set to clang
-    (add-hook 'c++-mode-hook
-        (lambda() (setq flycheck-clang-language-standard "c++11")))
-
-    ;; Only check while saving and opening files
-    (setq flycheck-check-syntax-automatically '(save mode-enabled))
-
-    ;; Set fringe style
-    (setq flycheck-indication-mode 'right-fringe)
-    (when (fboundp 'define-fringe-bitmap)
-      (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
-        [16 48 112 240 112 48 16] nil nil 'center))
-
-    ;; Display Flycheck errors in GUI tooltips
-    (if (display-graphic-p)
-        (if emacs/>=26p
-            (use-package flycheck-posframe
-              :hook (flycheck-mode . flycheck-posframe-mode)
-              :config (add-to-list 'flycheck-posframe-inhibit-functions
-                                   #'(lambda () (bound-and-true-p company-backend))))
-          (use-package flycheck-pos-tip
-            :defines flycheck-pos-tip-timeout
-            :hook (global-flycheck-mode . flycheck-pos-tip-mode)
-            :config (setq flycheck-pos-tip-timeout 30)))
-      (use-package flycheck-popup-tip
-        :hook (flycheck-mode . flycheck-popup-tip-mode))))
-
-  ;; Windows management: Quickly switch windows in Emacs
-  (use-package ace-window
-    :ensure t
-    :init
-    (progn
-      (global-set-key [remap other-window] 'ace-window)
-      (custom-set-faces
-       '(aw-leading-char-face
-         ((t (:inherit ace-jump-face-foreguound :height 3.0 :foreground "deep sky blue")))))
-      ))
-  (use-package ace-jump-mode
-    :ensure t
-    :config
-    (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
+;;  (defconst emacs/>=26p
+;;    (>= emacs-major-version 26)
+;;    "Emacs is 26 or above.")
+;;
+;;  ;; Flycheck
+;;  (use-package flycheck
+;;;;    :diminish flycheck-mode
+;;    :hook (after-init . global-flycheck-mode)
+;;    :config
+;;    (setq flycheck-emacs-lisp-load-path 'inherit)
+;;
+;;    ;; Force flycheck to always use c++11 support.
+;;    ;; We use the clang language backend so this is set to clang
+;;    (add-hook 'c++-mode-hook
+;;        (lambda() (setq flycheck-clang-language-standard "c++11")))
+;;
+;;    ;; Only check while saving and opening files
+;;    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+;;
+;;    ;; Set fringe style
+;;    (setq flycheck-indication-mode 'right-fringe)
+;;    (when (fboundp 'define-fringe-bitmap)
+;;      (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
+;;        [16 48 112 240 112 48 16] nil nil 'center))
+;;
+;;    ;; Display Flycheck errors in GUI tooltips
+;;    (if (display-graphic-p)
+;;        (if emacs/>=26p
+;;            (use-package flycheck-posframe
+;;              :hook (flycheck-mode . flycheck-posframe-mode)
+;;              :config (add-to-list 'flycheck-posframe-inhibit-functions
+;;                                   #'(lambda () (bound-and-true-p company-backend))))
+;;          (use-package flycheck-pos-tip
+;;            :defines flycheck-pos-tip-timeout
+;;            :hook (global-flycheck-mode . flycheck-pos-tip-mode)
+;;            :config (setq flycheck-pos-tip-timeout 30)))
+;;      (use-package flycheck-popup-tip
+;;        :hook (flycheck-mode . flycheck-popup-tip-mode))))
 
   ;; Highlight numbers for prog modes
   (use-package highlight-numbers
@@ -649,20 +623,6 @@ activations.
     (atomic-chrome-start-server)
     (setq atomic-chrome-buffer-open-style 'frame))
 
-  ;; Builds a list of recently opened files
-  (use-package recentf
-    :config
-    (setq recentf-max-saved-items 10
-          recentf-max-menu-items 5
-          recentf-save-file (concat user-emacs-directory ".cache/recentf")
-          recentf-auto-cleanup 'never)
-    (recentf-mode 1)
-
-    (add-to-list 'recentf-exclude (expand-file-name package-user-dir))
-    (add-to-list 'recentf-exclude "COMMIT_EDITMSG\\'")
-    (add-to-list 'recentf-exclude (expand-file-name (concat user-emacs-directory ".cache/")))
-    (add-hook 'delete-terminal-functions (lambda (terminal) (recentf-save-list))))
-
   ;; Display used hotkeys in another window
   (use-package command-log-mode
     :diminish command-log-mode)
@@ -678,6 +638,140 @@ activations.
     :config
     (show-smartparens-global-mode t))
 #+END_SRC
+
+** Recent file
+Opening recent files is always an easy and fast shortcut. Some files should be ignored though. That
+leads to this configuration
+
+#+begin_src emacs-lisp
+  ;; Builds a list of recently opened files
+  (use-package recentf
+    :config
+    (setq recentf-max-saved-items 10
+          recentf-max-menu-items 5
+          recentf-save-file (concat user-emacs-directory ".cache/recentf")
+          recentf-auto-cleanup 'never)
+    (recentf-mode 1)
+
+    (add-to-list 'recentf-exclude (expand-file-name package-user-dir))
+    (add-to-list 'recentf-exclude "COMMIT_EDITMSG\\'")
+    (add-to-list 'recentf-exclude (expand-file-name (concat user-emacs-directory ".cache/")))
+    (add-hook 'delete-terminal-functions (lambda (terminal) (recentf-save-list))))
+#+END_SRC
+
+** Backup files
+This section is dedicated to deal with backups. The main logic is to exlude some specific files
+(either because of they are sensitive, either because they are just results of a process). For the
+other ones, I want to have an easy way to navigate in it.
+
+*** Global backup configuration
+This the global backup configuration. For that I adapted a little bit the wonderful
+snapshot-timemachine package.
+
+#+begin_src emacs-lisp
+  (use-package snapshot-timemachine
+    :ensure t
+    :init
+
+    ;; Default Backup directory
+    (defvar backup-directory "~/.emacs.d/backups/")
+    (setq backup-directory-alist `((".*" . ,backup-directory)))
+
+    (when (not (file-exists-p backup-directory))
+      (make-directory backup-directory t))
+
+    ;; Auto-save
+    (defvar auto-save-directory "~/.emacs.d/auto-save/")
+    (setq auto-save-file-name-transforms `((".*" ,auto-save-directory t)))
+
+    (when (not (file-exists-p auto-save-directory))
+      (make-directory auto-save-directory t))
+
+    ;; Tramp backup
+    (defvar tramp-backup-directory "~/.emacs.d/tramp-backups/")
+    (setq tramp-backup-directory-alist `((".*" . ,tramp-backup-directory)))
+
+    (when (not (file-exists-p tramp-backup-directory))
+      (make-directory tramp-backup-directory t))
+
+    (setq make-backup-files t               ; backup of a file the first time it is saved.
+          backup-by-copying t               ; don't clobber symlinks
+          version-control t                 ; version numbers for backup files
+          delete-old-versions t             ; delete excess backup files silently
+          delete-by-moving-to-trash t
+          kept-old-versions 6               ; oldest versions to keep when a new numbered backup is made (default: 2)
+          kept-new-versions 9               ; newest versions to keep when a new numbered backup is made (default: 2)
+          auto-save-default t               ; auto-save every buffer that visits a file
+          auto-save-timeout 20              ; number of seconds idle time before auto-save (default: 30)
+          auto-save-interval 200            ; number of keystrokes between auto-saves (default: 300)
+          )
+
+    :config
+
+    (defun snapshot-timemachine-backup-finder (file)
+      "Find snapshots of FILE in rsnapshot backups."
+      (let* ((file (expand-file-name file))
+             (file-adapted (replace-regexp-in-string "/" "!" file))
+             (backup-files(directory-files backup-directory t (format "%s.*" file-adapted))))
+        (seq-map-indexed (lambda (backup-file index)
+                           (make-snapshot :id index
+                                          :name (format "%d" index)
+                                          :file backup-file
+                                          :date (nth 5 (file-attributes backup-file))))
+                         backup-files)))
+
+    (setq snapshot-timemachine-snapshot-finder #'snapshot-timemachine-backup-finder))
+#+end_src
+
+*** Sensitive mode
+There are some files which are not desired to be backed up. This part goal is to setup this
+"avoiding saving" spécificities.
+
+#+begin_src emacs-lisp
+  (define-minor-mode sensitive-mode
+    "For sensitive files like password lists.
+  It disables backup creation and auto saving.
+
+  With no argument, this command toggles the mode.
+  Non-null prefix argument turns on the mode.
+  Null prefix argument turns off the mode."
+    ;; The initial value.
+    nil
+    ;; The indicator for the mode line.
+    " Sensitive"
+    ;; The minor mode bindings.
+    nil
+    (if (symbol-value sensitive-mode)
+        (progn
+          ;; disable backups
+          (set (make-local-variable 'backup-inhibited) t)
+          ;; disable auto-save
+          (if auto-save-default
+              (auto-save-mode -1)))
+                                          ;resort to default value of backup-inhibited
+      (kill-local-variable 'backup-inhibited)
+                                          ;resort to default auto save setting
+      (if auto-save-default
+          (auto-save-mode 1))))
+
+
+  (add-to-list 'auto-minor-mode-alist '("\\.git/.*\\'" . sensitive-mode))
+  (add-to-list 'auto-minor-mode-alist '("emacs\\.d/.*\\'" . sensitive-mode))
+  (add-to-list 'auto-minor-mode-alist '("emacs\\.d/emms/.*\\'" . sensitive-mode))
+  (add-to-list 'auto-minor-mode-alist '("Calendars/.*.org\\'" . sensitive-mode))
+  (add-to-list 'auto-minor-mode-alist '("\\.gpg\\'" . sensitive-mode))
+#+end_src
+
+** Copy/Pasted
+Baseline configuration for copy/pasting, nothing fancy.
+
+#+begin_src emacs-lisp
+  (setq mouse-drag-copy-region nil
+        select-enable-primary nil
+        select-enable-clipboard t
+        select-active-regions t)
+#+end_src
+
 ** Language checking
 Writing a text is difficult enough, having some helpers to check and correct the language is necessary for me.
 
@@ -880,7 +974,23 @@ First, instead of jumping we simply can preview the jump.
     :bind
     (("M-g g" . goto-line-preview)))
 #+END_SRC
-
+*** Ace jump
+#+BEGIN_SRC emacs-lisp
+  ;; Windows management: Quickly switch windows in Emacs
+  (use-package ace-window
+    :ensure t
+    :init
+    (progn
+      (global-set-key [remap other-window] 'ace-window)
+      (custom-set-faces
+       '(aw-leading-char-face
+         ((t (:inherit ace-jump-face-foreguound :height 3.0 :foreground "deep sky blue")))))
+      ))
+  (use-package ace-jump-mode
+    :ensure t
+    :config
+    (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
+#+END_SRC
 *** Remember last jump
 Also, I tend to jump a lot for quick modification. So remembering the jump is absolute crucial in my
 workflow.
@@ -1181,7 +1291,89 @@ Prescient helps to sort candidates by last used first and then sorting by length
     :ensure t
     :config (company-prescient-mode))
 #+end_src
+* Compilation
+I develop with emacs, so compiling is actually a big part of my life. Therefore, I modified baseline
+compilation mechanisms as well as fly checking.
 
+** Baseline compilation
+I just modify a little bit the default compilation to be a little more "user friendly".
+
+#+begin_src emacs-lisp
+  (defun my-compile-autoclose (buffer string)
+    "Auto close compile log if there are no errors"
+    (when (string-match "finished" string)
+          (delete-window (get-buffer-window buffer t))
+          (bury-buffer-internal buffer)))
+
+  (use-package compile
+    :defer
+    :diminish compilation-in-progress
+    :init
+    (setq compilation-scroll-output t)
+    :config
+    (defun my-colorize-compilation-buffer ()
+          (read-only-mode 'toggle)
+          (ansi-color-apply-on-region compilation-filter-start (point))
+          (read-only-mode 'toggle))
+    (add-hook 'compilation-filter-hook 'my-colorize-compilation-buffer)
+    (add-to-list 'compilation-finish-functions #'my-compile-autoclose)
+
+    (setq compilation-always-kill t)
+    (setq compilation-ask-about-save nil)
+    (setq compilation-scroll-output 'first-error)
+
+    ;; the next-error function weirdly stops at "In file included from
+    ;; config.cpp:14:0:". Stop that:
+    ;; http://stackoverflow.com/questions/15489319/how-can-i-skip-in-file-included-from-in-emacs-c-compilation-mode
+    (setcar (nthcdr 5 (assoc 'gcc-include compilation-error-regexp-alist-alist)) 0)
+    )
+#+end_src
+
+** Flychecking
+For the fly checking, I use flycheck instead of flymake. So I adapted it for my needs by also adding proselint support.
+
+#+begin_src emacs-lisp
+  ;; Disable checking doc
+  (use-package flycheck
+    :ensure t
+    :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
+    :hydra
+    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
+                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
+                     :color teal :hint nil)
+                    "Errors"
+                    ("f"  flycheck-error-list-set-filter                            "Filter")
+                    ("j"  flycheck-next-error                                       "Next")
+                    ("k"  flycheck-previous-error                                   "Previous")
+                    ("gg" flycheck-first-error                                      "First")
+                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
+                    ("<" hydra-project/body "back")
+                    ("q"   nil "cancel" :color blue))
+
+    :config
+    (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+
+    (flycheck-define-checker proselint
+      "A linter for prose."
+      :command ("proselint" source-inplace)
+      :error-patterns
+      ((warning line-start (file-name) ":" line ":" column ": "
+                (id (one-or-more (not (any " "))))
+                (message) line-end))
+      :modes (text-mode markdown-mode gfm-mode org-mode))
+    )
+#+end_src
+
+** Task runner
+#+begin_src emacs-lisp
+  (use-package taskrunner
+    :ensure t)
+
+  (use-package ivy-taskrunner
+    :ensure quelpa
+    :quelpa (ivy-taskrunner :fetcher "github" :repo "emacs-taskrunner/ivy-taskrunner")
+    :bind ("C-c C-g b" . ivy-taskrunner))
+#+end_src
 * Personal keymap
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "<f5>") #'revert-buffer)
