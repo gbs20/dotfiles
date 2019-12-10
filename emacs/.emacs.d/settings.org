@@ -1451,6 +1451,82 @@ For the fly checking, I use flycheck instead of flymake. So I adapted it for my 
 
 #+END_SRC
 
+
+
+* org
+<s TAB : insert source block
+M-x org-edit-src-code : edit source block
+** The org package
+#+BEGIN_SRC emacs-lisp
+;; Org mode, for keeping notes, todo lists, etc... in plain text
+(use-package org
+  :config
+  (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
+  (setq org-agenda-include-diary t)
+  (setq org-src-fontify-natively t)
+  (setq org-default-notes-file "~/org/agenda/organizer.org")
+
+  ;; Prettify UI
+  (use-package org-bullets
+    :if (char-displayable-p ?◉)
+    :hook (org-mode . org-bullets-mode))
+
+  (use-package org-fancy-priorities
+    :diminish
+    :defines org-fancy-priorities-list
+    :hook (org-mode . org-fancy-priorities-mode)
+    :config
+    (unless (char-displayable-p ?❗)
+      (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
+  ;; Indentation
+  (use-package highlight-indent-guides
+    :ensure t
+    :commands (highlight-indent-guides-mode)
+    :hook
+    (prog-mode . highlight-indent-guides-mode)
+    :config
+    (setq highlight-indent-guides-method 'column))
+  ;; Show current function
+  (which-function-mode 1)
+  ;;Faces/Colors
+  (use-package rainbow-mode
+    :ensure t
+    :commands (rainbow-mode))
+#+END_SRC
+** Agenda and capture templates
+#+BEGIN_SRC emacs-lisp
+  (setq org-agenda-files (list "~/org/agenda"
+                               "~/org/agenda/projects/"))
+#+END_SRC
+** Keybindings
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c c") #'org-capture)
+#+END_SRC
+
+* ibuffer
+#+BEGIN_SRC emacs-lisp
+(defun ibuffer-clean ()
+  "Clean automatically created buffers"
+  (interactive)
+  (ibuffer-unmark-all ?*)
+  (ibuffer-mark-by-mode 'help-mode)
+  (ibuffer-mark-by-mode 'magit-mode)
+  (ibuffer-mark-by-mode 'occur-mode)
+  (ibuffer-mark-by-mode 'grep-mode)
+  (ibuffer-mark-by-mode 'dired-mode)
+  (ibuffer-mark-by-mode 'completion-list-mode)
+  (ibuffer-mark-by-mode 'compilation-mode)
+  (ibuffer-mark-by-mode 'Man-mode)
+  (ibuffer-mark-by-mode 'browse-kill-ring-mode)
+  (ibuffer-mark-by-name-regexp "*anything*")
+  (ibuffer-mark-by-name-regexp "*ESS*")
+  (ibuffer-mark-by-name-regexp "*Shell Command Output*")
+  (ibuffer-mark-by-name-regexp "*Compile-Log*")
+  (ibuffer-mark-by-name-regexp "*vc-diff*")
+  (ibuffer-do-delete))
+#+END_SRC
+
 * Eshell
 #+BEGIN_SRC emacs-lisp
 (use-package eshell
@@ -1563,152 +1639,6 @@ For the fly checking, I use flycheck instead of flymake. So I adapted it for my 
            (lambda () (require 'eshell-z)))))
 #+END_SRC
 
-
-* org
-<s TAB : insert source block
-M-x org-edit-src-code : edit source block
-** The org package
-#+BEGIN_SRC emacs-lisp
-;; Org mode, for keeping notes, todo lists, etc... in plain text
-(use-package org
-  :config
-  (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
-  (setq org-agenda-include-diary t)
-  (setq org-src-fontify-natively t)
-  (setq org-default-notes-file "~/org/agenda/organizer.org")
-
-  ;; Prettify UI
-  (use-package org-bullets
-    :if (char-displayable-p ?◉)
-    :hook (org-mode . org-bullets-mode))
-
-  (use-package org-fancy-priorities
-    :diminish
-    :defines org-fancy-priorities-list
-    :hook (org-mode . org-fancy-priorities-mode)
-    :config
-    (unless (char-displayable-p ?❗)
-      (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
-  ;; Indentation
-  (use-package highlight-indent-guides
-    :ensure t
-    :commands (highlight-indent-guides-mode)
-    :hook
-    (prog-mode . highlight-indent-guides-mode)
-    :config
-    (setq highlight-indent-guides-method 'column))
-  ;; Show current function
-  (which-function-mode 1)
-  ;;Faces/Colors
-  (use-package rainbow-mode
-    :ensure t
-    :commands (rainbow-mode))
-#+END_SRC
-** Agenda and capture templates
-#+BEGIN_SRC emacs-lisp
-  (setq org-agenda-files (list "~/org/agenda"
-                               "~/org/agenda/projects/"))
-#+END_SRC
-** Keybindings
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c c") #'org-capture)
-#+END_SRC
-
-* ibuffer
-#+BEGIN_SRC emacs-lisp
-(defun ibuffer-clean ()
-  "Clean automatically created buffers"
-  (interactive)
-  (ibuffer-unmark-all ?*)
-  (ibuffer-mark-by-mode 'help-mode)
-  (ibuffer-mark-by-mode 'magit-mode)
-  (ibuffer-mark-by-mode 'occur-mode)
-  (ibuffer-mark-by-mode 'grep-mode)
-  (ibuffer-mark-by-mode 'dired-mode)
-  (ibuffer-mark-by-mode 'completion-list-mode)
-  (ibuffer-mark-by-mode 'compilation-mode)
-  (ibuffer-mark-by-mode 'Man-mode)
-  (ibuffer-mark-by-mode 'browse-kill-ring-mode)
-  (ibuffer-mark-by-name-regexp "*anything*")
-  (ibuffer-mark-by-name-regexp "*ESS*")
-  (ibuffer-mark-by-name-regexp "*Shell Command Output*")
-  (ibuffer-mark-by-name-regexp "*Compile-Log*")
-  (ibuffer-mark-by-name-regexp "*vc-diff*")
-  (ibuffer-do-delete))
-#+END_SRC
-* File/Directory management
-** Treemacs
-*** Global
-#+begin_src emacs-lisp
-  (use-package treemacs
-    :ensure t
-    :bind (:map global-map
-                ([f8]        . treemacs))
-    :functions (treemacs-follow-mode treemacs-filewatch-mode)
-
-    :config
-    (setq treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
-          treemacs-deferred-git-apply-delay      0.5
-          treemacs-display-in-side-window        t
-          treemacs-eldoc-display                 t
-          treemacs-file-event-delay              5000
-          treemacs-file-follow-delay             0.2
-          treemacs-follow-after-init             t
-          treemacs-git-integration               t
-          treemacs-git-command-pipe              ""
-          treemacs-goto-tag-strategy             'refetch-index
-          treemacs-indentation                   2
-          treemacs-indentation-string            " "
-          treemacs-is-never-other-window         nil
-          treemacs-max-git-entries               5000
-          treemacs-missing-project-action        'ask
-          treemacs-no-png-images                 nil
-          treemacs-no-delete-other-windows       t
-          treemacs-project-follow-cleanup        nil
-          treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
-          treemacs-position                      'left
-          treemacs-recenter-distance             0.1
-          treemacs-recenter-after-file-follow    nil
-          treemacs-recenter-after-tag-follow     nil
-          treemacs-recenter-after-project-jump   'always
-          treemacs-recenter-after-project-expand 'on-distance
-          treemacs-show-cursor                   nil
-          treemacs-show-hidden-files             t
-          treemacs-silent-filewatch              nil
-          treemacs-silent-refresh                nil
-          treemacs-sorting                       'alphabetic-desc
-          treemacs-space-between-root-nodes      t
-          treemacs-tag-follow-cleanup            t
-          treemacs-tag-follow-delay              1.5
-          treemacs-width                         35)
-
-    (treemacs-follow-mode t)
-    (treemacs-filewatch-mode t))
-#+end_src
-*** Projectile
-#+begin_src emacs-lisp
-  (use-package treemacs-projectile
-    :ensure t
-    :functions treemacs-projectile-create-header
-    :after treemacs projectile
-    :config
-    (setq treemacs-header-function #'treemacs-projectile-create-header))
-#+end_src
-*** Magit
-#+begin_src emacs-lisp
-  (use-package treemacs-magit
-    :after treemacs magit
-    :ensure t)
-#+end_src
-*** Icons
-#+begin_src emacs-lisp
-  (use-package treemacs-icons-dired
-    :ensure t
-    :commands (treemacs-icons-dired-mode)
-    :hook
-    (dired-mode . treemacs-icons-dired-mode))
-#+end_src
 * Project management
 ** Configuration projectile
 The commands are based on http://endlessparentheses.com/improving-projectile-with-extra-commands.html?source=rss
@@ -1816,6 +1746,79 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
   (global-diff-hl-mode t)
   (diff-hl-flydiff-mode t))
 #+END_SRC
+
+* File/Directory management
+** Treemacs
+*** Global
+#+begin_src emacs-lisp
+  (use-package treemacs
+    :ensure t
+    :bind (:map global-map
+                ([f8]        . treemacs))
+    :functions (treemacs-follow-mode treemacs-filewatch-mode)
+
+    :config
+    (setq treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
+          treemacs-deferred-git-apply-delay      0.5
+          treemacs-display-in-side-window        t
+          treemacs-eldoc-display                 t
+          treemacs-file-event-delay              5000
+          treemacs-file-follow-delay             0.2
+          treemacs-follow-after-init             t
+          treemacs-git-integration               t
+          treemacs-git-command-pipe              ""
+          treemacs-goto-tag-strategy             'refetch-index
+          treemacs-indentation                   2
+          treemacs-indentation-string            " "
+          treemacs-is-never-other-window         nil
+          treemacs-max-git-entries               5000
+          treemacs-missing-project-action        'ask
+          treemacs-no-png-images                 nil
+          treemacs-no-delete-other-windows       t
+          treemacs-project-follow-cleanup        nil
+          treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
+          treemacs-position                      'left
+          treemacs-recenter-distance             0.1
+          treemacs-recenter-after-file-follow    nil
+          treemacs-recenter-after-tag-follow     nil
+          treemacs-recenter-after-project-jump   'always
+          treemacs-recenter-after-project-expand 'on-distance
+          treemacs-show-cursor                   nil
+          treemacs-show-hidden-files             t
+          treemacs-silent-filewatch              nil
+          treemacs-silent-refresh                nil
+          treemacs-sorting                       'alphabetic-desc
+          treemacs-space-between-root-nodes      t
+          treemacs-tag-follow-cleanup            t
+          treemacs-tag-follow-delay              1.5
+          treemacs-width                         35)
+
+    (treemacs-follow-mode t)
+    (treemacs-filewatch-mode t))
+#+end_src
+*** Projectile
+#+begin_src emacs-lisp
+  (use-package treemacs-projectile
+    :ensure t
+    :functions treemacs-projectile-create-header
+    :after treemacs projectile
+    :config
+    (setq treemacs-header-function #'treemacs-projectile-create-header))
+#+end_src
+*** Magit
+#+begin_src emacs-lisp
+  (use-package treemacs-magit
+    :after treemacs magit
+    :ensure t)
+#+end_src
+*** Icons
+#+begin_src emacs-lisp
+  (use-package treemacs-icons-dired
+    :ensure t
+    :commands (treemacs-icons-dired-mode)
+    :hook
+    (dired-mode . treemacs-icons-dired-mode))
+#+end_src
 
 
 * Language cpp
