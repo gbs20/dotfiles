@@ -2156,10 +2156,83 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
 #+END_SRC
 
 * Language python
+** Global configuration
+#+begin_src emacs-lisp
+  (use-package python
+    :mode
+    ("\\.py\\'" . python-mode)
+    ("\\.wsgi$" . python-mode)
+
+    :init
+    (setq-default indent-tabs-mode nil)
+
+    :config
+    (setq python-indent-offset 4))
+#+end_src
+** Lsp (with microsoft language server)
 #+BEGIN_SRC emacs-lisp
-(use-package elpy
-  :init
-  (elpy-enable))
+  (use-package lsp-python-ms
+    :ensure t
+    :demand
+    :hook (python-mode . lsp-deferred)  ; or lsp-deferred
+    :init
+    (setq lsp-python-ms-dir "/usr/lib"
+          lsp-python-ms-executable "/usr/bin/pyls")) ; mspyls ?
+#+END_SRC
+** Pipenv
+#+begin_src emacs-lisp
+  (use-package pipenv
+    :ensure t
+    :hook
+    ((python-mode . pipenv-mode))
+
+    :init
+    (setq pipenv-projectile-after-switch-function
+          #'pipenv-projectile-after-switch-extended))
+#+end_src
+** Conda
+#+begin_src emacs-lisp
+  (use-package conda
+    :ensure t
+    :init
+    (setq conda-anaconda-home (expand-file-name "~/.conda"))
+    :config
+    ;; If you want interactive shell support, include:
+    (conda-env-initialize-interactive-shells)
+    ;; If you want eshell support, include:
+    (conda-env-initialize-eshell)
+    ;; If you want auto-activation, include:
+    (conda-env-autoactivate-mode t)
+    ;; Activate the project/virtual env you want to use.
+    ;; Via M-x conda-env-activate RET analyticd-pysystemtrade
+    ;; or
+    ;; (conda-env-activate "analyticd-pysystemtrade")
+    )
+#+end_src
+** Interpreter configuration
+#+begin_src emacs-lisp
+  (use-package ein
+    :ensure t
+    :config
+
+    (cond
+     ((eq system-type 'darwin) (setq ein:console-args '("--gui=osx" "--matplotlib=osx" "--colors=Linux")))
+     ((eq system-type 'gnu/linux) (setq ein:console-args '("--gui=gtk3" "--matplotlib=gtk3" "--colors=Linux"))))
+
+    (setq ein:query-timeout 1000))
+#+end_src
+** Sphinx documentation
+#+begin_src emacs-lisp
+  (use-package sphinx-doc
+    :ensure t
+    :hook
+    (python-mode . (lambda () (sphinx-doc-mode t))))
+#+end_src
+** Elpy
+#+BEGIN_SRC emacs-lisp
+;;(use-package elpy
+;;  :init
+;;  (elpy-enable))
 #+END_SRC
 
 * Language go
