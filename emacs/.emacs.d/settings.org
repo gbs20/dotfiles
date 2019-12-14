@@ -396,6 +396,25 @@ Finally, I use paradox to enhance the package listing experience.
     (setq which-key-idle-delay config-which-key-delay)
     :diminish which-key-mode)
 #+END_SRC
+** Dashboard
+#+BEGIN_SRC emacs-lisp
+(use-package dashboard
+  :ensure t
+  :config
+  ;; Set the title
+  (setq dashboard-banner-logo-title
+	(concat "GNU Emacs " emacs-version " kernel "
+		(car (split-string (shell-command-to-string "uname -r") "-"))
+		" x86_64 ArchLinux GTK " gtk-version-string))
+  ;; Set the banner
+  (setq dashboard-startup-banner
+	(expand-file-name "emacs.png" user-emacs-directory))
+  (dashboard-setup-startup-hook)
+  (global-page-break-lines-mode)
+  (setq dashboard-page-separator "\n\f\f\n")
+  (setq dashboard-items '((recents . 14))))
+#+END_SRC
+
 * Core
 ** global
 #+BEGIN_SRC emacs-lisp
@@ -647,7 +666,7 @@ leads to this configuration
   ;; Builds a list of recently opened files
   (use-package recentf
     :config
-    (setq recentf-max-saved-items 10
+    (setq recentf-max-saved-items 14
           recentf-max-menu-items 5
           recentf-save-file (concat user-emacs-directory ".cache/recentf")
           recentf-auto-cleanup 'never)
@@ -888,6 +907,12 @@ M-x langtool-check-done
     (pending-delete-mode t)
     :bind ("C-=" . er/expand-region))
 
+  ;; Edit multiple regions simultaneously in a buffer or a region
+  ;;(use-package iedit
+  ;;  :ensure t
+  ;;  :config
+  ;;  (delete-selection-mode t))
+
   ;; Multiple cursors
   (use-package multiple-cursors
     :bind (("C-S-c C-S-c"   . mc/edit-lines)
@@ -904,6 +929,7 @@ M-x langtool-check-done
   (use-package smart-region
     :hook (after-init . smart-region-on))
 #+END_SRC
+
 ** chinese input
 #+BEGIN_SRC emacs-lisp
   (use-package pyim
@@ -1748,6 +1774,79 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
 #+END_SRC
 
 * File/Directory management
+** Diff
+*** Global
+#+begin_src emacs-lisp
+  (use-package ediff
+    :config
+    (autoload 'diff-mode "diff-mode" "Diff major mode" t)
+    (setq diff-switches "-u"
+          ediff-auto-refine-limit (* 2 14000)
+          ediff-window-setup-function 'ediff-setup-windows-plain
+          ediff-split-window-function
+          (lambda (&optional arg)
+            (if (> (frame-width) 160)
+                (split-window-horizontally arg)
+              (split-window-vertically arg)))))
+#+end_src
+*** Helpers for region diff
+#+begin_src emacs-lisp
+  (defun diff-region ()
+    "Select a region to compare"
+    (interactive)
+    (when (use-region-p) ; there is a region
+      (let (buf)
+        (setq buf (get-buffer-create "*Diff-regionA*"))
+        (save-current-buffer
+          (set-buffer buf)
+          (erase-buffer))
+        (append-to-buffer buf (region-beginning) (region-end)))
+      )
+    (message "Now select other region to compare and run `diff-region-now`"))
+
+  (defun diff-region-now ()
+    "Compare current region with region already selected by `diff-region`"
+    (interactive)
+    (when (use-region-p)
+      (let (bufa bufb)
+        (setq bufa (get-buffer-create "*Diff-regionA*"))
+        (setq bufb (get-buffer-create "*Diff-regionB*"))
+        (save-current-buffer
+          (set-buffer bufb)
+          (erase-buffer))
+        (append-to-buffer bufb (region-beginning) (region-end))
+        (ediff-buffers bufa bufb))
+      ))
+#+end_src
+** Tramp
+#+begin_src emacs-lisp
+  (use-package tramp
+    :defer t
+    :custom (tramp-default-method "ssh"
+             password-cache-expiry 60
+             tramp-verbose 1
+             tramp-auto-save-directory temporary-file-directory)
+          ;; ;; Debug
+          ;; tramp-verbose 9
+          ;; tramp-debug-buffer t)
+  )
+#+end_src
+** Trash
+#+begin_src emacs-lisp
+  ;; Ask confirmation only once and move to trash
+  (setq dired-recursive-deletes 'always)
+  (setq delete-by-moving-to-trash t)
+
+  (defun empty-trash()
+    "Command to empty the trash (for now gnome/linux specific)"
+    (interactive)
+    (shell-command "rm -rf ~/.local/share/Trash/*"))
+
+  (defun open-trash-dir()
+    "Command to open the trash dir"
+    (interactive)
+    (find-file "~/.local/share/Trash/files"))
+#+end_src
 ** Treemacs
 *** Global
 #+begin_src emacs-lisp
@@ -2111,16 +2210,35 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
 #+END_SRC
 
 * Language markdown
-#+BEGIN_SRC emacs-lisp
+** Global
+#+begin_src emacs-lisp
 ;; Major mode for editing Markdown formatted text
-(use-package markdown-mode
-  :defer t
-  :commands (markdown-mode gfm-mode)
-  :mode (("README\\.md\\'" . gfm-mode)
-         ("\\.md\\'" . markdown-mode)
-         ("\\.markdown\\'" . markdown-mode))
-  :init (setq markdown-command "/usr/bin/pandoc"))
-#+END_SRC
+  (use-package markdown-mode
+    :defer t
+    :commands (markdown-mode gfm-mode)
+    :mode (("README\\.md\\'" . gfm-mode)
+           ("\\.md\\'" . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode))
+    :init (setq markdown-command "/usr/bin/pandoc"))
+
+  (use-package markdown-mode+
+    :ensure t
+    :after markdown-mode)
+#+end_src
+** Syntax highlight in block
+#+begin_src emacs-lisp
+  (use-package poly-markdown
+    :ensure t
+    :disabled t)
+#+end_src
+** Visualize GFM rendering
+#+begin_src emacs-lisp
+  (use-package grip-mode
+    :ensure t
+    :commands (grip-mode)
+    :bind (:map markdown-mode-command-map
+           ("g" . grip-mode)))
+#+end_src
 
 * Language rust
 #+BEGIN_SRC emacs-lisp

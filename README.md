@@ -35,3 +35,5 @@ stow zsh # ...and whatever else you want
 4. Markdown: C-c C-s keywords
 - sudo pacman -S pandoc:
     - C-c C-c keywords
+- sudo pip install grip
+    - C-c C-c g
