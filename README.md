@@ -37,3 +37,7 @@ stow zsh # ...and whatever else you want
     - C-c C-c keywords
 - sudo pip install grip
     - C-c C-c g
+5. golang
+- sudo pacman -S go
+- zshrc: GOPATH,GOPROXY
+- go get golang.org/x/tools/gopls@latest

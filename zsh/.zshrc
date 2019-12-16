@@ -177,6 +177,10 @@ source $ZSH/oh-my-zsh.sh
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
+export GOPATH=/home/gbshen/go
+export GO111MODULE=on
+export GOPROXY=https://goproxy.io
+export PATH=$PATH:$GOPATH/bin
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
