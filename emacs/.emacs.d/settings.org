@@ -449,8 +449,14 @@ Finally, I use paradox to enhance the package listing experience.
   (setq exec-path (append exec-path '("/usr/local/bin")))
 
   ;; Turn on line numbers
-  (global-display-line-numbers-mode)
+  ;; (global-display-line-numbers-mode)
   ;;(menu-bar-display-line-numbers-mode 'relative)
+
+  ;; Hook line numbers to only when files are opened, also use linum-mode for emacs-version< 26
+  (if (version< emacs-version "26")
+      (global-linum-mode)
+    (add-hook 'text-mode-hook #'display-line-numbers-mode)
+    (add-hook 'prog-mode-hook #'display-line-numbers-mode))
 
   ;; Always hightlight current line
   (global-hl-line-mode t)
@@ -2251,8 +2257,8 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
            ("g" . grip-mode)))
 #+end_src
 
-** Latex
-*** Global
+* Language Latex
+** Global
 #+begin_src emacs-lisp
   (use-package tex-site
     :ensure auctex
@@ -2344,8 +2350,8 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
     ;; Keys
     (define-key LaTeX-mode-map (kbd "C-c C-=") 'align-current))
 #+end_src
-*** Bibtex
-**** Global
+** Bibtex
+*** Global
 #+begin_src emacs-lisp
   (use-package bibtex
     :config
@@ -2378,7 +2384,7 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
           bibtex-autokey-titleword-length 100
           bibtex-autokey-titlewords 1))
 #+end_src
-**** Formatting
+*** Formatting
 #+BEGIN_SRC emacs-lisp
   (use-package bibclean-format
     :ensure t
@@ -2393,7 +2399,7 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
     :config
     (setq bibclean-format-args '("--max-width" "0" "--align-equal")))
 #+END_SRC
-*** Completion
+** Completion
 #+begin_src emacs-lisp
   ;; Completion
   (setq TeX-auto-global (format "%s/auctex/style" user-emacs-directory))
@@ -2418,7 +2424,7 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
     :compdef (latex-mode org-mode)
     :company (company-math-symbols-unicode))
 #+end_src
-*** Compilation
+** Compilation
 #+begin_src emacs-lisp
   ;; Escape mode
   (defun TeX-toggle-escape nil
@@ -2462,7 +2468,7 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
     ;; special-mode makes it read-only which prevents input from TeX.
     (setq buffer-read-only nil))
 #+end_src
-*** Reftex
+** Reftex
 #+begin_src emacs-lisp
   (use-package reftex
     :init
@@ -2498,7 +2504,7 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
           reftex-cite-prompt-optional-args nil
           reftex-cite-cleanup-optional-args t))
 #+end_src
-*** Preview
+** Preview
 #+begin_src emacs-lisp
   (use-package latex-math-preview
     :ensure t
@@ -2619,6 +2625,41 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
 ;;  :init
 ;;  (elpy-enable))
 #+END_SRC
+
+* Language Java
+*** Global (lsp-java)
+#+begin_src emacs-lisp
+  (use-package lsp-java
+    :ensure t
+    :hook
+    (java-mode . lsp)
+
+    :config
+    (setq lsp-java-save-action-organize-imports nil))
+
+  (use-package dap-java :disabled t)
+  (use-package lsp-java-treemacs :disabled t)
+#+end_src
+*** Snippets
+#+begin_src emacs-lisp
+  (use-package java-snippets
+    :ensure t)
+#+end_src
+*** Javadoc
+#+begin_src emacs-lisp
+  (use-package javadoc-lookup
+    :ensure t
+    :config
+    (when (file-exists-p "/usr/share/doc/openjdk-8-jdk/api")
+      (javadoc-add-roots "/usr/share/doc/openjdk-8-jdk/api"))
+
+    (javadoc-add-artifacts [org.lwjgl.lwjgl lwjgl "2.8.2"]
+                           [com.nullprogram native-guide "0.2"]
+                           [org.apache.commons commons-math3 "3.0"]
+                           ;; [de.dfki.lt.jtok jtok-core "1.9.3"]
+                           ))
+
+#+end_src
 
 * Language go
 Go code helpers. [[https://tleyden.github.io/blog/2014/05/22/configure-emacs-as-a-go-editor-from-scratch/][see also]]

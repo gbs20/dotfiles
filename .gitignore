@@ -1,4 +1,3 @@
-zsh/.zshrc
 
 emacs/.emacs.d/.lsp-session*
 emacs/.emacs.d/.cache/
@@ -27,6 +26,7 @@ emacs/.emacs.d/.mc-lists.el
 # emacs/.emacs.d/third_parties
 emacs/.emacs.d/var/
 emacs/.emacs.d/quelpa/
+emacs/.emacs.d/javadoc-cache/
 
 vim/.vim/.netrwhist
 vim/.vim/autoload

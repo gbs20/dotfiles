@@ -41,3 +41,5 @@ stow zsh # ...and whatever else you want
 - sudo pacman -S go
 - zshrc: GOPATH,GOPROXY
 - go get golang.org/x/tools/gopls@latest
+6. Java
+- sudo pacman -S maven

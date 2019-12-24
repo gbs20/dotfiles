@@ -3,7 +3,8 @@
 export TERM=xterm-256color
 
 # Path to your oh-my-zsh installation.
-export ZSH="/home/gbshen/.oh-my-zsh"
+#export ZSH="/home/gbshen/.oh-my-zsh"
+export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
@@ -177,7 +178,7 @@ source $ZSH/oh-my-zsh.sh
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
-export GOPATH=/home/gbshen/go
+export GOPATH=$HOME/go
 export GO111MODULE=on
 export GOPROXY=https://goproxy.io
 export PATH=$PATH:$GOPATH/bin
