@@ -400,6 +400,19 @@ Finally, I use paradox to enhance the package listing experience.
 #+BEGIN_SRC emacs-lisp
 (use-package dashboard
   :ensure t
+  :custom
+  (dashboard-set-heading-icons t)
+  (dashboard-set-navigator t)
+  (dashboard-navigator-buttons
+   (if (featurep 'all-the-icons)
+       `(((,(all-the-icons-octicon "mark-github" :height 1.1 :v-adjust -0.05)
+           "EMACS" "Browse MY EMACS Homepage"
+           (lambda (&rest _) (browse-url "https://github.com/jackiebin/dotfiles/tree/master/emacs/.emacs.d")))
+          (,(all-the-icons-fileicon "elisp" :height 1.0 :v-adjust -0.1)
+           "Configuration" "" (lambda (&rest _) (edit-configs)))))
+     `((("" "EMACS" "Browse MY EMACS Homepage"
+         (lambda (&rest _) (browse-url "https://github.com/jackiebin/dotfiles/tree/master/emacs/.emacs.d")))
+        ("" "Configuration" "" (lambda (&rest _) (edit-configs)))))))
   :config
   ;; Set the title
   (setq dashboard-banner-logo-title
@@ -409,13 +422,16 @@ Finally, I use paradox to enhance the package listing experience.
   ;; Set the banner
   (setq dashboard-startup-banner
 	(expand-file-name "emacs.png" user-emacs-directory))
-  (dashboard-setup-startup-hook)
+
   (global-page-break-lines-mode)
   (setq dashboard-page-separator "\n\f\f\n")
-  (setq dashboard-items '((recents . 14))))
+  (setq dashboard-items '((recents . 14)))
+  (setq dashboard-modify-heading-icons '((recents . "file-text")))
+
+  (dashboard-setup-startup-hook))
 #+END_SRC
 
-* Core
+* Global setting
 ** global
 #+BEGIN_SRC emacs-lisp
   (defvar config-indent-web-mode-spaces 2)
@@ -430,7 +446,7 @@ Finally, I use paradox to enhance the package listing experience.
   (setq x-underline-at-descent-line t)
 
   ;; Permanently force Emacs to indent with spaces, never with TABs
-  (setq-default  indent-tabs-mode nil)
+  ;;(setq-default  indent-tabs-mode nil)
 
   ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
   (setq scroll-conservatively 101)
@@ -507,13 +523,13 @@ Finally, I use paradox to enhance the package listing experience.
   ;; (global-set-key (kbd "C-c n") 'iwb)
 
   ;; Use a hook so the message doesn't get clobbered by other messages.
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (message "Emacs ready in %s with %d garbage collections."
-                       (format "%.2f seconds"
-                               (float-time
-                                (time-subtract after-init-time before-init-time)))
-                       gcs-done)))
+  ;; (add-hook 'emacs-startup-hook
+  ;;           (lambda ()
+  ;;             (message "Emacs ready in %s with %d garbage collections."
+  ;;                      (format "%.2f seconds"
+  ;;                              (float-time
+  ;;                               (time-subtract after-init-time before-init-time)))
+  ;;                      gcs-done)))
 #+END_SRC
 ** Minor-mode activation
 I use some minor modes based on some filetypes. This package is an helper which facilitates these
@@ -523,6 +539,11 @@ activations.
   (use-package auto-minor-mode
     :ensure t)
 #+end_src
+** 2048 game
+#+BEGIN_SRC emacs-lisp
+(use-package 2048-game
+  :commands (2048-game))
+#+END_SRC
 ** Encoding
 #+BEGIN_SRC emacs-lisp
   (set-language-environment 'Chinese-GB)
@@ -549,10 +570,10 @@ activations.
   ;; 说明：使用此配置，新建文件会采用UTF-8(无BOM)格式编码，行末以unix方式("\n")结尾，打开已有的文件，修改，保存还是按原有编码方式保存。
 #+END_SRC
 
-* Core packages
+* Global packages
 ** Global
 #+BEGIN_SRC emacs-lisp
-  ;; Diminished modes are minor modes with no modeline display
+  ;; Diminish, a feature that removes certain minor modes from mode-line.
   (use-package diminish
     :ensure t)
 
@@ -586,45 +607,6 @@ activations.
     :diminish eldoc-mode
     :commands turn-on-eldoc-mode
     :defer t)
-
-;;  (defconst emacs/>=26p
-;;    (>= emacs-major-version 26)
-;;    "Emacs is 26 or above.")
-;;
-;;  ;; Flycheck
-;;  (use-package flycheck
-;;;;    :diminish flycheck-mode
-;;    :hook (after-init . global-flycheck-mode)
-;;    :config
-;;    (setq flycheck-emacs-lisp-load-path 'inherit)
-;;
-;;    ;; Force flycheck to always use c++11 support.
-;;    ;; We use the clang language backend so this is set to clang
-;;    (add-hook 'c++-mode-hook
-;;        (lambda() (setq flycheck-clang-language-standard "c++11")))
-;;
-;;    ;; Only check while saving and opening files
-;;    (setq flycheck-check-syntax-automatically '(save mode-enabled))
-;;
-;;    ;; Set fringe style
-;;    (setq flycheck-indication-mode 'right-fringe)
-;;    (when (fboundp 'define-fringe-bitmap)
-;;      (define-fringe-bitmap 'flycheck-fringe-bitmap-double-arrow
-;;        [16 48 112 240 112 48 16] nil nil 'center))
-;;
-;;    ;; Display Flycheck errors in GUI tooltips
-;;    (if (display-graphic-p)
-;;        (if emacs/>=26p
-;;            (use-package flycheck-posframe
-;;              :hook (flycheck-mode . flycheck-posframe-mode)
-;;              :config (add-to-list 'flycheck-posframe-inhibit-functions
-;;                                   #'(lambda () (bound-and-true-p company-backend))))
-;;          (use-package flycheck-pos-tip
-;;            :defines flycheck-pos-tip-timeout
-;;            :hook (global-flycheck-mode . flycheck-pos-tip-mode)
-;;            :config (setq flycheck-pos-tip-timeout 30)))
-;;      (use-package flycheck-popup-tip
-;;        :hook (flycheck-mode . flycheck-popup-tip-mode))))
 
   ;; Highlight numbers for prog modes
   (use-package highlight-numbers
@@ -935,7 +917,14 @@ M-x langtool-check-done
   (use-package smart-region
     :hook (after-init . smart-region-on))
 #+END_SRC
-
+** Evil Nerd Commenter
+Evil Nerd Commenter, a tool that helps you comment code efficiently.
+#+BEGIN_SRC emacs-lisp
+(use-package evil-nerd-commenter
+  :bind
+  (("C-c M-;" . c-toggle-comment-style)
+   ("M-;" . evilnc-comment-or-uncomment-lines)))
+#+END_SRC
 ** chinese input
 #+BEGIN_SRC emacs-lisp
   (use-package pyim
@@ -1297,8 +1286,6 @@ file type dedicated templates. The templates are available in =third_parties/tem
 
 #+begin_src emacs-lisp
   (use-package yatemplate
-    :ensure t
-    ;;:tags '("COMPLETION")
     :after yasnippet
     :config
 
@@ -1412,6 +1399,12 @@ For the fly checking, I use flycheck instead of flymake. So I adapted it for my 
 #+end_src
 * Personal keymap
 #+BEGIN_SRC emacs-lisp
+;; Unbind unneeded keys
+(global-set-key (kbd "C-z") nil)
+(global-set-key (kbd "M-z") nil)
+(global-set-key (kbd "C-x C-z") nil)
+(global-set-key (kbd "M-/") nil)
+
 (global-set-key (kbd "<f5>") #'revert-buffer)
 (global-set-key (kbd "C-c C-.") #'helpful-at-point)
 (global-set-key (kbd "C-h b") #'describe-bindings)
@@ -1441,6 +1434,19 @@ For the fly checking, I use flycheck instead of flymake. So I adapted it for my 
     (indent-for-tab-command))
 (global-set-key (kbd "<C-return>") 'open-line-below)
 (global-set-key (kbd "<C-S-return>") 'open-line-above)
+
+(defun scroll-half-page-down ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun scroll-half-page-up ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
+(global-set-key "\M-n" 'scroll-half-page-up)
+(global-set-key "\M-p" 'scroll-half-page-down)
 
 (global-set-key (kbd "C-S-n")
                 (lambda()
@@ -1539,7 +1545,133 @@ M-x org-edit-src-code : edit source block
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") #'org-capture)
 #+END_SRC
+* PDF
+** Global
+  #+begin_src emacs-lisp
+    (use-package pdf-tools
+      :functions
+      (pdf-history-backward
+       pdf-history-forward
+       pdf-links-action-perfom
+       pdf-links-isearch-link
+       pdf-view-enlarge
+       pdf-view-shrink
+       pdf-view-scale-reset
+       pdf-view-fit-height-to-window
+       pdf-view-fit-width-to-window
+       pdf-view-fit-page-to-window
+       pdf-view-next-page-command
+       pdf-view-previous-page-command
+       pdf-view-dark-minor-mode)
 
+
+      :hook
+      (pdf-view-mode . (lambda ()
+                         (pdf-misc-size-indication-minor-mode)
+                         (pdf-links-minor-mode)
+                         (pdf-isearch-minor-mode)
+                         (cua-mode 0)))
+
+      :bind
+      (:map pdf-view-mode-map
+            ("/" . hydra-pdftools/body)
+            ("<s-spc>" .  pdf-view-scroll-down-or-next-page)
+            ("<C-s>" . isearch-forward)
+            ("g"  . pdf-view-first-page)
+            ("G"  . pdf-view-last-page)
+            ("l"  . image-forward-hscroll)
+            ("h"  . image-backward-hscroll)
+            ("j"  . pdf-view-next-page)
+            ("k"  . pdf-view-previous-page)
+            ("e"  . pdf-view-goto-page)
+            ("u"  . pdf-view-revert-buffer)
+            ("al" . pdf-annot-list-annotations)
+            ("ad" . pdf-annot-delete)
+            ("aa" . pdf-annot-attachment-dired)
+            ("am" . pdf-annot-add-markup-annotation)
+            ("at" . pdf-annot-add-text-annotation)
+            ("y"  . pdf-view-kill-ring-save)
+            ("i"  . pdf-misc-display-metadata)
+            ("s"  . pdf-occur)
+            ("b"  . pdf-view-set-slice-from-bounding-box)
+            ("r"  . pdf-view-reset-slice))
+
+      :hydra
+      (hydra-pdftools (:color blue :hint nil)
+                      "
+                PDF tools
+
+             Move  History   Scale/Fit                  Annotations     Search/Link     Do
+          ------------------------------------------------------------------------------------------------
+               ^^_g_^^      _B_    ^↧^    _+_    ^ ^     _al_: list    _s_: search    _u_: revert buffer
+               ^^^↑^^^      ^↑^    _H_    ^↑^  ↦ _W_ ↤   _am_: markup  _o_: outline   _i_: info
+               ^^_p_^^      ^ ^    ^↥^    _0_    ^ ^     _at_: text    _F_: link      _d_: dark mode
+               ^^^↑^^^      ^↓^  ╭─^─^─┐  ^↓^  ╭─^ ^─┐   _ad_: delete  _f_: search link
+          _h_ ←pag_e_→ _l_  _N_  │ _P_ │  _-_    _b_     _aa_: dired
+               ^^^↓^^^      ^ ^  ╰─^─^─╯  ^ ^  ╰─^ ^─╯   _y_:  yank
+               ^^_n_^^      ^ ^  _r_eset slice box
+               ^^^↓^^^
+               ^^_G_^^
+          "
+                      ("<ESC>" nil "quit")
+                      ("al" pdf-annot-list-annotations)
+                      ("ad" pdf-annot-delete)
+                      ("aa" pdf-annot-attachment-dired)
+                      ("am" pdf-annot-add-markup-annotation)
+                      ("at" pdf-annot-add-text-annotation)
+                      ("y"  pdf-view-kill-ring-save)
+                      ("+" pdf-view-enlarge :color red)
+                      ("-" pdf-view-shrink :color red)
+                      ("0" pdf-view-scale-reset)
+                      ("H" pdf-view-fit-height-to-window)
+                      ("W" pdf-view-fit-width-to-window)
+                      ("P" pdf-view-fit-page-to-window)
+                      ("n" pdf-view-next-page-command :color red)
+                      ("p" pdf-view-previous-page-command :color red)
+                      ("d" pdf-view-dark-minor-mode)
+                      ("b" pdf-view-set-slice-from-bounding-box)
+                      ("r" pdf-view-reset-slice)
+                      ("g" pdf-view-first-page)
+                      ("G" pdf-view-last-page)
+                      ("e" pdf-view-goto-page)
+                      ("o" pdf-outline)
+                      ("s" pdf-occur)
+                      ("i" pdf-misc-display-metadata)
+                      ("u" pdf-view-revert-buffer)
+                      ("F" pdf-links-action-perfom)
+                      ("f" pdf-links-isearch-link)
+                      ("B" pdf-history-backward :color red)
+                      ("N" pdf-history-forward :color red)
+                      ("l" image-forward-hscroll :color red)
+                      ("h" image-backward-hscroll :color red))
+
+      :magic ("%PDF" . pdf-view-mode)
+
+      :config
+      ;; Install what need to be installed !
+      (pdf-tools-install t t t)
+
+      ;; open pdfs scaled to fit page
+      (setq-default pdf-view-display-size 'fit-page)
+
+      ;; automatically annotate highlights
+      (setq pdf-annot-activate-created-annotations t)
+
+      ;; more fine-grained zooming
+      (setq pdf-view-resize-factor 1.1))
+
+    (use-package pdf-view-restore
+      :ensure t
+      :after pdf-tools
+      :hook
+      (pdf-view-mode-hook . pdf-view-restore-mode))
+  #+end_src
+** Grepping
+#+BEGIN_SRC emacs-lisp
+  (use-package pdfgrep
+    :config
+    (pdfgrep-mode))
+#+END_SRC
 * ibuffer
 #+BEGIN_SRC emacs-lisp
 (defun ibuffer-clean ()
@@ -2178,54 +2310,72 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
 #+END_SRC
 
 * Language HTML, css
-#+BEGIN_SRC emacs-lisp
-(defun setup-template ()
-  (interactive)
-  (yas-minor-mode))
+** Global web configuration
+#+begin_src emacs-lisp
+  (use-package web-mode
+    :ensure t
+    :mode
+    ("\\.phtml\\'" "\\.tpl\\.php\\'" "\\.[agj]sp\\'" "\\.as[cp]x\\'"
+    "\\.erb\\'" "\\.mustache\\'" "\\.djhtml\\'" "\\.html?\\'")
 
-(add-hook 'web-mode-hook 'setup-template)
+    :init
+    (setq web-mode-markup-indent-offset 2
+          web-mode-code-indent-offset 2
+          web-mode-css-indent-offset 2
 
-;; Major mode for editing web templates
-(use-package web-mode
-  :defer t
-  :mode (("\\.html?\\'" . web-mode)
-         ("\\.css\\'" . web-mode))
-  :config
-  (defadvice web-mode-highlight-part (around tweak-jsx activate)
-    (if (equal web-mode-content-type "js")
-        (let ((web-mode-enable-part-face nil))
-          ad-do-it)
-      ad-do-it))
+          web-mode-enable-auto-pairing t
+          web-mode-enable-auto-expanding t
+          web-mode-enable-css-colorization t)
 
-  ;; Disable lining up the args
-  (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
-  (add-to-list 'web-mode-indentation-params '("lineup-ternary" . nil))
-  :init
-  (setq web-mode-content-types-alist
-        '(("js" . "\\.js\\'")))
-  (setq web-mode-engines-alist
-        '(("django" . "\\.html\\'")))
+    :config
+    ;; Template
+    (setq web-mode-engines-alist
+          '(("php"    . "\\.phtml\\'")
+            ("blade"  . "\\.blade\\."))
+          )
 
-  (setq-default indent-tabs-mode nil)
-  ;; Disable auto-quoting
-  (setq web-mode-enable-auto-quoting nil)
-  (setq web-mode-markup-indent-offset config-indent-web-mode-spaces)
-  (setq web-mode-css-indent-offset config-indent-web-mode-spaces)
-  (setq web-mode-code-indent-offset config-indent-web-mode-spaces)
-  ;; Don't lineup element attributes
-  (setq web-mode-attr-indent-offset config-indent-web-mode-spaces)
-  ;; Automatically close tag
-  (setq web-mode-enable-auto-pairing t)
-  (setq web-mode-enable-css-colorization t))
+    )
 
-;; SASS
-(use-package scss-mode
-  :defer t)
+  (use-package web-beautify
+    :ensure t
+    :commands (web-beautify-css
+               web-beautify-css-buffer
+               web-beautify-html
+               web-beautify-html-buffer
+               web-beautify-js
+               web-beautify-js-buffer))
 
-#+END_SRC
+  (use-package web-completion-data
+    :ensure t)
 
+  (use-package web-mode-edit-element
+    :ensure t)
+#+end_src
+** EMMET
+#+begin_src emacs-lisp
+  (use-package emmet-mode
+    :ensure t
+    :diminish (emmet-mode . "ε")
+    :bind* (("C-)" . emmet-next-edit-point)
+            ("C-(" . emmet-prev-edit-point))
+    :commands (emmet-mode
+               emmet-next-edit-point
+               emmet-prev-edit-point)
+    :hook
+    ((sgml-mode-hook . emmet-mode)
+     (html-mode . emmet-mode)
+     (web-mode . emmet-mode))
+    :init
+    (setq emmet-indentation 2
+          emmet-move-cursor-between-quotes t))
+#+end_src
+** Completion
+#+begin_src emacs-lisp
+  (use-package company-web
+    :ensure t
+    :compdef (web-mode)
+    :company (company-web-html))
+#+end_src
 * Language markdown
 ** Global
 #+begin_src emacs-lisp
