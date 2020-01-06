@@ -51,10 +51,6 @@ Here, we are initializing =use-package= in the classic way.
 
   ;; (eval-when-compile
   ;;   (setq use-package-expand-minimally byte-compile-current-file))
-
-  ;; Should set before loading `use-package'
-  (setq use-package-always-ensure t)
-  (setq gc-cons-threshold most-positive-fixnum)
 #+END_SRC
 
 ** Quelpa
@@ -80,71 +76,6 @@ I use hydra a lot so it is easier to add its support directly in the use-package
      hydra--call-interactively-remap-maybe
      hydra-show-hint
      hydra-set-transient-map))
-
-  (defhydra hydra-zoom (global-map "<f2>")
-    "zoom"
-    ("g" text-scale-increase "in")
-    ("l" text-scale-decrease "out"))
-
-  (use-package pretty-hydra
-    :defines (display-line-numbers-mode linum-mode)
-    :bind ("<f6>" . toggles-hydra/body)
-    :init
-    (cl-defun pretty-hydra-title (title &optional icon-type icon-name
-                                        &key face height v-adjust)
-      "Add an icon in the hydra title."
-      (let ((face (or face `(:foreground ,(face-background 'highlight))))
-            (height (or height 1.0))
-            (v-adjust (or v-adjust 0.0)))
-        (concat
-         (when (and (display-graphic-p) icon-type icon-name)
-           (let ((f (intern (format "all-the-icons-%s" icon-type))))
-             (when (fboundp f)
-               (concat
-                (apply f (list icon-name :face face :height height :v-adjust v-adjust))
-                " "))))
-         (propertize title 'face face))))
-    ;; Global toggles
-    (pretty-hydra-define toggles-hydra (:title (pretty-hydra-title "Toggles" 'faicon "toggle-on")
-                                        :color amaranth :quit-key "q")
-      ("Basic"
-       (("n" (if (fboundp 'display-line-numbers-mode)
-                 (display-line-numbers-mode (if display-line-numbers-mode -1 1))
-               (linum-mode (if linum-mode -1 1)))
-         "line number" :toggle (if (fboundp 'display-line-numbers-mode)
-                                   display-line-numbers-mode
-                                 linum-mode))
-        ("a" aggressive-indent-mode "aggressive indent" :toggle t)
-        ("h" hungry-delete-mode "hungry delete" :toggle t)
-        ("e" electric-pair-mode "electric pair" :toggle t)
-        ("c" flyspell-mode "spell check" :toggle t)
-        ("S" prettify-symbols-mode "pretty symbol" :toggle t)
-        ("L" page-break-lines-mode "page break lines" :toggle t)
-        ("M" doom-modeline-mode "modern mode-line" :toggle t))
-       "Highlight"
-       (("l" global-hl-line-mode "line" :toggle t)
-        ("P" show-paren-mode "paren" :toggle t)
-        ("s" symbol-overlay-mode "symbol" :toggle t)
-        ("r" rainbow-mode "rainbow" :toggle t)
-        ("w" (setq show-trailing-whitespace (not show-trailing-whitespace))
-         "whitespace" :toggle show-trailing-whitespace)
-        ("d" rainbow-delimiters-mode "delimiter" :toggle t)
-        ("i" highlight-indent-guides-mode "indent" :toggle t)
-        ("T" hl-todo-mode "todo" :toggle t))
-       "Coding"
-       (("f" flycheck-mode "flycheck" :toggle t)
-        ("F" flymake-mode "flymake" :toggle t)
-        ("o" origami-mode "folding" :toggle t)
-        ("O" hs-minor-mode "hideshow" :toggle t)
-        ("u" subword-mode "subword" :toggle t)
-        ("W" which-function-mode "which function" :toggle t)
-        ("E" toggle-debug-on-error "debug on error" :toggle (default-value 'debug-on-error))
-        ("Q" toggle-debug-on-quit "debug on quit" :toggle (default-value 'debug-on-quit)))
-       "Version Control"
-       (("v" diff-hl-mode "gutter" :toggle t)
-        ("V" diff-hl-flydiff-mode "live gutter" :toggle t)
-        ("m" diff-hl-margin-mode "margin gutter" :toggle t)
-        ("D" diff-hl-dired-mode "dired gutter" :toggle t)))))
 #+END_SRC
 
 ** Paradox to enhance package list management
@@ -446,7 +377,7 @@ Finally, I use paradox to enhance the package listing experience.
   (setq x-underline-at-descent-line t)
 
   ;; Permanently force Emacs to indent with spaces, never with TABs
-  ;;(setq-default  indent-tabs-mode nil)
+  (setq-default  indent-tabs-mode nil)
 
   ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
   (setq scroll-conservatively 101)
@@ -493,12 +424,6 @@ Finally, I use paradox to enhance the package listing experience.
 
   ;; Enable narrow to region functionality
   (put 'narrow-to-region 'disabled nil)
-
-  ;; Frequently accessed files (C-x r j <letter>)
-  ;; jump-to-register
-  (set-register ?i '(file . "~/.emacs.d/settings.org"))
-  (set-register ?o '(file . "~/org/agenda/organizer.org"))
-  (set-register ?w '(file . "~/org/wiki/index.org"))
 
   ;; Colorize compilation-mode
   (defun my-colorize-compilation-buffer ()
@@ -569,7 +494,27 @@ activations.
   (prefer-coding-system 'utf-8-unix)
   ;; 说明：使用此配置，新建文件会采用UTF-8(无BOM)格式编码，行末以unix方式("\n")结尾，打开已有的文件，修改，保存还是按原有编码方式保存。
 #+END_SRC
+** Define some important variables
+This section focus on defining some variables/helpers needed to have a more global configuration
 
+#+BEGIN_SRC emacs-lisp
+  ;; Define root directory and add the plugins
+  (defvar default-plugin-dir (format "%s/plugins" user-emacs-directory)
+    "The plugins directory")
+  (add-to-list 'load-path default-plugin-dir)
+
+  ;; Don't screw up my files with custom
+  (setq custom-file (format "%s/custom.el" user-emacs-directory))
+  (load custom-file 'noerror)
+
+  ;; Silence!!!!!!
+  (setq save-abbrevs 'silently
+	ad-redefinition-action 'accept
+
+	;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
+	gc-cons-threshold 50000000
+	large-file-warning-threshold 100000000)
+#+END_SRC
 * Global packages
 ** Global
 #+BEGIN_SRC emacs-lisp
@@ -1397,117 +1342,600 @@ For the fly checking, I use flycheck instead of flymake. So I adapted it for my 
     :quelpa (ivy-taskrunner :fetcher "github" :repo "emacs-taskrunner/ivy-taskrunner")
     :bind ("C-c C-g b" . ivy-taskrunner))
 #+end_src
-* Personal keymap
-#+BEGIN_SRC emacs-lisp
-;; Unbind unneeded keys
-(global-set-key (kbd "C-z") nil)
-(global-set-key (kbd "M-z") nil)
-(global-set-key (kbd "C-x C-z") nil)
-(global-set-key (kbd "M-/") nil)
 
-(global-set-key (kbd "<f5>") #'revert-buffer)
-(global-set-key (kbd "C-c C-.") #'helpful-at-point)
-(global-set-key (kbd "C-h b") #'describe-bindings)
-(global-set-key (kbd "C-h f") #'helpful-callable)
-(global-set-key (kbd "C-h k") #'helpful-key)
-(global-set-key (kbd "C-h v") #'helpful-variable)
-(global-set-key (kbd "C-x C-b") #'ibuffer)
-(global-set-key (kbd "C-x C-e") #'pp-eval-last-sexp)
-
-(global-set-key (kbd "M-i") #'imenu)
-
-(global-set-key (kbd "C-x k") 'kill-this-buffer)
-
-;;opening new lines can be finichy
-(defun open-line-below()
-    "open line below."
-    (interactive)
-    (end-of-line)
-    (newline)
-    (indent-for-tab-command))
-(defun open-line-above()
-    "open line above."
-    (interactive)
-    (beginning-of-line)
-    (newline)
-    (forword-line -1)
-    (indent-for-tab-command))
-(global-set-key (kbd "<C-return>") 'open-line-below)
-(global-set-key (kbd "<C-S-return>") 'open-line-above)
-
-(defun scroll-half-page-down ()
-  "scroll down half the page"
-  (interactive)
-  (scroll-down (/ (window-body-height) 2)))
-
-(defun scroll-half-page-up ()
-  "scroll up half the page"
-  (interactive)
-  (scroll-up (/ (window-body-height) 2)))
-
-(global-set-key "\M-n" 'scroll-half-page-up)
-(global-set-key "\M-p" 'scroll-half-page-down)
-
-(global-set-key (kbd "C-S-n")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (next-line 5))))
-(global-set-key (kbd "C-S-p")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (previous-line 5))))
-(global-set-key (kbd "C-S-f")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (forword-char 5))))
-(global-set-key (kbd "C-S-b")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (backward-char 5))))
-;;
-;; Copy or Cut one line if no content selected
-;;
-;; copy region or whole line
-(global-set-key "\M-w"
-(lambda ()
-  (interactive)
-  (if mark-active
-      (kill-ring-save (region-beginning)
-      (region-end))
-    (progn
-     (kill-ring-save (line-beginning-position)
-     (line-end-position))
-     (message "copied line")))))
-
-;; kill region or whole line
-(global-set-key "\C-w"
-(lambda ()
-  (interactive)
-  (if mark-active
-      (kill-region (region-beginning)
-   (region-end))
-    (progn
-     (kill-region (line-beginning-position)
-  (line-end-position))
-     (message "killed line")))))
-
-#+END_SRC
-
-
-
-* org
+* Org
 <s TAB : insert source block
 M-x org-edit-src-code : edit source block
+** Global
+#+begin_src emacs-lisp
+  (use-package org
+    :ensure org-plus-contrib
+    :hook
+    (org-mode . flyspell-mode)
+
+    :config
+
+    ;; Global
+    (setq org-startup-indented t
+          org-startup-folded t
+          org-enforce-todo-dependencies t
+          org-cycle-separator-lines 2
+          org-blank-before-new-entry '((heading) (plain-list-item . auto))
+          org-insert-heading-respect-content nil
+          org-reverse-note-order nil
+          org-show-following-heading t
+          org-show-hierarchy-above t
+          org-show-siblings '((default))
+          org-id-method 'uuidgen
+          org-deadline-warning-days 30
+          org-table-export-default-format "orgtbl-to-csv"
+          org-src-window-setup 'other-window
+          org-clone-delete-id t
+          org-cycle-include-plain-lists t
+          org-src-fontify-natively t
+          org-src-tab-acts-natively t
+          org-hide-emphasis-markers t
+          org-global-properties '(("Effort_ALL" . "0:15 0:30 0:45 1:00 2:00 3:00 4:00 5:00 6:00 0:00")
+                                  ("STYLE_ALL" . "habit"))
+
+          ;; Todo part
+          org-todo-keywords '(;; Baseline sequence
+                              (sequence "TODO(t)" "DELEGATED(e)" "IN PROCESS(s)"  "MEETING(M)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c@/!)" "POSTPONED(o@/!)")
+
+                              ;; Specific "to complete"
+                              (sequence "REVIEW(r)" "RELEASE(R)" "MAIL(m)" "|")
+
+                              ;; Note information
+                              (sequence "|" "NOTE(N)" "EVENT(E)"))
+
+          org-todo-state-tags-triggers '(("CANCELLED" ("CANCELLED" . t))
+                                         ("WAITING"   ("WAITING"   . t))
+                                         ("POSTPONED" ("POSTPONED" . t)))
+
+          ;; Priority definition
+          org-highest-priority ?A
+          org-lowest-priority ?E
+          org-default-priority ?C
+
+          ;; Archiving
+          org-archive-mark-done t
+          org-log-done 'time
+          org-archive-location "%s_archive::* Archived Tasks"
+
+          ;; Refiling
+          org-refile-targets '((nil . (:maxlevel . 6))
+                               (org-agenda-files . (:maxlevel . 6)))
+          org-completion-use-ido nil
+          org-refile-use-outline-path 'file
+          org-outline-path-complete-in-steps nil
+          org-refile-allow-creating-parent-nodes 'confirm))
+
+    ;; FIXME: to sort !
+    (use-package org-checklist :defer t)
+    (use-package ob-exp :defer t)
+    (use-package ox-bibtex :defer t)
+    (use-package org-protocol :defer t)
+#+end_src
+** Todo management - some helpers
+Extracted from https://www.emacswiki.org/emacs/org-extension.el
+#+begin_src emacs-lisp
+  (defun org-archive-all-done-item ()
+    "Archive all item that have with prefix DONE."
+    (interactive)
+    (save-excursion
+      (outline-show-all)
+      (goto-char (point-min))
+      (if (search-forward-regexp "^[\\*]+ \\(DONE\\|CANCELLED\\)" nil t)
+          (progn
+            (goto-char (point-min))
+            (while (search-forward-regexp "^[\\*]+ \\(DONE\\|CANCELLED\\)" nil t)
+              (org-advertized-archive-subtree))
+            (message "Archive finished"))
+        (message "No need to archive"))))
+
+
+  (defun org-clean-done-item ()
+    "Delete all item that have with prefix DONE."
+    (interactive)
+    (save-excursion
+      (outline-show-all)
+      (goto-char (point-min))
+      (if (search-forward-regexp "^[\\*]+ \\(DONE\\|CANCELLED\\)" nil t)
+          (progn
+            (goto-char (point-min))
+            (while (search-forward-regexp "^[\\*]+ \\(DONE\\|CANCELLED\\)" nil t)
+              (org-cut-subtree))
+            (message "Cleaning DONE tasks finished"))
+        (message "No need to clean"))))
+#+end_src
+** Calendar / Agenda
+*** Global
+#+begin_src emacs-lisp
+  (use-package org-agenda
+    :commands (org-agenda)
+    :init
+    (defun color-org-header (tag backcolor)
+      "Highlight the line in org-agenda in the given BACKCOLOR if TAG is present on the line."
+      (interactive)
+      (goto-char (point-min))
+      (while (re-search-forward tag nil t)
+        (add-text-properties (line-beginning-position) (+ (line-end-position) 1)
+                             `(face (:background, backcolor)))))
+
+    :hook
+    (org-agenda-finalize . (lambda ()
+                             (save-excursion
+                               (color-org-header "CalendarMe:" "RosyBrown1")
+                               (color-org-header "CalendarAdapt:" "PaleGreen1"))))
+
+    :hydra
+    (hydra-org-agenda-view (:color blue :hint none)
+                           "
+          _d_: ?d? day        _g_: time grid=?g? _a_: arch-trees
+          _w_: ?w? week       _[_: inactive      _A_: arch-files
+          _t_: ?t? fortnight  _f_: follow=?f?    _r_: report=?r?
+          _m_: ?m? month      _e_: entry =?e?    _D_: diary=?D?
+          _y_: ?y? year       _q_: quit          _L__l__c_: ?l?
+             "
+
+                           ("SPC" org-agenda-reset-view)
+                           ("d" org-agenda-day-view
+                            (if (eq 'day (org-agenda-cts))
+                                "[x]" "[ ]"))
+                           ("w" org-agenda-week-view
+                            (if (eq 'week (org-agenda-cts))
+                                "[x]" "[ ]"))
+                           ("t" org-agenda-fortnight-view
+                            (if (eq 'fortnight (org-agenda-cts))
+                                "[x]" "[ ]"))
+                           ("m" org-agenda-month-view
+                            (if (eq 'month (org-agenda-cts)) "[x]" "[ ]"))
+                           ("y" org-agenda-year-view
+                            (if (eq 'year (org-agenda-cts)) "[x]" "[ ]"))
+                           ("l" org-agenda-log-mode
+                            (format "% -3S" org-agenda-show-log))
+                           ("L" (org-agenda-log-mode '(4)))
+                           ("c" (org-agenda-log-mode 'clockcheck))
+                           ("f" org-agenda-follow-mode
+                            (format "% -3S" org-agenda-follow-mode))
+                           ("a" org-agenda-archives-mode)
+                           ("A" (org-agenda-archives-mode 'files))
+                           ("r" org-agenda-clockreport-mode
+                            (format "% -3S" org-agenda-clockreport-mode))
+                           ("e" org-agenda-entry-text-mode
+                            (format "% -3S" org-agenda-entry-text-mode))
+                           ("g" org-agenda-toggle-time-grid
+                            (format "% -3S" org-agenda-use-time-grid))
+                           ("D" org-agenda-toggle-diary
+                            (format "% -3S" org-agenda-include-diary))
+                           ("!" org-agenda-toggle-deadlines)
+                           ("["
+                            (let ((org-agenda-include-inactive-timestamps t))
+                              (org-agenda-check-type t 'timeline 'agenda)
+                              (org-agenda-redo)))
+                           ("q" (message "Abort") :exit t))
+
+    :bind
+    (([f12] . org-agenda)
+
+     :map org-agenda-mode-map
+     ("v"  . hydra-org-agenda-view/body))
+
+    :config
+
+    ;; Agenda files
+    (setq org-agenda-files '())
+    (when (file-exists-p "~/org/todo/todo.org")
+      (add-to-list 'org-agenda-files "~/org/todo/todo.org"))
+
+    (when (file-exists-p "~/Calendars")
+      (setq org-agenda-files (append org-agenda-files (directory-files "~/Calendars/" t "^.*\\.org$"))))
+
+    ;; Deadline management
+    (setq org-agenda-include-diary nil
+          org-deadline-warning-days 7
+          org-timeline-show-empty-dates t
+          org-agenda-span 'day
+          org-agenda-prefix-format '((agenda . " %i %-15:c%?-15t% s")
+                                     (todo . " %i %-15:c")
+                                     (tags . " %i %-15:c")
+                                     (search . " %i %-15:c"))
+
+          org-agenda-category-icon-alist `(
+                                           ;; Tools / utils
+                                           ("[Ee]macs"
+                                            ,(format "%s/third_parties/icons/emacs24.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Oo]rg"
+                                            ,(format "%s/third_parties/icons/org.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("^[Hh][Tt][Ss]$"
+                                            ,(format "%s/third_parties/icons/hts.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("^[Mm]ary[tT]\\{2\\}[sS]$"
+                                            ,(format "%s/third_parties/icons/marytts.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("^SFB$"
+                                            ,(format "%s/third_parties/icons/sfb.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Ss]ystem"
+                                            ,(format "%s/third_parties/icons/debian.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Tt]ools?"
+                                            ,(format "%s/third_parties/icons/wrench.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Ex]pe\\(riment\\)s?"
+                                            ,(format "%s/third_parties/icons/expes.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+
+                                           ;; Admin / meeting
+                                           ("[Aa]dmin"
+                                            ,(format "%s/third_parties/icons/admin.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Mm]eeting"
+                                            ,(format "%s/third_parties/icons/meeting.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Aa]ppointments?"
+                                            ,(format "%s/third_parties/icons/appointment.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Vv]isitors"
+                                            ,(format "%s/third_parties/icons/visitors.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("synsig"
+                                            ,(format "%s/third_parties/icons/isca.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("\\([Tt]rip\\|[Dd]eplacement\\)"
+                                            ,(format "%s/third_parties/icons/trip.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("Train"
+                                            ,(format "%s/third_parties/icons/train.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+
+                                           ;; Deadlines / dates
+                                           ("\\([Pp]resentations?\\)"
+                                            ,(format "%s/third_parties/icons/meeting.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("\\([Pp]apers?\\|[Bb]lio\\|[Aa]rticles?\\|[Rr]eading\\|[Ww]riting\\)"
+                                            ,(format "%s/third_parties/icons/book.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Mm]ails?"
+                                            ,(format "%s/third_parties/icons/gnus.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Rr]eview?"
+                                            ,(format "%s/third_parties/icons/review.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+
+                                           ;; Personnal dates
+                                           ("Medical"
+                                            ,(format "%s/third_parties/icons/medical.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("\\(Party\\|Celeb\\)"
+                                            ,(format "%s/third_parties/icons/party.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("Anniv"
+                                            ,(format "%s/third_parties/icons/anniversary.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("\\([Hh]olidays\\|[Vv]acations?\\)"
+                                            ,(format "%s/third_parties/icons/holidays.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("Concert"
+                                            ,(format "%s/third_parties/icons/music.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+
+                                           ;; Personnal diverse
+                                           ("CD"
+                                            ,(format "%s/third_parties/icons/cd.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("Book"
+                                            ,(format "%s/third_parties/icons/book.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           ("[Pp]rojects?"
+                                            ,(format "%s/third_parties/icons/project.png" user-emacs-directory)
+                                            nil nil :ascent center)
+
+                                           (".*" '(space . (:width (16))))))
+
+    (defun org-agenda-cts ()
+      (let ((args (get-text-property
+                   (min (1- (point-max)) (point))
+                   'org-last-args)))
+        (nth 2 args)))
+    )
+#+end_src
+*** Super agenda
+#+begin_src emacs-lisp
+  (use-package org-super-agenda
+    :ensure t
+    :config
+
+    ;; Create groups
+    (setq org-super-agenda-groups
+          '(
+            ;; CD part
+            (:name "Interesting releases"
+                   :and (:todo "RELEASE" :date t )
+                   :order 8)
+
+            (:name "Ordered Releases"
+                   :and (:category "Release" :todo "WAITING")
+                   :order 8)
+
+            (:name "Releases"
+                   :and (:category "Release" :not (:todo "WAITING"))
+                   :order 9)
+
+            (:name "Today"  ; Optionally specify section name
+                   :time-grid t  ; Items that appear on the time grid
+                   )
+
+            ;; Important thing
+            (:name "Important"
+                   :and (:priority "A" :date t)
+                   :order 2)
+
+            ;; Some standby thingy
+            (:name "In process"
+                   :todo "WAITING"
+                   :order 7)
+
+            ;; Deadlines
+            (:name "Overdue"
+                   :deadline past
+                   :order 3)
+            (:name "Due Today"
+                   :deadline today
+                   :order 3)
+            (:name "Due Soon"
+                   :deadline future
+                   :order 4)
+
+            ;; Schedule
+            (:name "Scheduled, past but opened"
+                   :and (:scheduled past :not (:todo "WAITING") :not (:todo "RELEASE"))
+                   :order 5)
+            (:name "Scheduled in the next couple of days"
+                   :and (:scheduled future :not (:todo "WAITING") :not (:todo "RELEASE"))
+                   :order 6)
+            ))
+
+    ;; Activate mode
+    (org-super-agenda-mode t))
+#+end_src
+** Capturing
+*** Global
+#+begin_src emacs-lisp
+  (use-package org-capture
+    :commands (org-capture)
+    :init
+    (setq org-capture-templates
+          `(("b" "Adding book" entry
+             (file+headline "~/org/todo/todo.org" "To read")
+             (file ,(format "%s/third_parties/org-capture-templates/book.org" user-emacs-directory)))
+
+            ("c" "CD" entry
+             (file+headline "~/org/todo/todo.org" "CD")
+             (file ,(format "%s/third_parties/org-capture-templates/cd.org" user-emacs-directory)))
+
+            ("C" "Concert" entry
+             (file+headline "~/org/todo/todo.org" "Concert")
+             (file ,(format "%s/third_parties/org-capture-templates/concert.org" user-emacs-directory)))
+
+            ("f" "Reference" entry
+             (file+headline "~/org/todo/todo.org" "Reference task")
+             (file ,(format "%s/third_parties/org-capture-templates/reference.org" user-emacs-directory)))
+
+            ("L" "Bookmark" entry
+             (file+olp "~/org/todo/todo.org" "To review" "Bookmarks")
+             (file ,(format "%s/third_parties/org-capture-templates/bookmark.org" user-emacs-directory)))
+
+            ("m" "mail" entry
+             (file+headline "~/org/todo/todo.org" "Mailing")
+             (file ,(format "%s/third_parties/org-capture-templates/mail.org" user-emacs-directory)))
+
+            ("M" "Meeting" entry
+             (file+headline "~/org/todo/todo.org" "To sort")
+             (file ,(format "%s/third_parties/org-capture-templates/meeting.org" user-emacs-directory)))
+
+            ("P" "Personnal calendar" entry
+             (file "~/Calendars/CalendarMe.org")
+             (file ,(format "%s/third_parties/org-capture-templates/calendar.org" user-emacs-directory)))
+
+            ("r" "RSS" entry
+             (file+olp "~/org/todo/todo.org" "To review" "RSS")
+             (file ,(format "%s/third_parties/org-capture-templates/rss.org" user-emacs-directory)))
+
+            ("t" "ToDo Entry" entry
+             (file+headline "~/org/todo/todo.org" "To sort")
+             (file ,(format "%s/third_parties/org-capture-templates/default.org" user-emacs-directory))
+             :empty-lines-before 1)))
+    )
+#+end_src
+*** Cooking
+#+begin_src emacs-lisp
+  (use-package org-chef
+    :ensure t
+    :after (org-capture)
+    :config
+    (add-to-list 'org-capture-templates
+                 '("c" "Cookbook" entry (file "~/recipes/cookbook.org")
+                   "%(org-chef-get-recipe-from-url)"
+                   :empty-lines 1)))
+#+end_src
+** Clocking
+#+begin_src emacs-lisp
+  (use-package org-mru-clock
+    :ensure t
+    :bind* (("C-c C-x i" . org-mru-clock-in)
+            ("C-c C-x C-j" . org-mru-clock-select-recent-task))
+    :init
+    (setq org-mru-clock-how-many 100
+          org-mru-clock-keep-formatting t
+          org-mru-clock-completing-read #'ivy-completing-read
+          org-clock-persist t)
+
+    (defun sacha/org-clock-in-if-starting ()
+      "Clock in when the task is marked IN PROCESS."
+      (when (and (string= org-state "IN PROCESS")
+                 (not (string= org-last-state org-state)))
+        (org-clock-in)))
+
+    (defadvice org-clock-in (after sacha activate)
+      "Set this task's status to 'IN PROCESS'."
+      (org-todo "IN PROCESS"))
+
+    (defun sacha/org-clock-out-if-waiting ()
+      "Clock in when the task is marked STARTED."
+      (when (and (string= org-state "WAITING")
+                 (not (string= org-last-state org-state)))
+        (org-clock-out)))
+
+    :hook
+    (org-after-todo-state-change . sacha/org-clock-out-if-waiting)
+    (org-after-todo-state-change . sacha/org-clock-in-if-starting)
+
+    :config
+    (org-clock-persistence-insinuate))
+#+end_src
+*** Webpage overview
+#+begin_src emacs-lisp
+  (use-package org-analyzer
+    :ensure t
+    :custom (org-analyzer-org-directory  "~/org/todo")
+    :commands (org-analyzer-start))
+#+end_src
+** Exporting
+*** HTML
+#+begin_src emacs-lisp
+  (use-package htmlize
+    :ensure t)
+
+  (use-package ox-html
+    :after ox
+    :requires (htmlize)
+    :functions (endless/export-audio-link endless/export-video-link)
+    :config
+    (setq org-html-xml-declaration '(("html" . "")
+                                     ("was-html" . "<?xml version=\"1.0\" encoding=\"%s\"?>")
+                                     ("php" . "<?php echo \"<?xml version=\\\"1.0\\\" encoding=\\\"%s\\\" ?>\"; ?>"))
+          org-export-html-inline-images t
+          org-export-with-sub-superscripts nil
+          org-export-html-style-extra "<link rel=\"stylesheet\" href=\"org.css\" type=\"text/css\" />"
+          org-export-html-style-include-default nil
+          org-export-htmlize-output-type 'css ; Do not generate internal css formatting for HTML exports
+          )
+
+    (defun endless/export-audio-link (path desc format)
+      "Export org audio links to hmtl."
+      (cl-case format
+        (html (format "<audio src=\"%s\" controls>%s</audio>" path (or desc "")))))
+    (org-link-set-parameters "audio" :ignore #'endless/export-audio-link)
+
+
+    (defun endless/export-video-link (path desc format)
+      "Export org video links to hmtl."
+      (cl-case format
+        (html (format "<video controls src=\"%s\">%s</video>" path (or desc "")))))
+    (org-link-set-parameters "video" :ignore #'endless/export-video-link)
+
+    (add-to-list 'org-file-apps '("\\.x?html?\\'" . "/usr/bin/firefox %s")))
+
+  (use-package ox-reveal
+    :ensure t
+    :requires (ox-html htmlize))
+#+end_src
+*** LaTeX
+#+begin_src emacs-lisp
+  (use-package ox-latex
+    :after ox
+    :config
+    (setq org-latex-listings t
+          org-export-with-LaTeX-fragments t
+          org-latex-pdf-process (list "latexmk -shell-escape -bibtex -f -pdf %f")))
+#+end_src
+*** Hugo
+#+begin_src emacs-lisp
+  (use-package ox-hugo
+    :after ox)
+#+end_src
+*** Markdown
+#+begin_src emacs-lisp
+  (use-package ox-gfm
+      :ensure t
+      :after ox
+      :config (require 'ox-gfm))
+#+end_src
+*** Pandoc
+#+begin_src emacs-lisp
+  (use-package ox-pandoc
+    :ensure t
+    :disabled t
+    :defines (org-pandoc-options-for-docx org-pandoc-options-for-beamer-pdf org-pandoc-options-for-latex-pdf)
+    :config
+    ;; default options for all output formats
+    (setq org-pandoc-options '((standalone . t))
+          ;; cancel above settings only for 'docx' format
+          org-pandoc-options-for-docx '((standalone . nil))
+          ;; special settings for beamer-pdf and latex-pdf exporters
+          org-pandoc-options-for-beamer-pdf '((pdf-engine . "xelatex"))
+          org-pandoc-options-for-latex-pdf '((pdf-engine . "xelatex"))))
+#+end_src
+** Async
+#+begin_src emacs-lisp
+  (use-package ob-async
+    :ensure t
+    :after org
+    :commands (ob-async-org-babel-execute-src-block)
+    :init
+    (setq ob-async-no-async-languages-alist '("ipython" "jupyter-python" "jupyter")))
+
+  ;; org-export-in-background t
+  ;; org-export-async-debug t
+  ;; org-export-async-init-file (expand-file-name (format "%s/org-export.el" user-emacs-directory)))
+#+end_src
+** Dashboard
+#+begin_src emacs-lisp
+  (use-package org-dashboard :ensure t)
+#+end_src
+** Sidebar
+#+begin_src emacs-lisp
+  (use-package org-sidebar
+    :ensure t
+    :commands (org-sidebar))
+#+end_src
+** Querying
+It is useful to find some items in org files based on a query.
+#+begin_src emacs-lisp
+  (use-package org-ql
+    :ensure t)
+#+end_src
 ** The org package
 #+BEGIN_SRC emacs-lisp
-;; Org mode, for keeping notes, todo lists, etc... in plain text
-(use-package org
-  :config
-  (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
-  (setq org-agenda-include-diary t)
-  (setq org-src-fontify-natively t)
-  (setq org-default-notes-file "~/org/agenda/organizer.org")
-
   ;; Prettify UI
   (use-package org-bullets
     :if (char-displayable-p ?◉)
@@ -1519,7 +1947,7 @@ M-x org-edit-src-code : edit source block
     :hook (org-mode . org-fancy-priorities-mode)
     :config
     (unless (char-displayable-p ?❗)
-      (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL")))))
+      (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL"))))
   ;; Indentation
   (use-package highlight-indent-guides
     :ensure t
@@ -1534,11 +1962,6 @@ M-x org-edit-src-code : edit source block
   (use-package rainbow-mode
     :ensure t
     :commands (rainbow-mode))
-#+END_SRC
-** Agenda and capture templates
-#+BEGIN_SRC emacs-lisp
-  (setq org-agenda-files (list "~/org/agenda"
-                               "~/org/agenda/projects/"))
 #+END_SRC
 ** Keybindings
 #+BEGIN_SRC emacs-lisp
@@ -1895,7 +2318,7 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
 ;;  (counsel-projectile-mode t)
 ;;  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
 #+END_SRC
-* Version control
+* Version management
 #+BEGIN_SRC emacs-lisp
 ;; A git interface for emacs
 (use-package magit
@@ -1915,7 +2338,7 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
   (diff-hl-flydiff-mode t))
 #+END_SRC
 
-* File/Directory management
+* File/Dir management
 ** Diff
 *** Global
 #+begin_src emacs-lisp
@@ -2060,6 +2483,322 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
     :hook
     (dired-mode . treemacs-icons-dired-mode))
 #+end_src
+
+* Process management
+I want to have some services and processes managed directly in emacs. This services/processes are
+closely related to my emacs use and there have to be shutdown when emacs is stopping.
+
+** System daemons
+With this package I can also manage my system services (tested on archlinux).
+
+#+begin_src emacs-lisp
+  (use-package daemons
+    :ensure t)
+#+end_src
+
+** Background process configuration
+Starting process in background is really nice to avoid being spammed. So let's make it available
+
+#+begin_src emacs-lisp
+  (use-package bpr
+    :ensure t
+    :config
+
+    (defun encode-cd ()
+      "Encode CD using abcde."
+      (interactive)
+      (bpr-spawn "abcde -1"))
+
+    (defun my-bpr-on-start (process)
+      "Routine to allow colors in comint buffer."
+      (set-process-filter process 'comint-output-filter))
+
+    (setq bpr-scroll-direction 1
+          bpr-show-progress nil
+          bpr-colorize-output t
+          bpr-close-after-success t
+          bpr-use-projectile t
+          bpr-process-mode #'comint-mode
+          bpr-window-creator #'split-window-vertically
+          bpr-on-start 'my-bpr-on-start))
+#+end_src
+
+** Paging support for comint
+In order to monitor each process started via comint, I use bifocal which splits the window accordingly.
+
+#+begin_src emacs-lisp
+  (use-package bifocal
+    :ensure t
+    :disabled t
+    :hook
+    (inferior-python-mode . #'bifocal-mode)
+
+    :config
+    (bifocal-global-mode 1))
+#+end_src
+
+* System
+** Docker
+#+begin_src emacs-lisp
+  (use-package docker
+    :ensure t
+    :commands (docker))
+
+  (use-package docker-api
+    :ensure t)
+
+  (use-package docker-tramp
+    :ensure t)
+
+  (use-package dockerfile-mode
+    :ensure t)
+#+end_src
+** SSH
+#+begin_src emacs-lisp
+  (use-package ssh)
+
+  (use-package ssh-deploy)
+#+end_src
+** Slurm
+#+BEGIN_SRC emacs-lisp
+ (use-package slurm-mode
+    :ensure quelpa
+    :quelpa (slurm :repo "ffevotte/slurm.el" :fetcher github))
+#+END_SRC
+** Cron
+#+BEGIN_SRC emacs-lisp
+  (use-package crontab-mode
+    :ensure t)
+#+END_SRC
+** Monitoring
+#+begin_src emacs-lisp
+  (use-package symon
+    :ensure t)
+#+end_src
+** Clipboard
+#+begin_src emacs-lisp
+  (use-package cliphist
+    :ensure t)
+#+end_src
+
+** systctl
+#+begin_src emacs-lisp
+  (use-package sysctl :ensure t :commands (sysctl))
+#+end_src
+** Locate
+#+begin_src emacs-lisp
+  (use-package ellocate
+    :ensure t
+    :commands (ellocate))
+#+end_src
+** COMMENT unison interaction
+#+begin_src emacs-lisp
+  (use-package unison
+    :ensure t)
+#+end_src
+** System package
+#+begin_src emacs-lisp
+  (use-package system-packages
+      :config
+      (setq system-packages-supported-package-managers
+            '(
+              (trizen .
+                      ((default-sudo . nil)
+                       (install . "trizen -S --noconfirm")
+                       (search . "trizen -Ss")
+                       (uninstall . "trizen -Rns")
+                       (update . "trizen -Syu --noconfirm")
+                       (clean-cache . "trizen -Sc")
+                       (log . "cat /var/log/trizen.log")
+                       (get-info . "trizen -Qi")
+                       (get-info-remote . "trizen -Si")
+                       (list-files-provided-by . "trizen -Ql")
+                       (verify-all-packages . "trizen -Qkk")
+                       (verify-all-dependencies . "trizen -Dk")
+                       (remove-orphaned . "trizen -Rns $(trizen -Qtdq)")
+                       (list-installed-packages . "trizen -Qe")
+                       (list-installed-packages-all . "trizen -Q")
+                       (list-dependencies-of . "trizen -Qi")
+                       (noconfirm . "--noconfirm")))
+              )
+
+            system-packages-use-sudo nil
+            system-packages-package-manager 'trizen)
+      )
+#+end_src
+* Keymap
+** Main Helper
+#+begin_src emacs-lisp
+  (defhydra hydra-main (:color teal :hint nil)
+    "
+    Main helper
+
+    Org. related          Help                Zooming        bookmarks          other helpers     completion
+    ------------------------------------------------------------------------------------------------------------------
+    _c_: org-capture        _f_: function doc.    _+_: zoom in     _b_: list bookmarks  _p_: prodigy        _y_: ivy-yasnippet
+    _g_: org-web-get-url    _v_: variable doc.    _-_: zoom out    _B_: bookmark file   _m_: new mail
+
+    Backups
+    ------------------------------------------------------------------------------------------------------------------
+    _s_: list backups
+    _S_: snapshot timemachine
+
+    "
+    ("B" bookmark-set)
+    ("b" list-bookmarks)
+    ("c" counsel-org-capture)
+    ("f" describe-function)
+    ("g" org-web-tools-read-url-as-org)
+    ("m" mu4e-compose-new)
+    ("p" prodigy)
+    ("s" snapshot-timeline)
+    ("S" snapshot-timemachine)
+    ("v" describe-variable)
+    ("y" ivy-yasnippet)
+    ("+" text-scale-increase :color pink)
+    ("-" text-scale-decrease :color pink)
+    ("<ESC>" nil "quit" :color blue)
+    ("q"   nil "cancel" :color blue))
+
+  (global-set-key (kbd "<f1>") 'hydra-main/body)
+#+end_src
+** Project/Version control
+#+begin_src emacs-lisp
+  (defhydra hydra-project (:color teal :hint nil)
+    "
+         Project/Source management
+
+     Projects              Version control        On-the-fly
+    ------------------------------------------------------------------------------------------
+    _d_: dash projects     _m_: magit             _f_: fixme listing
+    _p_: projectile        _t_: travis status     _F_: flycheck
+
+    "
+    ("<ESC>" nil "quit")
+    ("d"   org-dashboard-display)
+    ("p"   hydra-projectile/body)
+    ("f"   fic-view-listing)
+    ("F"   hydra-flycheck/body)
+    ("m"   hydra-magit/body)
+    ("t"   show-my-travis-projects)
+    ("q"   nil "cancel" :color blue))
+  (global-set-key (kbd "<f4>") 'hydra-project/body)
+#+end_src
+** Global keys
+*** Compilation
+#+begin_src emacs-lisp
+  (defhydra hydra-next-error (global-map "C-x")
+      "
+  Compilation errors:
+  _j_: next error        _h_: first error    _q_uit
+  _k_: previous error    _l_: last error
+  "
+      ("`" next-error     nil)
+      ("j" next-error     nil :bind nil)
+      ("k" previous-error nil :bind nil)
+      ("h" first-error    nil :bind nil)
+      ("l" (condition-case err
+               (while t
+                 (next-error))
+             (user-error nil))
+       nil :bind nil)
+      ("q" nil            nil :color blue))
+#+end_src
+** personal
+#+BEGIN_SRC emacs-lisp
+;; Unbind unneeded keys
+(global-set-key (kbd "C-z") nil)
+(global-set-key (kbd "M-z") nil)
+(global-set-key (kbd "C-x C-z") nil)
+(global-set-key (kbd "M-/") nil)
+
+(global-set-key (kbd "<f5>") #'revert-buffer)
+(global-set-key (kbd "C-c C-.") #'helpful-at-point)
+(global-set-key (kbd "C-h b") #'describe-bindings)
+(global-set-key (kbd "C-h f") #'helpful-callable)
+(global-set-key (kbd "C-h k") #'helpful-key)
+(global-set-key (kbd "C-h v") #'helpful-variable)
+(global-set-key (kbd "C-x C-b") #'ibuffer)
+(global-set-key (kbd "C-x C-e") #'pp-eval-last-sexp)
+
+(global-set-key (kbd "M-i") #'imenu)
+
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+
+;;opening new lines can be finichy
+(defun open-line-below()
+    "open line below."
+    (interactive)
+    (end-of-line)
+    (newline)
+    (indent-for-tab-command))
+(defun open-line-above()
+    "open line above."
+    (interactive)
+    (beginning-of-line)
+    (newline)
+    (forword-line -1)
+    (indent-for-tab-command))
+(global-set-key (kbd "<C-return>") 'open-line-below)
+(global-set-key (kbd "<C-S-return>") 'open-line-above)
+
+(defun scroll-half-page-down ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun scroll-half-page-up ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
+(global-set-key "\M-n" 'scroll-half-page-up)
+(global-set-key "\M-p" 'scroll-half-page-down)
+
+(global-set-key (kbd "C-S-n")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (next-line 5))))
+(global-set-key (kbd "C-S-p")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (previous-line 5))))
+(global-set-key (kbd "C-S-f")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (forword-char 5))))
+(global-set-key (kbd "C-S-b")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (backward-char 5))))
+;;
+;; Copy or Cut one line if no content selected
+;;
+;; copy region or whole line
+(global-set-key "\M-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-ring-save (region-beginning)
+      (region-end))
+    (progn
+     (kill-ring-save (line-beginning-position)
+     (line-end-position))
+     (message "copied line")))))
+
+;; kill region or whole line
+(global-set-key "\C-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-region (region-beginning)
+   (region-end))
+    (progn
+     (kill-region (line-beginning-position)
+  (line-end-position))
+     (message "killed line")))))
+
+#+END_SRC
 
 
 * Language cpp
