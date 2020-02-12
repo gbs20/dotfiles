@@ -28,6 +28,9 @@ emacs/.emacs.d/.mc-lists.el
 emacs/.emacs.d/var/
 emacs/.emacs.d/quelpa/
 emacs/.emacs.d/javadoc-cache/
+emacs/.emacs.d/emms/
+emacs/.emacs.d/emojis/
+emacs/.emacs.d/themes/
 
 vim/.vim/.netrwhist
 vim/.vim/autoload

@@ -77,6 +77,13 @@ I use hydra a lot so it is easier to add its support directly in the use-package
      hydra-show-hint
      hydra-set-transient-map))
 #+END_SRC
+** General
+I introduce general to configure the key management. It is not really used yet, but it will be more and and more.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package general
+    :ensure t)
+#+END_SRC
 
 ** Paradox to enhance package list management
 Finally, I use paradox to enhance the package listing experience.
@@ -172,7 +179,7 @@ Finally, I use paradox to enhance the package listing experience.
 #+END_SRC
 * Visual
 ** Font
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   ;; English Font
   (defvar config-font-family "Monaco")
   (defvar config-font-height 100
@@ -183,6 +190,10 @@ Finally, I use paradox to enhance the package listing experience.
     (set-fontset-font (frame-parameter nil 'font)
                       charset (font-spec :family "WenQuanYi Micro Hei Mono"
                                          :size 12)));;14
+
+  (set-face-attribute 'default nil
+                      :family config-font-family
+                      :height config-font-height)
 #+END_SRC
 ** Mode line
 #+BEGIN_SRC emacs-lisp
@@ -263,6 +274,8 @@ Finally, I use paradox to enhance the package listing experience.
     (load-theme 'monokai t))
   ;;(load-theme 'solarized-dark t)
   ;;(load-theme 'cyberpunk t)
+  ;;(add-to-list 'load-path"~/.emacs.d/themes")
+  ;;(require 'lazycat-theme)
 #+END_SRC
 ** Frame
 *** Title
@@ -292,22 +305,250 @@ Finally, I use paradox to enhance the package listing experience.
 *** Remove unused part
 #+begin_src emacs-lisp
   (tool-bar-mode -1)
-  ;;(menu-bar-mode -1)
+  (menu-bar-mode -1)
   (scroll-bar-mode -1);;(toggle-scroll-bar -1)
   ;; Prevent the startup window
   (setq inhibit-startup-message t)
   ;; Setup fullscreen when startup
   (setq initial-frame-alist (quote ((fullscreen . maximized))))
 #+end_src
+** Buffer
+*** Org-mode
+**** Faces
+#+begin_src emacs-lisp
+  (use-package org
+    :ensure t
+    :config
 
+    (setq org-todo-keyword-faces
+          '(("TODO"       :background "red1"          :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+            ("IN PROCESS" :background "lightgray"          :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+            ("MEETING"    :foreground "red1"                              :weight bold)
+
+            ;; Specific helpers
+            ("REVIEW"     :background "orange"        :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+            ("MAIL"       :background "purple"        :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+
+            ;; I can't really do anything here!
+            ("WAITING"    :background "gold"          :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+            ("DELEGATED"  :background "gold"          :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+
+            ;; Done but not complete
+            ("CANCELLED"  :background "lime green"    :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+            ("POSTPONED"  :background "lime green"    :foreground "black" :weight bold :box (:line-width 2 :style released-button))
+
+            ;; Done and I don't care to be complete
+            ("EVENT"      :foreground "purple"                            :weight bold)
+            ("NOTE"       :foreground "purple"                            :weight bold)
+            ("RELEASE"    :foreground "purple"                            :weight bold)
+
+            ;; Done and complete
+            ("DONE"       :background "forest green"                      :weight bold :box (:line-width 2 :style released-button))
+            )
+
+
+            org-priority-faces '((?A . (:foreground "red" :weight bold))
+                                 (?B . (:foreground "orange"  :weight bold))
+                                 (?C . (:foreground "orange"))
+                                 (?D . (:foreground "forest green"))
+                                 (?E . (:foreground "forest green")))))
+#+end_src
+**** Org-bullets
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :ensure t
+    :hook
+    (org-mode . (lambda () (org-bullets-mode 1))))
+#+end_src
+**** Fancy priority
+#+begin_src emacs-lisp
+  (use-package org-fancy-priorities
+    :ensure t
+    :hook
+    (org-agenda-mode . org-fancy-priorities-mode)
+    (org-mode . org-fancy-priorities-mode)
+    :config
+    (setq org-fancy-priorities-list
+          '((?A . "❗") (?B . "⬆") (?C . "⬇") (?D . "☕")
+            (?1 . "⚡") (?2 . "⮬") (?3 . "⮮") (?4 . "☕")
+            (?I . "Important"))))
+#+end_src
+*** Indentation
+#+begin_src emacs-lisp
+  (use-package highlight-indent-guides
+    :ensure t
+    :commands (highlight-indent-guides-mode)
+    :hook
+    (prog-mode . highlight-indent-guides-mode)
+    :config
+    (setq highlight-indent-guides-method 'column))
+#+end_src
+*** Column/line
+#+begin_src emacs-lisp
+  (use-package fill-column-indicator
+    :ensure t
+    :config
+
+    ;; Define a global mode but not sure I am going to use it
+    (define-globalized-minor-mode
+      global-fci-mode fci-mode
+      (lambda ()
+        (fci-mode 1))))
+
+  (use-package visual-fill-column
+    :ensure t)
+
+  ;; See column-number
+  (column-number-mode t)
+  (size-indication-mode t)
+#+end_src
+
+*** Paging
+#+begin_src emacs-lisp
+  (use-package page-break-lines
+    :ensure t
+    :diminish page-break-lines-mode
+    :config
+    (global-page-break-lines-mode t))
+#+end_src
+*** Parenthesis
+**** Smart parents
+#+begin_src emacs-lisp
+  (use-package smartparens
+    :ensure t
+    :config
+
+    ;; Activate smartparens globally
+    (smartparens-global-mode t)
+    (show-smartparens-global-mode t)
+
+    ;; Activate smartparens in minibuffer
+    (add-hook 'eval-expression-minibuffer-setup-hook #'smartparens-mode)
+
+    ;; Do not pair simple quotes
+    (sp-pair "'" nil :actions :rem))
+#+end_src
+**** Rainbow delimiter
+#+begin_src emacs-lisp
+  (use-package rainbow-delimiters
+    :ensure t
+    :config
+
+    (custom-set-faces
+     '(rainbow-delimiters-mismatched-face ((t (:foreground "white" :background "red" :weight bold))))
+     '(rainbow-delimiters-unmatched-face ((t (:foreground "white" :background "red" :weight bold))))
+
+     ;; show parents (in case of rainbow failing !)
+     '(show-paren-match ((t (:foreground "white" :background "green" :weight bold))))
+     '(show-paren-mismatch ((t (:foreground "white" :background "red" :weight bold)))))
+
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+#+end_src
+*** Show current function
+#+begin_src emacs-lisp
+  (which-function-mode 1)
+#+end_src
+*** Diff
+#+begin_src emacs-lisp
+  (use-package diff-hl
+    :ensure t
+    :hook
+    (dired-mode . diff-hl-dired-mode-unless-remote)
+
+    :config
+    (global-diff-hl-mode)
+    (fringe-mode 10))
+#+end_src
+*** Faces/Colors
+**** Rainbow
+#+begin_src emacs-lisp
+(use-package rainbow-mode
+  :ensure t
+  :commands (rainbow-mode))
+#+end_src
+
+**** COMMENT Terminal
+#+begin_src emacs-lisp
+  (set-face-foreground 'term-color-black "#4d4d4d")
+  (set-face-foreground 'term-color-red "#cc9393")
+  (set-face-foreground 'term-color-green "#7f9f7f")
+  (set-face-foreground 'term-color-yellow "#f0dfaf")
+  (set-face-foreground 'term-color-blue "#4169e1")
+  (set-face-foreground 'term-color-magenta "#dc8cc3")
+  (set-face-foreground 'term-color-cyan "#93e0e3")
+  (set-face-foreground 'term-color-white "#dcdccc")
+#+end_src
+**** Dired (using dired-rainbow)
+#+begin_src emacs-lisp
+  (use-package dired-rainbow
+    :ensure t
+    :init
+    (eval-after-load 'dired '(require 'dired-rainbow))
+
+    :config
+
+    (defconst dired-audio-files-extensions
+      '("mp3" "MP3" "ogg" "OGG" "flac" "FLAC" "wav" "WAV")
+      "Dired Audio files extensions")
+    (dired-rainbow-define audio "#329EE8" dired-audio-files-extensions)
+
+    (defconst dired-video-files-extensions
+      '("vob" "VOB" "mkv" "MKV" "mpe" "mpg" "MPG" "mp4" "MP4" "ts" "TS" "m2ts"
+        "M2TS" "avi" "AVI" "mov" "MOV" "wmv" "asf" "m2v" "m4v" "mpeg" "MPEG" "tp")
+      "Dired Video files extensions")
+    (dired-rainbow-define video "#455AFC" dired-video-files-extensions)
+
+    (dired-rainbow-define html "#4e9a06" ("htm" "html" "xhtml"))
+    (dired-rainbow-define xml "DarkGreen" ("xml" "xsd" "xsl" "xslt" "wsdl"))
+
+    (dired-rainbow-define document "#ce5c00" ("doc" "docx" "odt" "pdb" "pdf" "ps" "rtf" "djvu"))
+    (dired-rainbow-define image "#ff4b4b" ("jpg" "png" "jpeg" "gif"))
+
+    (dired-rainbow-define sourcefile "#3F82FD" ("el" "groovy" "gradle" "py" "c" "cc" "h" "java" "pl" "rb"))
+
+    (dired-rainbow-define executable "#8cc4ff" ("exe" "msi"))
+    (dired-rainbow-define compressed "#ad7fa8" ("zip" "bz2" "tgz" "txz" "gz" "xz" "z" "Z" "jar" "war" "ear" "rar" "sar" "xpi" "apk" "xz" "tar"))
+    (dired-rainbow-define packaged "#e6a8df" ("deb" "rpm"))
+    (dired-rainbow-define encrypted "LightBlue" ("gpg" "pgp"))
+
+    (dired-rainbow-define-chmod executable-unix "Green" "-.*x.*")
+
+    (dired-rainbow-define log (:inherit default :italic t) ".*\\.log")
+    )
+#+end_src
+*** Scrolling
+#+begin_src emacs-lisp
+  (use-package scrollkeeper
+    :ensure quelpa
+    :quelpa (scrollkeeper :fetcher github :repo "alphapapa/scrollkeeper.el")
+    :general ([remap scroll-up-command] #'scrollkeeper-contents-up
+              [remap scroll-down-command] #'scrollkeeper-contents-down))
+#+end_src
+*** Emoji
+#+begin_src emacs-lisp
+    (use-package emojify
+      :ensure t
+      :functions (emojify-set-emoji-data)
+      :hook (circe-chat-mode . emojify-mode)
+      :config
+
+      (setq emojify-user-emojis
+            '(("(heart)" . (("name" . "Heart")
+                            ("image" . "~/.emacs.d/emojis/emojione-v2.2.6-22/2665.png")
+                            ("style" . "github")))))
+
+      ;; If emojify is already loaded refresh emoji data
+      (when (featurep 'emojify)
+        (emojify-set-emoji-data)))
+
+    (use-package company-emoji
+      :ensure t)
+
+    (use-package flycheck-status-emoji
+      :ensure t)
+#+end_src
 ** Icons
 #+begin_src emacs-lisp
-  ;; This required some fonts to be downloaded, run `all-the-icons-install-fonts` manually
-  ;; https://github.com/emacs-jp/replace-colorthemes
-  ;;(use-package all-the-icons-dired
-  ;;  :config
-  ;;  (add-hook 'dired-mode-hook 'all-the-icons-dired-mode))
-
   (use-package all-the-icons
     :ensure t)
 
@@ -316,6 +557,49 @@ Finally, I use paradox to enhance the package listing experience.
 
   (use-package all-the-icons-ivy
     :ensure t)
+#+end_src
+** Fonts
+#+begin_src emacs-lisp
+  (defun set-icon-fonts (CODE-FONT-ALIST)
+    "Utility to associate many unicode points with specified fonts."
+    (--each CODE-FONT-ALIST
+      (-let (((font . codes) it))
+        (--each codes
+          (set-fontset-font t `(,it . ,it) font)))))
+
+  (defun load-default-fonts ()
+
+    (set-fontset-font "fontset-default" 'unicode "Dejavu Sans Mono")
+    (set-face-font 'default "Inconsolata-11")
+
+    ;; The icons you see are not the correct icons until this is evaluated!
+    (set-icon-fonts
+     '(("fontawesome"
+        ;;                         
+        #xf07c #xf0c9 #xf0c4 #xf0cb #xf017 #xf101)
+
+       ("all-the-icons"
+        ;;    
+        #xe907 #xe928)
+
+       ("github-octicons"
+        ;;                        
+        #xf091 #xf059 #xf076 #xf075 #xf016 #xf00a)
+
+       ("Symbola"
+        ;; 𝕊    ⨂      ∅      ⟻    ⟼     ⊙      𝕋       𝔽
+        #x1d54a #x2a02 #x2205 #x27fb #x27fc #x2299 #x1d54b #x1d53d
+        ;; 𝔹    𝔇       𝔗
+        #x1d539 #x1d507 #x1d517))))
+
+
+  (defun load-fonts (frame)
+    (select-frame frame)
+    (load-default-fonts))
+
+  (if (daemonp)
+      (add-hook 'after-make-frame-functions #'load-fonts)
+    (load-default-fonts))
 #+end_src
 ** which-key
 #+BEGIN_SRC emacs-lisp
@@ -362,30 +646,62 @@ Finally, I use paradox to enhance the package listing experience.
   (dashboard-setup-startup-hook))
 #+END_SRC
 
-* Global setting
+* Helpers
+I need to define some helpers to be able to facilitate the configuration. This mainly introduce
+user/password management.
+
+** Define some important variables
+This section focus on defining some variables/helpers needed to have a more global configuration
+
+#+BEGIN_SRC emacs-lisp
+  ;; Define root directory and add the plugins
+  (defvar default-plugin-dir (format "%s/plugins" user-emacs-directory)
+    "The plugins directory")
+  (add-to-list 'load-path default-plugin-dir)
+
+  ;; Don't screw up my files with custom
+  ;;(setq custom-file (format "%s/custom.el" user-emacs-directory))
+  ;;(load custom-file 'noerror)
+
+  ;; Silence!!!!!!
+  (setq save-abbrevs 'silently
+	ad-redefinition-action 'accept
+
+	;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
+	gc-cons-threshold 50000000
+	large-file-warning-threshold 100000000)
+#+END_SRC
+** Identification helper
+Easy use wrapper around auth-* authentification emacs utils.
+
+#+begin_src emacs-lisp
+  (cl-defun my:auth-source-get-user (&rest spec &allow-other-keys)
+    "Helper to get the user given the SPEC from authsource."
+    (let ((founds (apply 'auth-source-search spec)))
+      (when founds
+        (plist-get (nth 0 founds) :user))))
+
+  (cl-defun my:auth-source-get-passwd (&rest spec &allow-other-keys)
+    "Helper to get the password given the SPEC from authsource."
+    (let ((founds (apply 'auth-source-search spec)))
+      (when founds
+        (funcall (plist-get (nth 0 founds) :secret)))))
+#+end_src
+
+
+* Global packages
 ** global
 #+BEGIN_SRC emacs-lisp
-  (defvar config-indent-web-mode-spaces 2)
-
   ;; Set regex syntax to string for re-builder
   (setq reb-re-syntax 'string)
-
-  ;; Hide column numbers
-  (setq column-number-mode t)
 
   ;; Draw underline lower
   (setq x-underline-at-descent-line t)
 
   ;; Permanently force Emacs to indent with spaces, never with TABs
-  (setq-default  indent-tabs-mode nil)
+  ;; (setq-default  indent-tabs-mode nil)
 
-  ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
-  (setq scroll-conservatively 101)
-
-  ;; Automatically scroll the compilation buffer
-  (setq compilation-scroll-output t)
-
-  ;; Give focus to new help windows
+    ;; Give focus to new help windows
   (setq help-window-select t)
   ;; Put apropos in current buffer so it can be read and exited with minimum effort
   (add-to-list 'display-buffer-alist
@@ -411,11 +727,6 @@ Finally, I use paradox to enhance the package listing experience.
   ;; Y or n is enough for me
   (fset 'yes-or-no-p 'y-or-n-p)
 
-  ;; Font
-  (set-face-attribute 'default nil
-                      :family config-font-family
-                      :height config-font-height)
-
   ;; Parenthesis
   (show-paren-mode 1)
 
@@ -425,37 +736,69 @@ Finally, I use paradox to enhance the package listing experience.
   ;; Enable narrow to region functionality
   (put 'narrow-to-region 'disabled nil)
 
-  ;; Colorize compilation-mode
-  (defun my-colorize-compilation-buffer ()
-      (when (eq major-mode 'compilation-mode)
-          (ansi-color-apply-on-region compilation-filter-start (point-max))))
-
-  (add-hook 'compilation-filter-hook 'my-colorize-compilation-buffer)
-
   ;; When on OSX, change meta to cmd key
   ;; Amethyst, an OSX app I use is mucking around with Option-Shift
   (when (eq system-type 'darwin)
     (setq mac-command-modifier 'meta)
     (setq mac-option-modifier nil))
-
-  ;; indent whole buffer
-  (defun iwb ()
-    "indent whole buffer"
-    (interactive)
-    (delete-trailing-whitespace)
-    (indent-region (point-min) (point-max) nil)
-    (untabify (point-min) (point-max)))
-  ;; (global-set-key (kbd "C-c n") 'iwb)
-
-  ;; Use a hook so the message doesn't get clobbered by other messages.
-  ;; (add-hook 'emacs-startup-hook
-  ;;           (lambda ()
-  ;;             (message "Emacs ready in %s with %d garbage collections."
-  ;;                      (format "%.2f seconds"
-  ;;                              (float-time
-  ;;                               (time-subtract after-init-time before-init-time)))
-  ;;                      gcs-done)))
 #+END_SRC
+** Global
+#+BEGIN_SRC emacs-lisp
+  ;; Diminish, a feature that removes certain minor modes from mode-line.
+  (use-package diminish
+    :ensure t)
+
+  ;; Undo-tree
+  (use-package undo-tree
+    :config
+    (setq undo-tree-visualizer-timestamps t)
+    (setq undo-tree-visualizer-diff t)
+    (setq undo-tree-auto-save-history t)
+    ;; save all undo histories to this location
+    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+    (defadvice undo-tree-make-history-save-file-name
+        (after undo-tree activate)
+      (setq ad-return-value (concat ad-return-value ".gz")))
+    (global-undo-tree-mode)
+    :defer t
+    :diminish 'undo-tree-mode)
+
+  ;; Show the argument list of a function in the echo area
+  (use-package eldoc
+    :diminish eldoc-mode
+    :commands turn-on-eldoc-mode
+    :defer t)
+
+  ;; Respect editor configs
+  (use-package editorconfig
+    :diminish editorconfig-mode
+    :config
+    (editorconfig-mode 1))
+
+  ;; Edit text area in chrome with emacs
+  (use-package atomic-chrome
+    :config
+    (atomic-chrome-start-server)
+    (setq atomic-chrome-buffer-open-style 'frame))
+
+  ;; Display used hotkeys in another window
+  (use-package command-log-mode
+    :diminish command-log-mode)
+#+END_SRC
+** Highlight
+#+begin_src emacs-lisp
+  ;; Parenthesis
+  (use-package highlight-parentheses
+    :diminish 'highlight-parentheses-mode
+    :config
+    (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
+
+  ;; Highlight numbers for prog modes
+  (use-package highlight-numbers
+    :defer t
+    :init
+    (add-hook 'prog-mode-hook 'highlight-numbers-mode))
+#+end_src
 ** Minor-mode activation
 I use some minor modes based on some filetypes. This package is an helper which facilitates these
 activations.
@@ -464,11 +807,30 @@ activations.
   (use-package auto-minor-mode
     :ensure t)
 #+end_src
-** 2048 game
-#+BEGIN_SRC emacs-lisp
-(use-package 2048-game
-  :commands (2048-game))
-#+END_SRC
+** TODO Message buffer
+The main idea here is to add a timestamp to the messages as it helps to understand the sequence of
+problems. For now the advice is not activated as it causes some problems.
+
+#+begin_src emacs-lisp
+  (defvar debug-messages nil)
+
+  (defun current-time-microseconds ()
+    (let* ((nowtime (current-time))
+           (now-ms (nth 2 nowtime)))
+      (concat (format-time-string "[%Y-%m-%d %T" nowtime) (format ".%d] " now-ms))))
+
+  (defadvice message (before who-said-that activate)
+    "Find out who said that thing. and say so."
+    (let ((trace nil) (n 1) (frame nil))
+      (when debug-messages
+          (progn
+            (while (setq frame (backtrace-frame n))
+              (setq n     (1+ n)
+                    trace (cons (cadr frame) trace)) )
+
+            (ad-set-arg 0 (concat (format-time-string "[%Y-%m-%d %T %Z] ") "<<%S>>:\n" (ad-get-arg 0)))
+            (ad-set-args 1 (cons trace (ad-get-args 1)))))))
+#+end_src
 ** Encoding
 #+BEGIN_SRC emacs-lisp
   (set-language-environment 'Chinese-GB)
@@ -494,103 +856,6 @@ activations.
   (prefer-coding-system 'utf-8-unix)
   ;; 说明：使用此配置，新建文件会采用UTF-8(无BOM)格式编码，行末以unix方式("\n")结尾，打开已有的文件，修改，保存还是按原有编码方式保存。
 #+END_SRC
-** Define some important variables
-This section focus on defining some variables/helpers needed to have a more global configuration
-
-#+BEGIN_SRC emacs-lisp
-  ;; Define root directory and add the plugins
-  (defvar default-plugin-dir (format "%s/plugins" user-emacs-directory)
-    "The plugins directory")
-  (add-to-list 'load-path default-plugin-dir)
-
-  ;; Don't screw up my files with custom
-  (setq custom-file (format "%s/custom.el" user-emacs-directory))
-  (load custom-file 'noerror)
-
-  ;; Silence!!!!!!
-  (setq save-abbrevs 'silently
-	ad-redefinition-action 'accept
-
-	;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
-	gc-cons-threshold 50000000
-	large-file-warning-threshold 100000000)
-#+END_SRC
-* Global packages
-** Global
-#+BEGIN_SRC emacs-lisp
-  ;; Diminish, a feature that removes certain minor modes from mode-line.
-  (use-package diminish
-    :ensure t)
-
-  ;; Rainbow mode - displays color codes in their color
-  (use-package rainbow-mode
-    :delight)
-
-  ;; Parenthesis
-  (use-package highlight-parentheses
-    :diminish 'highlight-parentheses-mode
-    :config
-    (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
-
-  ;; Undo-tree
-  (use-package undo-tree
-    :config
-    (setq undo-tree-visualizer-timestamps t)
-    (setq undo-tree-visualizer-diff t)
-    (setq undo-tree-auto-save-history t)
-    ;; save all undo histories to this location
-    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
-    (defadvice undo-tree-make-history-save-file-name
-        (after undo-tree activate)
-      (setq ad-return-value (concat ad-return-value ".gz")))
-    (global-undo-tree-mode)
-    :defer t
-    :diminish 'undo-tree-mode)
-
-  ;; Show the argument list of a function in the echo area
-  (use-package eldoc
-    :diminish eldoc-mode
-    :commands turn-on-eldoc-mode
-    :defer t)
-
-  ;; Highlight numbers for prog modes
-  (use-package highlight-numbers
-    :defer t
-    :init
-    (add-hook 'prog-mode-hook 'highlight-numbers-mode))
-
-  ;; Respect editor configs
-  (use-package editorconfig
-    :diminish editorconfig-mode
-    :config
-    (editorconfig-mode 1))
-
-  ;; Syntax highlighting for docker files
-  (use-package dockerfile-mode
-    :defer t)
-
-  ;; Edit text area in chrome with emacs
-  (use-package atomic-chrome
-    :config
-    (atomic-chrome-start-server)
-    (setq atomic-chrome-buffer-open-style 'frame))
-
-  ;; Display used hotkeys in another window
-  (use-package command-log-mode
-    :diminish command-log-mode)
-
-  ;;I use some minor modes based on some filetypes.
-  ;; This package is an helper which facilitates these activations.
-  (use-package auto-minor-mode
-    :ensure t)
-
-  ;; Minor mode for dealing with pairs, such as quotes
-  (use-package smartparens-config
-    :ensure smartparens
-    :config
-    (show-smartparens-global-mode t))
-#+END_SRC
-
 ** Recent file
 Opening recent files is always an easy and fast shortcut. Some files should be ignored though. That
 leads to this configuration
@@ -806,7 +1071,9 @@ Configuration of the (fly) spelling for emacs. For spelling, I am using aspell.
 *** English checking
 lang-tool is actually supported by emacs through a dedicated mode which allows to have syntax and
 typography checking.
-$ sudo pacman -S languagetool
+#+begin_src shell :tangle no
+sudo pacman -S languagetool
+#+end_src
 To check current buffer and show warnings.
 M-x langtool-check
 To finish checking. All langtool marker is removed.
@@ -820,7 +1087,7 @@ M-x langtool-check-done
           "/usr/share/languagetool:/usr/share/java/languagetool/*"))
     ;;(setq langtool-language-tool-server-jar "~/work/tools/src/languagetool/languagetool/languagetool-server.jar"))
 #+END_SRC
-** edit
+** Edit
 #+BEGIN_SRC emacs-lisp
  ;; Hungry deletion
   (use-package hungry-delete
@@ -870,51 +1137,30 @@ Evil Nerd Commenter, a tool that helps you comment code efficiently.
   (("C-c M-;" . c-toggle-comment-style)
    ("M-;" . evilnc-comment-or-uncomment-lines)))
 #+END_SRC
-** chinese input
+** Chinese input
 #+BEGIN_SRC emacs-lisp
-  (use-package pyim
-    :ensure nil
-    :demand t
-    :config
-    ;; 激活 basedict 拼音词库，五笔用户请继续阅读 README
-    (use-package pyim-basedict
-      :ensure nil
-      :config (pyim-basedict-enable))
+(use-package pyim
+  :init
+  (use-package posframe :defer t)
+  :custom
+  (default-input-method "pyim")
+  (pyim-default-scheme 'quanpin)
+  (pyim-page-tooltip 'posframe)
+  (pyim-page-length 9)
+  :config
+  (pyim-isearch-mode 1)
+  (setq-default pyim-english-input-switch-functions
+                '(pyim-probe-isearch-mode
+                  pyim-probe-org-structure-template))
+  (setq-default pyim-punctuation-half-width-functions
+                '(pyim-probe-punctuation-line-beginning
+                  pyim-probe-punctuation-after-punctuation))
+  :bind
+  ("M-j" . pyim-convert-string-at-point)) ; M-j 强制将光标前的拼音字符串转换为中文。
 
-    (setq default-input-method "pyim")
-
-    ;; 我使用全拼
-    ;;(setq pyim-default-scheme 'quanpin)
-
-    ;; 设置 pyim 探针设置，这是 pyim 高级功能设置，可以实现 *无痛* 中英文切换 :-)
-    ;; 我自己使用的中英文动态切换规则是：
-    ;; 1. 光标只有在注释里面时，才可以输入中文。
-    ;; 2. 光标前是汉字字符时，才能输入中文。
-    ;; 3. 使用 M-j 快捷键，强制将光标前的拼音字符串转换为中文。
-    (setq-default pyim-english-input-switch-functions
-                  '(pyim-probe-dynamic-english
-                    pyim-probe-isearch-mode
-                    pyim-probe-program-mode
-                    pyim-probe-org-structure-template))
-
-    (setq-default pyim-punctuation-half-width-functions
-                  '(pyim-probe-punctuation-line-beginning
-                    pyim-probe-punctuation-after-punctuation))
-
-    ;; 开启拼音搜索功能
-    (pyim-isearch-mode 1)
-
-    ;; 使用 pupup-el 来绘制选词框, 如果用 emacs26, 建议设置
-    ;; 为 'posframe, 速度很快并且菜单不会变形，不过需要用户
-    ;; 手动安装 posframe 包。
-    (setq pyim-page-tooltip 'popup)
-
-    ;; 选词框显示5个候选词
-    (setq pyim-page-length 5)
-
-    :bind
-    (("M-j" . pyim-convert-string-at-point) ;与 pyim-probe-dynamic-english 配合
-     ("C-;" . pyim-delete-word-from-personal-buffer)))
+(use-package pyim-basedict
+  :after pyim
+  :config (pyim-basedict-enable))
 #+END_SRC
 ** Navigation
 This part is dedicated to the configuration for buffer (even large) navigation.
@@ -929,6 +1175,9 @@ This part is dedicated to the configuration for buffer (even large) navigation.
     :config
     (fast-scroll-config)
     (fast-scroll-mode 1))
+
+  ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
+  (setq scroll-conservatively 101)
 #+end_src
 *** Preview
 First, instead of jumping we simply can preview the jump.
@@ -968,6 +1217,22 @@ workflow.
     ;;:bind ("C-<" . goto-last-point)
     :config (goto-last-point-mode))
 #+END_SRC
+
+** Minibuffer
+Minibuffer configuration part. Nothing really outstanding, just the classical stuff.
+
+#+begin_src emacs-lisp
+  (use-package minibuffer
+    ;; :hook
+    ;; (eval-expression-minibuffer-setup .  #'eldoc-mode)
+    :config
+    (setq read-file-name-completion-ignore-case t
+          completion-ignore-case t
+          resize-mini-windows t)
+
+    (file-name-shadow-mode 1))
+#+end_src
+
 ** Buffers
 Some buffer specificities configuration like how to deal with trailing whitespaces or the
 fill-column for example.
@@ -1048,8 +1313,60 @@ Double-saber is really helpful to reduce the result of a search after the search
                 (double-saber-mode)
                 (setq-local double-saber-start-line 5))))
 #+END_SRC
+** Environment control helpers
+I prefer to control some hardware using emacs directly. For now the keyboard, the screen and the sound.
 
+*** desktop environment
+Thanks to desktop environement, I can control the keyboard and the screen brightness.
+#+begin_src shell :tangle no
+sudo pacman -S xorg-xbacklight
+#+end_src
 
+#+begin_src emacs-lisp
+  (use-package desktop-environment
+    :ensure t
+    :config
+    (setq desktop-environment-brightness-normal-increment "-inc 10"
+          desktop-environment-brightness-normal-decrement "-dec 10"
+          desktop-environment-brightness-small-increment "-inc 5"
+          desktop-environment-brightness-small-decrement "-dec 5"
+          desktop-environment-brightness-get-command "xbacklight -get"
+          desktop-environment-brightness-set-command "xbacklight")
+    (desktop-environment-mode))
+#+end_src
+*** pulseaudio
+Thanks to pulseaudio-control, I can control my soundcard.
+[[https://www.freedesktop.org/wiki/Software/PulseAudio/][PulseAudio]] is a sound system for POSIX OSes, meaning that it is a proxy for your sound applications.
+#+begin_src shell :tangle no
+sudo pacman -S pulseaudio
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package pulseaudio-control
+    :ensure t
+    :config
+    (setq pulseaudio-control--current-sink "@DEFAULT_SINK@"))
+#+end_src
+
+** Helpers
+I define here some global helpers used either in the rest of the file, either available to use at runtime
+
+*** Editing as root
+Defining a simple helper to edit file as root using tramp
+
+#+begin_src emacs-lisp
+  (defun edit-current-file-as-root ()
+    "Edit the file that is associated with the current buffer as root"
+    (interactive)
+    (if (buffer-file-name)
+        (find-file (concat "/sudo:localhost:" (buffer-file-name)))
+      (message "Current buffer does not have an associated file.")))
+#+end_src
+** 2048 game
+#+BEGIN_SRC emacs-lisp
+(use-package 2048-game
+  :commands (2048-game))
+#+END_SRC
 
 * Completion
 This part focuses on completion configuration. Language specific configurations are not done here
@@ -1936,32 +2253,7 @@ It is useful to find some items in org files based on a query.
 #+end_src
 ** The org package
 #+BEGIN_SRC emacs-lisp
-  ;; Prettify UI
-  (use-package org-bullets
-    :if (char-displayable-p ?◉)
-    :hook (org-mode . org-bullets-mode))
 
-  (use-package org-fancy-priorities
-    :diminish
-    :defines org-fancy-priorities-list
-    :hook (org-mode . org-fancy-priorities-mode)
-    :config
-    (unless (char-displayable-p ?❗)
-      (setq org-fancy-priorities-list '("HIGH" "MID" "LOW" "OPTIONAL"))))
-  ;; Indentation
-  (use-package highlight-indent-guides
-    :ensure t
-    :commands (highlight-indent-guides-mode)
-    :hook
-    (prog-mode . highlight-indent-guides-mode)
-    :config
-    (setq highlight-indent-guides-method 'column))
-  ;; Show current function
-  (which-function-mode 1)
-  ;;Faces/Colors
-  (use-package rainbow-mode
-    :ensure t
-    :commands (rainbow-mode))
 #+END_SRC
 ** Keybindings
 #+BEGIN_SRC emacs-lisp
@@ -2095,27 +2387,361 @@ It is useful to find some items in org files based on a query.
     :config
     (pdfgrep-mode))
 #+END_SRC
-* ibuffer
-#+BEGIN_SRC emacs-lisp
-(defun ibuffer-clean ()
-  "Clean automatically created buffers"
-  (interactive)
-  (ibuffer-unmark-all ?*)
-  (ibuffer-mark-by-mode 'help-mode)
-  (ibuffer-mark-by-mode 'magit-mode)
-  (ibuffer-mark-by-mode 'occur-mode)
-  (ibuffer-mark-by-mode 'grep-mode)
-  (ibuffer-mark-by-mode 'dired-mode)
-  (ibuffer-mark-by-mode 'completion-list-mode)
-  (ibuffer-mark-by-mode 'compilation-mode)
-  (ibuffer-mark-by-mode 'Man-mode)
-  (ibuffer-mark-by-mode 'browse-kill-ring-mode)
-  (ibuffer-mark-by-name-regexp "*anything*")
-  (ibuffer-mark-by-name-regexp "*ESS*")
-  (ibuffer-mark-by-name-regexp "*Shell Command Output*")
-  (ibuffer-mark-by-name-regexp "*Compile-Log*")
-  (ibuffer-mark-by-name-regexp "*vc-diff*")
-  (ibuffer-do-delete))
+* Ibuffer
+** Filter
+#+begin_src emacs-lisp
+  (defun my-own-ibuffer-hook ()
+    ""
+    (interactive)
+    (setq ibuffer-saved-filter-groups
+          (list
+           (cons "default"
+                 (append
+                  (quote
+                   (("Emacs"
+                     (or
+                      (name . "^[*]scratch[*]$")
+                      (name . "^[*]Messages[*]$")))
+
+                    ("Calendar"
+                     (or
+                      (name . "^[*]?[Cc]alendar.*$")
+                      (name . "^diary$")
+                      (mode . cfw:calendar-mode)
+                      (mode . muse-mode)))
+
+                    ("Todos"
+                     (filename . "/todo.org"))
+
+                    ("Emms"
+                     (or
+                      (mode . emms-mode)
+                      (mode . emms-browser-mode)
+                      (mode . emms-playlist-mode)))
+
+                    ("RSS/Podcast"
+                     (or
+                      (name . "rss.org")
+                      (name . "^[*]?[Ee]lfeed.*$")
+                      (derived-mode . elfeed-search-mode)
+                      (derived-mode . elfeed-show-mode)))
+
+                    ("Help"
+                     (or
+                      (derived-mode . apropos-mode)
+                      (derived-mode . help-mode)
+                      (derived-mode . Info-mode)))
+
+                    ("Mail"
+                     (or
+                      (derived-mode . message-mode)
+                      (mode . bbdb-mode)
+                      (mode . mail-mode)
+                      (mode . mu4e-main-mode)
+                      (mode . notmuch-headers-mode)
+                      (mode . notmuch-view-mode)
+                      (name . "^\.bbdb$")
+                      (name . "^\.newsrc-dribble")))
+                    ("Slack"
+                     (or
+                      (derived-mode . slack-mode)
+                      (name . "^[*]?[Ss]lack.*")))
+                    ))
+
+                  (ibuffer-circe-generate-filter-groups-by-server)
+                  (ibuffer-tramp-generate-filter-groups-by-tramp-connection)
+                  (ibuffer-vc-generate-filter-groups-by-vc-root)
+
+                  (quote
+                   (("Dired" (mode . dired-mode))
+
+                    ("Shell"
+                     (or
+                      (mode . sh-mode)))
+
+                    ("Editing"
+                     (or
+                      (mode . tex-mode)
+                      (mode . latex-mode)
+                      (mode . bibtex-mode)
+                      (mode . text-mode)))
+
+                    ("Mathematics/Statistics"
+                     (or
+                      (mode . matlab-mode)
+                      (name . "^[*]MATLAB[*]$")
+                      (mode . ess-mode)
+                      (mode . iESS)))
+
+
+                    ("Configuration"
+                     (or
+                      (derived-mode . conf-mode)))
+
+                    ("Web"
+                     (or
+                      (mode . php-mode)
+                      (mode . css-mode)
+                      (mode . html-mode)
+                      (mode . js2-mode)
+                      (mode . scss-mode)
+                      (mode . web-mode)))
+
+                    ("Programming"
+                     (or
+                      (mode . emacs-lisp-mode)
+                      (mode . c-mode)
+                      (mode . cperl-mode)
+                      (mode . python-mode)
+                      (mode . c++-mode)
+                      (mode . java-mode)
+                      (mode . jde-mode)))
+
+                    ("Compiling"
+                     (or
+                      (mode . groovy-mode)
+                      (derived-mode . makefile-mode)))
+
+                    ("Data"
+                     (or
+                      (mode . csv-mode)
+                      (mode . json-mode)
+                      (mode . nxml-mode)
+                      (mode . ledger-mode)
+                      ))
+
+                    ("Org"
+                     (or
+                      (mode . org-mode)))
+
+
+                    ("Term"
+                     (or
+                      (mode . comint-mode)
+                      (mode . eshell-mode)
+                      (mode . term-mode)))
+
+                    ("Prodigy"
+                     (or
+                      (name . "^[*]prodigy.*[*]$")))
+
+                    ("Temp"
+                     (or
+                      (name ."^[*].*[*]$")))
+                    )))))))
+#+end_src
+** Global
+#+begin_src emacs-lisp
+  (use-package ibuffer
+    :functions ibuffer-quit
+    :hook
+    (ibuffer-mode . (lambda ()
+                      (my-own-ibuffer-hook)
+                      (ibuffer-switch-to-saved-filter-groups "default")
+                      (ibuffer-update nil t)))
+
+    :hydra
+    (hydra-ibuffer-main (:color pink :hint nil)
+                        "
+           Ibuffer
+
+     ^Navigation^     ^Mark^         ^Actions^          ^View^
+    ------------------------------------------------------------------------
+      _k_:    ʌ     _m_: mark       _D_: delete        _g_: refresh
+     _RET_: visit   _u_: unmark     _S_: save          _s_: sort
+      _j_:    v     _*_: specific   _a_: all actions   _/_: filter
+    "
+                        ("j" ibuffer-forward-line)
+                        ("RET" ibuffer-visit-buffer :color blue)
+                        ("k" ibuffer-backward-line)
+
+                        ("m" ibuffer-mark-forward)
+                        ("u" ibuffer-unmark-forward)
+                        ("*" hydra-ibuffer-mark/body :color blue)
+
+                        ("D" ibuffer-do-delete)
+                        ("S" ibuffer-do-save)
+                        ("a" hydra-ibuffer-action/body :color blue)
+
+                        ("g" ibuffer-update)
+                        ("s" hydra-ibuffer-sort/body :color blue)
+                        ("/" hydra-ibuffer-filter/body :color blue)
+
+                        ("o" ibuffer-visit-buffer-other-window "other window" :color blue)
+                        ("q" ibuffer-quit "quit ibuffer" :color blue)
+                        ("." nil "toggle hydra" :color blue))
+
+    (hydra-ibuffer-mark (:color teal :columns 5
+                                :after-exit (hydra-ibuffer-main/body))
+                        "Mark"
+                        ("*" ibuffer-unmark-all "unmark all")
+                        ("M" ibuffer-mark-by-mode "mode")
+                        ("m" ibuffer-mark-modified-buffers "modified")
+                        ("u" ibuffer-mark-unsaved-buffers "unsaved")
+                        ("s" ibuffer-mark-special-buffers "special")
+                        ("r" ibuffer-mark-read-only-buffers "read-only")
+                        ("/" ibuffer-mark-dired-buffers "dired")
+                        ("e" ibuffer-mark-dissociated-buffers "dissociated")
+                        ("h" ibuffer-mark-help-buffers "help")
+                        ("z" ibuffer-mark-compressed-file-buffers "compressed")
+                        ("b" hydra-ibuffer-main/body "back" :color blue))
+
+    (hydra-ibuffer-action (:color teal :columns 4
+                                  :after-exit
+                                  (if (eq major-mode 'ibuffer-mode)
+                                      (hydra-ibuffer-main/body)))
+                          "Action"
+                          ("A" ibuffer-do-view "view")
+                          ("E" ibuffer-do-eval "eval")
+                          ("F" ibuffer-do-shell-command-file "shell-command-file")
+                          ("I" ibuffer-do-query-replace-regexp "query-replace-regexp")
+                          ("H" ibuffer-do-view-other-frame "view-other-frame")
+                          ("N" ibuffer-do-shell-command-pipe-replace "shell-cmd-pipe-replace")
+                          ("M" ibuffer-do-toggle-modified "toggle-modified")
+                          ("O" ibuffer-do-occur "occur")
+                          ("P" ibuffer-do-print "print")
+                          ("Q" ibuffer-do-query-replace "query-replace")
+                          ("R" ibuffer-do-rename-uniquely "rename-uniquely")
+                          ("T" ibuffer-do-toggle-read-only "toggle-read-only")
+                          ("U" ibuffer-do-replace-regexp "replace-regexp")
+                          ("V" ibuffer-do-revert "revert")
+                          ("W" ibuffer-do-view-and-eval "view-and-eval")
+                          ("X" ibuffer-do-shell-command-pipe "shell-command-pipe")
+                          ("b" nil "back"))
+
+    (hydra-ibuffer-sort (:color amaranth :columns 3)
+                        "Sort"
+                        ("i" ibuffer-invert-sorting "invert")
+                        ("a" ibuffer-do-sort-by-alphabetic "alphabetic")
+                        ("v" ibuffer-do-sort-by-recency "recently used")
+                        ("s" ibuffer-do-sort-by-size "size")
+                        ("f" ibuffer-do-sort-by-filename/process "filename")
+                        ("m" ibuffer-do-sort-by-major-mode "mode")
+                        ("b" hydra-ibuffer-main/body "back" :color blue))
+
+    (hydra-ibuffer-filter (:color amaranth :columns 4)
+                          "Filter"
+                          ("m" ibuffer-filter-by-used-mode "mode")
+                          ("M" ibuffer-filter-by-derived-mode "derived mode")
+                          ("n" ibuffer-filter-by-name "name")
+                          ("c" ibuffer-filter-by-content "content")
+                          ("e" ibuffer-filter-by-predicate "predicate")
+                          ("f" ibuffer-filter-by-filename "filename")
+                          (">" ibuffer-filter-by-size-gt "size")
+                          ("<" ibuffer-filter-by-size-lt "size")
+                          ("/" ibuffer-filter-disable "disable")
+                          ("b" hydra-ibuffer-main/body "back" :color blue))
+
+    :bind
+    (;; Global
+     ("C-x C-b" . ibuffer)
+
+     ;; Mode specific
+     :map ibuffer-mode-map
+          ("." . hydra-ibuffer-main/body))
+
+    :config
+
+    ;; Sub packages
+    (use-package ibuffer-git :ensure t)
+    (use-package ibuffer-tramp :ensure t)
+    (use-package ibuffer-vc :ensure t)
+    (use-package ibuffer-circe
+      :ensure quelpa
+      :quelpa (ibuffer-circe :repo "seblemaguer/ibuffer-circe" :fetcher github)
+      :after circe
+      :config (require 'circe))
+
+    ;; Use human readable Size column instead of original one
+    (define-ibuffer-column size-h
+      (:name "Size" :inline t)
+      (cond
+       ((> (buffer-size) 1000000) (format "%7.3fM" (/ (buffer-size) 1000000.0)))
+       ((> (buffer-size) 1000) (format "%7.3fk" (/ (buffer-size) 1000.0)))
+       (t (format "%8d" (buffer-size)))))
+
+
+    ;; Modification time
+    (defun get-modification-time-buffer(b)
+      "Retrieve the savetime of the given buffer"
+      (if (buffer-file-name b)
+          (format-time-string "%Y-%m-%d %H:%M:%S"
+                              (nth 5 (file-attributes (buffer-file-name b))))
+        ""))
+
+    (define-ibuffer-column last-modification
+      (:name "Last modification time" )
+      (get-modification-time-buffer buffer))
+
+    ;; Ibuffer entry format
+    (setq ibuffer-formats
+          '((mark modified read-only
+                  (name 30 30 :left :elide) " "
+                  (size-h 9 -1 :right) " "
+                  (mode 20 20 :left :elide) " "
+                  ;; (eproject 16 16 :left :elide)      " "
+                  (git-status 8 8 :left)" "
+                  (last-modification 30 30 :left :elide)  " "
+                  filename-and-process)))
+
+    ;; Update
+    (defadvice ibuffer-update (around ibuffer-preserve-prev-header activate)
+      "Preserve line-header used before Ibuffer if it doesn't set one"
+      (let ((prev-line-header header-line-format))
+        ad-do-it
+        (unless header-line-format
+          (setq header-line-format prev-line-header))))
+
+
+    (setq ibuffer-default-sorting-mode 'major-mode  ;; Sorting
+          ibuffer-show-empty-filter-groups nil      ;; Ignore empty groups
+          ibuffer-marked-char ?✓               ;; Change the marking symbol
+          )
+
+    ;; Collapsing some buffer groups
+    (setq mp/ibuffer-collapsed-groups
+          (list "Calendar" "Todos" "Prodigy"
+                "Emms" "RSS/Podcast"
+                "Temp" "Help" "*Tramp*"))
+
+    (defadvice ibuffer (after collapse)
+      (dolist (group mp/ibuffer-collapsed-groups)
+        (progn
+          (goto-char 1)
+          (when (search-forward (concat "[ " group " ]") (point-max) t)
+            (progn
+              (move-beginning-of-line nil)
+              (ibuffer-toggle-filter-group)
+              )
+            )
+          )
+        )
+      (goto-char 1)
+      (search-forward "[ " (point-max) t)
+      )
+    (ad-activate 'ibuffer))
+#+end_src
+** Helpers
+#+begin_src emacs-lisp
+  (defun ibuffer-clean ()
+    "Clean automatically created buffers"
+    (interactive)
+    (ibuffer-unmark-all ?*)
+    (ibuffer-mark-by-mode 'help-mode)
+    (ibuffer-mark-by-mode 'magit-mode)
+    (ibuffer-mark-by-mode 'occur-mode)
+    (ibuffer-mark-by-mode 'grep-mode)
+    (ibuffer-mark-by-mode 'dired-mode)
+    (ibuffer-mark-by-mode 'completion-list-mode)
+    (ibuffer-mark-by-mode 'compilation-mode)
+    (ibuffer-mark-by-mode 'Man-mode)
+    (ibuffer-mark-by-mode 'browse-kill-ring-mode)
+    (ibuffer-mark-by-name-regexp "*anything*")
+    (ibuffer-mark-by-name-regexp "*ESS*")
+    (ibuffer-mark-by-name-regexp "*Shell Command Output*")
+    (ibuffer-mark-by-name-regexp "*Compile-Log*")
+    (ibuffer-mark-by-name-regexp "*vc-diff*")
+    (ibuffer-do-delete))
 #+END_SRC
 
 * Eshell
@@ -2536,10 +3162,140 @@ In order to monitor each process started via comint, I use bifocal which splits 
     :config
     (bifocal-global-mode 1))
 #+end_src
+* Notification
+** Sauron
+#+begin_src emacs-lisp
+  (use-package sauron
+    :ensure t
+    :config
 
+    ;;
+    (setq sauron-separate-frame nil ;; The notification is on the same window ?
+          sauron-sticky-frame t
+          sauron-max-line-length nil ;; No max. length for the line
+          sauron-modules '(sauron-org sauron-elfeed) ;; reduced the default modules
+          sauron-column-alist '( ( timestamp  .  20)
+                                 ( origin     .  20)
+                                 ( priority   .   4)
+                                 ( message    . nil)))
+    (sauron-start-hidden))
+#+end_src
+** Alert
+#+begin_src emacs-lisp
+  (use-package alert
+    :ensure t
+    :after sauron
+    :bind
+    (("<f7>"   . sauron-mode-line-toggle-hide-show)
+     ("C-<f7>" . sauron-mode-line-clear))
+
+    :init
+
+    (defvar sauron-mode-line-current-level 0
+      "The current level associated with the modeline higlight alert.")
+
+    (defvar sauron-mode-line-threshold 1
+      "The mode coloring highlight threshold. If current level is
+      below, mode-line is sticking to its current state.")
+
+    (defface sauron-mode-line-backup-face nil
+      "The face which store the backup default mode."
+      :group 'alert)
+
+    (defun sauron-mode-line-clear ()
+      "Helper to clear the content of the sauron log and reset the mode-line status."
+      (interactive)
+      (progn
+        (when (> sauron-mode-line-current-level sauron-mode-line-threshold)
+          (progn
+            (copy-face 'sauron-mode-line-face 'mode-line)
+            (setq sauron-mode-line-current-level 0)))
+        (sauron-clear)))
+
+    (defun sauron-mode-line-toggle-hide-show ()
+      "Helper to show/hide the sauron part and reset the mode-line status."
+      (interactive)
+      (progn
+        (sauron-toggle-hide-show)
+        (when (> sauron-mode-line-current-level sauron-mode-line-threshold)
+          (progn
+            (copy-face 'backup-mode-line-face 'mode-line)
+            (setq sauron-mode-line-current-level 0)))))
+
+    :config
+
+    ;; ==============================================================================================================
+
+    (defcustom sauron-mode-line-priorities
+      '((urgent   . 5)
+        (high     . 4)
+        (moderate . 3)
+        (normal   . 2)
+        (low      . 1)
+        (trivial  . 0))
+      "A mapping of alert severities onto Growl priority values."
+      :type '(alist :key-type symbol :value-type integer)
+      :group 'alert)
+
+    (defun alert-sauron-notify (info)
+      (sauron-add-event (if (plist-get info :category)
+                            (if (symbolp (plist-get info :category))
+                                (plist-get info :category)
+                              (intern (plist-get info :category)))
+                          (if (plist-get info :title)
+                            (if (symbolp (plist-get info :title))
+                                (plist-get info :title)
+                              (intern (plist-get info :title)))
+                            'unknown))
+                        (cdr (assq (plist-get info :severity) sauron-mode-line-priorities))
+                        (plist-get info :message)))
+
+    (alert-define-style 'sauron :title "Use sauron as a backend for alert"
+                        :notifier #'alert-sauron-notify
+                        :continue t
+                        :remover #'alert-message-remove)
+
+    ;; ==============================================================================================================
+
+    (defun sauron-mode-line-notifier (info)
+      "Alert mode-line flashing style notifier."
+      ;; First time => copy the current mode line face
+      (when (<= sauron-mode-line-current-level sauron-mode-line-threshold)
+        (copy-face 'mode-line 'backup-mode-line-face))
+
+      ;; Change the policy
+      (when (and (> (cdr (assq (plist-get info :severity) sauron-mode-line-priorities))
+                    sauron-mode-line-threshold)
+                 (> (cdr (assq (plist-get info :severity) sauron-mode-line-priorities))
+                    sauron-mode-line-current-level))
+        (progn
+          (set-face-attribute 'mode-line nil
+                              :background (cdr (assq (plist-get info :severity)
+                                                     alert-severity-colors)))
+          ))
+
+      ;; Change current level if this one is upper
+      (when (> (cdr (assq (plist-get info :severity) sauron-mode-line-priorities))
+               sauron-mode-line-current-level)
+        (setq sauron-mode-line-current-level (cdr (assq (plist-get info :severity)
+                                                        sauron-mode-line-priorities))))
+      ;; Print the message everytime !
+      (alert-sauron-notify info))
+
+    (alert-define-style
+     'sauron-mode-line-style
+     :title "Sauron/flashing mode line style"
+     :notifier 'sauron-mode-line-notifier
+     :continue t
+     :remover #'alert-message-remove)
+
+    (setq sauron-min-priority sauron-mode-line-threshold)
+    (setq alert-default-style 'sauron-mode-line-style))
+#+end_src
 * System
 ** Docker
 #+begin_src emacs-lisp
+;; Manage docker from Emacs.
   (use-package docker
     :ensure t
     :commands (docker))
@@ -2555,16 +3311,11 @@ In order to monitor each process started via comint, I use bifocal which splits 
 #+end_src
 ** SSH
 #+begin_src emacs-lisp
+;; Support for remote logins using ssh in Emacs
   (use-package ssh)
-
+;; A deployment plugin via Tramp for Emacs.
   (use-package ssh-deploy)
 #+end_src
-** Slurm
-#+BEGIN_SRC emacs-lisp
- (use-package slurm-mode
-    :ensure quelpa
-    :quelpa (slurm :repo "ffevotte/slurm.el" :fetcher github))
-#+END_SRC
 ** Cron
 #+BEGIN_SRC emacs-lisp
   (use-package crontab-mode
@@ -2572,10 +3323,12 @@ In order to monitor each process started via comint, I use bifocal which splits 
 #+END_SRC
 ** Monitoring
 #+begin_src emacs-lisp
+;; tiny graphical system monitor
   (use-package symon
     :ensure t)
 #+end_src
 ** Clipboard
+Read clipboard history from Parcellite/Clipit on Linux and Flycut on OS X
 #+begin_src emacs-lisp
   (use-package cliphist
     :ensure t)
@@ -2583,6 +3336,7 @@ In order to monitor each process started via comint, I use bifocal which splits 
 
 ** systctl
 #+begin_src emacs-lisp
+;; Manage sysctl through Emacs
   (use-package sysctl :ensure t :commands (sysctl))
 #+end_src
 ** Locate
@@ -2591,13 +3345,9 @@ In order to monitor each process started via comint, I use bifocal which splits 
     :ensure t
     :commands (ellocate))
 #+end_src
-** COMMENT unison interaction
-#+begin_src emacs-lisp
-  (use-package unison
-    :ensure t)
-#+end_src
 ** System package
 #+begin_src emacs-lisp
+;; functions to manage system packages
   (use-package system-packages
       :config
       (setq system-packages-supported-package-managers
@@ -2625,6 +3375,310 @@ In order to monitor each process started via comint, I use bifocal which splits 
             system-packages-use-sudo nil
             system-packages-package-manager 'trizen)
       )
+#+end_src
+* Internet/network
+** IRC
+Circe, a Client for IRC in Emacs, see [[https://github.com/jorgenschaefer/circe/wiki/Configuration][Circe Configuration]].
+Setting nickserv-password: (setq auth-sources '("~/.authinfo.gpg"))
+*** Global
+#+begin_src emacs-lisp
+  (use-package circe
+    :ensure t
+    :bind ("<S-f2>" . circe-init)
+    :hook
+    (circe-chat-mode . disable-global-facilities)
+
+    :config
+
+    ;; Defining the networks
+    (setq circe-network-options
+           '(("Freenode"
+             :tls t
+             :nick "sgb20"
+             :channels ("#emacs")
+             ;;:nickserv-password my-irc-password
+             :server-buffer-name "⇄ freenode")))
+
+    ;; Completion
+    (setq circe-use-cycle-completion t)
+
+    ;; Spam information reduction
+    (setq circe-reduce-lurker-spam t)
+
+    ;; Tracking
+    (setq lui-track-bar-behavior 'before-switch-to-buffer)
+    (enable-lui-track-bar)
+
+    ;; spell checking
+    (add-hook 'circe-channel-mode-hook 'turn-on-flyspell)
+    (setq lui-max-buffer-size 30000
+          lui-flyspell-p t
+          lui-flyspell-alist '(("." "american")))
+
+    ;; Formatting / Visual
+    (enable-circe-color-nicks)
+    (setq lui-time-stamp-position 'right-margin
+          lui-time-stamp-format "[%Y-%m-%d %H:%M:%S]"
+          lui-fill-type nil)
+    (enable-circe-display-images)
+
+    (defun my-lui-setup ()
+      (setq
+       fringes-outside-margins t
+       right-margin-width 21
+       word-wrap t
+       wrap-prefix "    "))
+    (add-hook 'lui-mode-hook 'my-lui-setup)
+
+    ;; Connection
+    (defun circe-network-connected-p (network)
+      "Return non-nil if there's any Circe server-buffer whose
+    `circe-netwok' is NETWORK."
+      (catch 'return
+        (dolist (buffer (circe-server-buffers))
+          (with-current-buffer buffer
+            (if (string= network circe-network)
+                (throw 'return t))))))
+
+     (defun circe-maybe-connect (network)
+       "Connect to NETWORK, but ask user for confirmation if it's
+    already been connected to."
+       (interactive "sNetwork: ")
+       (if (or (not (circe-network-connected-p network))
+               (y-or-n-p (format "Already connected to %s, reconnect?" network)))
+           (circe network)))
+
+     (defun my-irc-password (server)
+       "Return the password for the `SERVER'."
+       (my:auth-source-get-passwd :host server))
+
+     ;; Shortcut
+     (defun circe-init ()
+       "Connect to IRC"
+       (interactive)
+       (if (circe-network-connected-p "Freenode")
+           (switch-to-buffer "⇄ freenode")
+         (progn
+           (circe-maybe-connect "Freenode"))))
+    )
+#+end_src
+*** Logging
+#+begin_src emacs-lisp
+  (use-package lui-logging
+    :commands (enable-lui-logging))
+
+#+end_src
+*** Autopasting
+#+begin_src emacs-lisp
+  (use-package lui-autopaste
+    :config
+    (add-hook 'circe-channel-mode-hook 'enable-lui-autopaste)
+    (defvar lui-autopaste-service-gist-url nil
+      "The URL for the last gist.")
+
+    (defun lui-autopaste-service-gist (text)
+      "Paste TEXT to github using gist.el."
+      ;; It's so great gist works with callbacks! It's so much fun to
+      ;; work around that!
+      (setq lui-autopaste-service-gist-url 'waiting)
+      (with-temp-buffer
+        (insert text)
+        (gist-region (point-min) (point-max) nil
+                     (lambda (gist)
+                       (when (eq lui-autopaste-service-gist-url
+                                 'waiting)
+                         (setq lui-autopaste-service-gist-url
+                               (oref gist :html-url)))))) ;; FIXME: this provokes a Warning: Unknown slot ‘:html-url’
+      (let ((wait 0))
+        (while (and (< wait 10)
+                    (eq lui-autopaste-service-gist-url
+                        'waiting))
+          (sit-for 0.1 )
+          (setq wait (1+ wait))))
+      (if (eq lui-autopaste-service-gist-url 'waiting)
+          (progn
+            (setq lui-autopaste-service-gist-url nil)
+            (error "Couldn't create gist"))
+        (prog1 lui-autopaste-service-gist-url
+          (setq lui-autopaste-service-gist-url nil))))
+
+
+    (setq lui-autopaste-function 'lui-autopaste-service-gist))
+#+end_src
+*** Some coloring
+#+begin_src emacs-lisp
+  (use-package lui-irc-colors
+    :after circe
+    :config
+    (add-to-list 'lui-pre-output-hook 'lui-irc-colors))
+#+end_src
+*** Notification
+#+begin_src emacs-lisp
+  (use-package circe-notifications
+    :ensure t
+    :commands (enable-circe-notifications)
+    :custom (circe-notifications-alert-style 'sauron-mode-line-style)
+    :hook
+    (circe-server-connected . enable-circe-notifications))
+#+end_src
+** RSS
+*** Global
+#+begin_src emacs-lisp
+  (use-package elfeed
+    :ensure t
+    :commands (elfeed)
+    :no-require t
+    :bind (([f9] . elfeed))
+
+    :config
+    ;; Change the storage directory
+    (setq elfeed-db-directory "~/org/elfeed")
+
+    ;; Formatting dates
+    (setq elfeed-search-date-format '("%Y-%m-%d %H:%M" 17 :left)))
+#+end_src
+*** Org connection
+#+begin_src emacs-lisp
+  (use-package elfeed-org
+    :ensure t
+    :no-require t
+    :config
+    (when (file-exists-p "~/org/organisation/rss.org")
+      (progn
+        (elfeed-org)
+        (setq rmh-elfeed-org-files (list "~/org/organisation/rss.org"))
+        (rmh-elfeed-org-process rmh-elfeed-org-files rmh-elfeed-org-tree-id)))
+
+    (elfeed-update-background-start))
+#+end_src
+*** Goodies
+#+BEGIN_SRC emacs-lisp
+  (use-package elfeed-goodies
+    :ensure t
+    :disabled t
+    :config
+    (elfeed-goodies/setup))
+#+END_SRC
+*** Notification part
+#+begin_src emacs-lisp
+  (use-package sauron-elfeed
+    :config
+    (cl-loop for feed in elfeed-feeds
+             do (when (member 'mustread (cdr feed))
+                  (puthash (car feed) 3 sauron-elfeed-prio-hash))))
+
+#+end_src
+* Music
+** Global
+#+begin_src shell :tangle no
+sudo pacman -S mpv
+#+end_src
+#+begin_src emacs-lisp
+  (use-package emms
+    :ensure t
+    :commands (emms emms-browse-by-artist)
+    :bind
+    (("<f5>"            . emms-browse-by-artist)
+     ("S-<f5>"          . emms-playlist-mode-go)
+     ("<XF86AudioPlay>" . emms-pause)
+     ("<XF86AudioStop>" . emms-stop)
+     ("<XF86AudioPrev>" . emms-previous)
+     ("<XF86AudioNext>" . emms-next))
+
+    :config
+
+    (emms-all)
+
+    ;; Use mpv player
+    (setq emms-player-list '(emms-player-mpv))
+
+    ;; A minor macos adaptation
+    (when (eq system-type 'darwin)
+      (setq emms-source-file-gnu-find "/usr/local/bin/gfind"))
+
+    ;; Some behaviour definition
+    (setq later-do-interval 0.0001
+          emms-directory "~/.emacs.d/emms"
+          emms-playlist-buffer-name "*Music*"
+          emms-source-file-default-directory (expand-file-name "~/Music")
+          emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find
+          emms-show-format "NP: %s"
+          emms-playlist-default-major-mode 'emms-playlist-mode
+          emms-repeat-playlist t
+          emms-mode-line-mode-line-function nil  ;; Don't want any info in the mode line
+          emms-mode-line-titlebar-function 'emms-mode-line-playlist-current) ;; Put info in the titlebar
+
+    ;; Visualisation activation/deactivation
+    (emms-mode-line nil)
+    ;; (emms-playing-time-disable-display)
+
+    ;; Enable cache
+    (when (fboundp 'emms-cache)
+      (emms-cache 1))
+
+    ;; Adapt track description format
+    (defun track-description (track)
+      "Return a description of the current TRACK."
+      (if (and (emms-track-get track 'info-artist)
+               (emms-track-get track 'info-title))
+          (let ((pmin (emms-track-get track 'info-playing-time-min))
+                (psec (emms-track-get track 'info-playing-time-sec))
+                (ptot (emms-track-get track 'info-playing-time))
+                (art  (emms-track-get track 'info-artist))
+                (tit  (emms-track-get track 'info-title))
+                (alb  (emms-track-get track 'info-album)))
+            (cond ((and pmin psec) (format "%s - %s - %s [%02d:%02d]" art alb tit pmin psec))
+                  (ptot (format  "%s - %s - %s [%02d:%02d]" art alb tit (/ ptot 60) (% ptot 60)))
+                  (t (emms-track-simple-description track))))
+        (emms-track-simple-description track)))
+    (setq emms-track-description-function 'track-description)
+
+    ;; taken from http://emacs.stackexchange.com/questions/21747/emms-how-can-i-have-a-progress-bar?rq=1
+    (defun emms-indicate-seek (_sec)
+      "Show the progress bar when seek."
+      (let* ((total-playing-time (emms-track-get
+                                  (emms-playlist-current-selected-track)
+                                  'info-playing-time))
+             (elapsed/total (/ (* 100 emms-playing-time) total-playing-time)))
+        (with-temp-message (format "[%-100s] %2d%% ([%02d:%02d]/[%02d:%02d])"
+                                   (make-string elapsed/total ?=)
+                                   elapsed/total
+                                   (/ emms-playing-time 60) (% emms-playing-time 60)
+                                   (/ total-playing-time 60) (% total-playing-time 60))
+          (sit-for 2))))
+    (add-hook 'emms-player-seeked-functions #'emms-indicate-seek 'append))
+
+  (use-package emms-info-libtag
+    :after emms
+    :config
+
+    (setq emms-info-asynchronously nil
+          emms-info-functions '(emms-info-libtag)))
+#+end_src
+** Tagging using emms
+I actually use this part for minor correction. The tags are done when abcde is converting the cd
+#+begin_src emacs-lisp
+  (use-package emms-mark-ext
+    :ensure t
+    :hook
+    (emms-playlist-mode . emms-mark-ext-hook)
+    :commands (emms-mark-ext-hook))
+#+end_src
+** Browser
+#+begin_src emacs-lisp
+  (use-package emms-browser
+    :after emms
+    :hook
+    (emms-browser-show-display . (lambda () (hl-line-mode 1)))
+
+    :config
+    (emms-browser-make-filter "all-files" (emms-browser-filter-only-type 'file))
+
+    (setq emms-browser-info-artist-format "%i☢ %n"
+          emms-browser-info-album-format "%i%cS [%y] %n"
+          emms-browser-info-title-format "%i♪ %T. %t [%d]"
+          emms-browser-playlist-info-album-format "%cS %a - %A : "
+          emms-browser-playlist-info-title-format "%T. %t [%d]"))
 #+end_src
 * Keymap
 ** Main Helper
@@ -2801,44 +3855,8 @@ In order to monitor each process started via comint, I use bifocal which splits 
 #+END_SRC
 
 
-* Language cpp
+* Language Server
 #+BEGIN_SRC emacs-lisp
-  ;; C/C++ Mode
-  (use-package cc-mode
-    :ensure nil
-    :bind (:map c-mode-base-map
-           ("C-c c" . compile))
-    :hook (c-mode-common . (lambda ()
-                             (c-set-style "linux")
-                             (setq tab-width 4)
-                             (setq c-basic-offset 4))))
-
-  (use-package modern-cpp-font-lock
-    :diminish
-    :init (modern-c++-font-lock-global-mode t))
-
-  ;; Emacs frontend to GNU GLobal source code tagging system
-  (use-package ggtags
-    :init
-    (ggtags-mode 1)
-    (add-hook 'c-mode-common-hook
-              (lambda ()
-                (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-                  (ggtags-mode 1))))
-    :config
-    (dolist (map (list ggtags-mode-map dired-mode-map))
-      (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
-      (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
-      (define-key map (kbd "C-c g r") 'ggtags-find-reference)
-      (define-key map (kbd "C-c g f") 'ggtags-find-file)
-      (define-key map (kbd "C-c g c") 'ggtags-create-tags)
-      (define-key map (kbd "C-c g u") 'ggtags-update-tags)
-      (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
-      (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
-      (define-key map (kbd "M-,") 'pop-tag-mark)
-      (define-key map (kbd "C-c <") 'ggtags-prev-mark)
-      (define-key map (kbd "C-c >") 'ggtags-next-mark)))
-
   ;; A client for Language Server Protocol servers
   ;;(use-package eglot
     ;;:hook (prog-mode . eglot-ensure))
@@ -2857,13 +3875,6 @@ In order to monitor each process started via comint, I use bifocal which splits 
     :bind (:map lsp-mode-map ("C-c C-f" . lsp-format-buffer))
 ;;    :bind (:map lsp-mode-map ("C-c C-d" . lsp-describe-thing-at-point))
     :hook ((c-mode c++-mode go-mode) . lsp))
-
-;; Set up before-save hooks to format buffer and add/delete imports.
-;; Make sure you don't have other gofmt/goimports hooks enabled.
-(defun lsp-go-install-save-hooks ()
-  (add-hook 'before-save-hook #'lsp-format-buffer t t)
-  (add-hook 'before-save-hook #'lsp-organize-imports t t))
-(add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
 
   ;; flycheck -- syntax checking
   (use-package lsp-ui
@@ -2916,6 +3927,56 @@ In order to monitor each process started via comint, I use bifocal which splits 
     (defadvice lsp-ui-imenu (after hide-lsp-ui-imenu-mode-line activate)
       (setq mode-line-format nil)))
 
+  ;; Code completion
+  (use-package company-lsp
+    :requires company
+    :config
+    (push 'company-lsp company-backends) ;; add company-lsp as a backend
+
+     ;; Disable client-side cache because the LSP server does a better job.
+    (setq company-transformers nil
+          company-lsp-async t
+          company-lsp-cache-candidates nil))
+#+END_SRC
+* Language cpp
+#+BEGIN_SRC emacs-lisp
+  ;; C/C++ Mode
+  (use-package cc-mode
+    :ensure nil
+    :bind (:map c-mode-base-map
+           ("C-c c" . compile))
+    :hook (c-mode-common . (lambda ()
+                             (c-set-style "linux")
+                             (setq tab-width 4)
+                             (setq c-basic-offset 4))))
+
+  (use-package modern-cpp-font-lock
+    :diminish
+    :init (modern-c++-font-lock-global-mode t))
+
+  ;; Emacs frontend to GNU GLobal source code tagging system
+  (use-package ggtags
+    :init
+    (ggtags-mode 1)
+    (add-hook 'c-mode-common-hook
+              (lambda ()
+                (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+                  (ggtags-mode 1))))
+    :config
+    (dolist (map (list ggtags-mode-map dired-mode-map))
+      (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
+      (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
+      (define-key map (kbd "C-c g r") 'ggtags-find-reference)
+      (define-key map (kbd "C-c g f") 'ggtags-find-file)
+      (define-key map (kbd "C-c g c") 'ggtags-create-tags)
+      (define-key map (kbd "C-c g u") 'ggtags-update-tags)
+      (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
+      (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
+      (define-key map (kbd "M-,") 'pop-tag-mark)
+      (define-key map (kbd "C-c <") 'ggtags-prev-mark)
+      (define-key map (kbd "C-c >") 'ggtags-next-mark)))
+
+
    ;; C/C++/Objective-C support
 ;;   (use-package ccls
 ;;     :defines projectile-project-root-files-top-down-recurring
@@ -2929,65 +3990,46 @@ In order to monitor each process started via comint, I use bifocal which splits 
 ;;                       ".ccls")
 ;;                     projectile-project-root-files-top-down-recurring))))
 
-  ;; Code completion
-  (use-package company-lsp
-    :requires company
-    :config
-    (push 'company-lsp company-backends) ;; add company-lsp as a backend
-
-     ;; Disable client-side cache because the LSP server does a better job.
-    (setq company-transformers nil
-          company-lsp-async t
-          company-lsp-cache-candidates nil))
-
 #+END_SRC
 
 * Language elisp
 #+BEGIN_SRC emacs-lisp
-;; String manipulation routines for emacs lisp
-(use-package s
-  :ensure t)
+  ;; String manipulation routines for emacs lisp
+  (use-package s
+    :ensure t)
 
-;; Minor mode for performing structured editing of S-expression data
-(use-package paredit
-  :init
-  (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
-  (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-  (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
-  (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
-  (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-  (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
-  :bind (("C-c d" . paredit-forward-down))
-  :config
-  (eldoc-add-command
-   'paredit-backward-delete
-   'paredit-close-round))
+  ;; Minor mode for performing structured editing of S-expression data
+  (use-package paredit
+    :init
+    (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
+    (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+    (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
+    (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
+    (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+    (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
+    :bind (("C-c d" . paredit-forward-down))
+    :config
+    (eldoc-add-command
+     'paredit-backward-delete
+     'paredit-close-round))
 
-;; Ensure paredit is used EVERYWHERE!
-(use-package paredit-everywhere
-  :ensure t
-  :diminish paredit-everywhere-mode
-  :config
-  (add-hook 'list-mode-hook #'paredit-everywhere-mode))
+  ;; Ensure paredit is used EVERYWHERE!
+  (use-package paredit-everywhere
+    :ensure t
+    :diminish paredit-everywhere-mode
+    :config
+    (add-hook 'list-mode-hook #'paredit-everywhere-mode))
 
-(use-package highlight-parentheses
-  :ensure t
-  :diminish highlight-parentheses-mode
-  :config
-  (add-hook 'emacs-lisp-mode-hook
-            (lambda()
-              (highlight-parentheses-mode)
-              )))
+  ;; (use-package highlight-parentheses
+  ;;   :ensure t
+  ;;   :diminish highlight-parentheses-mode
+  ;;   :config
+  ;;   (add-hook 'emacs-lisp-mode-hook
+  ;;             (lambda()
+  ;;               (highlight-parentheses-mode)
+  ;;               )))
 
-(use-package rainbow-delimiters
-  :ensure t
-  :config
-  (add-hook 'lisp-mode-hook
-            (lambda()
-              (rainbow-delimiters-mode)
-              )))
-
-(global-highlight-parentheses-mode)
+  ;; (global-highlight-parentheses-mode)
 #+END_SRC
 
 * Language scheme
@@ -3539,8 +4581,8 @@ In order to monitor each process started via comint, I use bifocal which splits 
   (use-package javadoc-lookup
     :ensure t
     :config
-    (when (file-exists-p "/usr/share/doc/openjdk-8-jdk/api")
-      (javadoc-add-roots "/usr/share/doc/openjdk-8-jdk/api"))
+    (when (file-exists-p "/usr/share/doc/java8-openjdk/api")
+      (javadoc-add-roots "/usr/share/doc/java8-openjdk/api"))
 
     (javadoc-add-artifacts [org.lwjgl.lwjgl lwjgl "2.8.2"]
                            [com.nullprogram native-guide "0.2"]
@@ -3560,9 +4602,14 @@ go get -u golang.org/x/tools/cmd/guru
 go get -u golang.org/x/tools/cmd/goimports
 #+end_src
 
-Completion
+Format
 #+begin_src emacs-lisp
-
+;; Set up before-save hooks to format buffer and add/delete imports.
+;; Make sure you don't have other gofmt/goimports hooks enabled.
+(defun lsp-go-install-save-hooks ()
+  (add-hook 'before-save-hook #'lsp-format-buffer t t)
+  (add-hook 'before-save-hook #'lsp-organize-imports t t))
+(add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
 #+end_src
 
 Go uses tabs, so lets set the indent to a sane mode
@@ -3663,6 +4710,104 @@ Packages that you need for a nice Go setup
             "/usr/share/man/" "/usr/local/man/" ;; System
             ,(format "%s/local/man" user-emacs-directory) ;; Private environment
             )))
+#+end_src
+* Configuration and log files
+This part is dedicated to unix and more general configuration files as well as logs.
+** Default unix configuration
+Config-general-mode is applied for all unix configuration files.
+#+begin_src emacs-lisp
+  (use-package config-general-mode
+    :ensure t
+    :mode ("\\.conf$" "\\.*rc$"))
+#+end_src
+** Apache
+#+begin_src emacs-lisp
+  (use-package apache-mode
+    :ensure t
+    :mode ("\\.htaccess\\'" "httpd\\.conf\\'" "srm\\.conf\\'"
+           "access\\.conf\\'" "sites-\\(available\\|enabled\\)/"))
+#+end_src
+** SSH configuration
+#+begin_src emacs-lisp
+  (use-package ssh-config-mode
+    :ensure t
+    :mode ("/\\.ssh/config\\'" "/system/ssh\\'" "/sshd?_config\\'" "/known_hosts\\'" "/authorized_keys2?\\'")
+    :hook (ssh-config-mode . turn-on-font-lock)
+
+    :config
+    (autoload 'ssh-config-mode "ssh-config-mode" t))
+#+end_src
+** Logview
+#+begin_src emacs-lisp
+  (use-package logview
+    :ensure t
+    :mode ("syslog\\(?:\\.[0-9]+\\)" "\\.log\\(?:\\.[0-9]+\\)?\\'"))
+#+end_src
+** yaml
+#+begin_src emacs-lisp
+  (use-package yaml-mode
+    :ensure t
+    :mode (".yaml$")
+    :hook
+    (yaml-mode . yaml-mode-outline-hook)
+
+    :init
+    (defun yaml-outline-level ()
+      "Return the outline level based on the indentation, hardcoded at 2 spaces."
+      (s-count-matches "[ ]\\{2\\}" (match-string 0)))
+
+    (defun yaml-mode-outline-hook ()
+      (outline-minor-mode)
+      (setq outline-regexp "^\\([ ]\\{2\\}\\)*\\([-] \\)?\\([\"][^\"]*[\"]\\|[a-zA-Z0-9_-]*\\): *\\([>|]\\|&[a-zA-Z0-9_-]*\\)?$")
+      (setq outline-level 'yaml-outline-level))
+    )
+
+  (use-package yaml-tomato
+    :ensure t)
+#+end_src
+** toml
+#+begin_src emacs-lisp
+  (use-package toml-mode
+    :ensure t)
+#+end_src
+** vimrc
+#+begin_src emacs-lisp
+  (use-package vimrc-mode
+    :ensure t
+    :mode ("^\\.vimrc\\'"))
+#+end_src
+** CSS
+#+begin_src emacs-lisp
+  (use-package scss-mode
+    :ensure t
+    :defines scss-compile-at-save
+    :mode ("\\.scss\\'")
+    :config
+    (setq scss-compile-at-save 'nil))
+#+END_SRC
+** CSV
+ #+begin_src emacs-lisp
+   (use-package csv-mode
+     :ensure t
+     :config
+
+     ;; Define separators
+     (setq csv-separators '("," ";" ":" " ")))
+
+
+   ;; Subpackages
+   (use-package csv-nav
+     :ensure t
+     :disabled t)
+ #+end_src
+** Graphviz
+#+begin_src emacs-lisp
+  (use-package graphviz-dot-mode
+    :ensure t
+    :init
+    (defvar default-tab-width nil)
+
+    :mode ("\\.dot\\'"))
 #+end_src
 
 

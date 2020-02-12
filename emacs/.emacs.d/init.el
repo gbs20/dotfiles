@@ -38,4 +38,8 @@
  ;; If there is more than one, they won't work right.
  '(aw-leading-char-face ((t (:inherit ace-jump-face-foreguound :height 3.0 :foreground "deep sky blue"))))
  '(lsp-ui-doc-background ((t (:background nil))))
- '(lsp-ui-doc-header ((t (:inherit (font-lock-string-face italic))))))
+ '(lsp-ui-doc-header ((t (:inherit (font-lock-string-face italic)))))
+ '(rainbow-delimiters-mismatched-face ((t (:foreground "white" :background "red" :weight bold))))
+ '(rainbow-delimiters-unmatched-face ((t (:foreground "white" :background "red" :weight bold))))
+ '(show-paren-match ((t (:foreground "white" :background "green" :weight bold))))
+ '(show-paren-mismatch ((t (:foreground "white" :background "red" :weight bold)))))
