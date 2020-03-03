@@ -179,6 +179,15 @@ Finally, I use paradox to enhance the package listing experience.
 #+END_SRC
 * Visual
 ** Font
+#+BEGIN_SRC emacs-lisp
+(use-package cnfonts
+  :ensure t)
+;; 让 cnfonts 随着 Emacs 自动生效。
+(cnfonts-enable)
+;; 让 spacemacs mode-line 中的 Unicode 图标正确显示。
+(cnfonts-set-spacemacs-fallback-fonts)
+#+END_SRC
+
 #+BEGIN_SRC emacs-lisp :tangle no
   ;; English Font
   (defvar config-font-family "Monaco")
@@ -197,6 +206,38 @@ Finally, I use paradox to enhance the package listing experience.
 #+END_SRC
 ** Mode line
 #+BEGIN_SRC emacs-lisp
+  ;; Diminish, a feature that removes certain minor modes from mode-line.
+  (use-package diminish
+    :ensure t)
+
+  (use-package powerline
+    :ensure t
+    :config
+    (powerline-default-theme))
+  (use-package fancy-battery
+    :ensure t
+    :config
+    (fancy-battery-mode))
+
+;; displays current match and total matches information
+;; in the mode-line in various search modes.
+  (use-package anzu
+    :ensure t
+    :diminish
+    :config
+    (global-anzu-mode +1))
+
+  (use-package minions
+    :ensure t
+    :config (minions-mode 1))
+
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle no
+  ;; Diminish, a feature that removes certain minor modes from mode-line.
+  (use-package diminish
+    :ensure t)
+
   (use-package fancy-battery
     :ensure t
     :config
@@ -210,6 +251,7 @@ Finally, I use paradox to enhance the package listing experience.
   (use-package minions
     :ensure t
     :config (minions-mode 1))
+
   (use-package doom-modeline
     :ensure t
     :hook (after-init . doom-modeline-mode)
@@ -687,10 +729,18 @@ Easy use wrapper around auth-* authentification emacs utils.
       (when founds
         (funcall (plist-get (nth 0 founds) :secret)))))
 #+end_src
-
-
+** eldoc
+#+begin_src emacs-lisp
+  ;; Show the argument list of a function in the echo area
+  (use-package eldoc
+    :diminish eldoc-mode
+    :commands turn-on-eldoc-mode
+    :defer t)
+#+end_src
 * Global packages
-** global
+This section is about configuring global emacs helpers which are not specific to a dedicated language (or filetype)
+but are useful for any edition use-case in emacs.
+** Global
 #+BEGIN_SRC emacs-lisp
   ;; Set regex syntax to string for re-builder
   (setq reb-re-syntax 'string)
@@ -721,9 +771,6 @@ Easy use wrapper around auth-* authentification emacs utils.
     (add-hook 'text-mode-hook #'display-line-numbers-mode)
     (add-hook 'prog-mode-hook #'display-line-numbers-mode))
 
-  ;; Always hightlight current line
-  (global-hl-line-mode t)
-
   ;; Y or n is enough for me
   (fset 'yes-or-no-p 'y-or-n-p)
 
@@ -741,13 +788,13 @@ Easy use wrapper around auth-* authentification emacs utils.
   (when (eq system-type 'darwin)
     (setq mac-command-modifier 'meta)
     (setq mac-option-modifier nil))
-#+END_SRC
-** Global
-#+BEGIN_SRC emacs-lisp
-  ;; Diminish, a feature that removes certain minor modes from mode-line.
-  (use-package diminish
-    :ensure t)
 
+  ;; Display used hotkeys in another window
+  ;;(use-package command-log-mode
+  ;;  :diminish command-log-mode)
+#+END_SRC
+** Undo
+#+BEGIN_SRC emacs-lisp
   ;; Undo-tree
   (use-package undo-tree
     :config
@@ -762,28 +809,6 @@ Easy use wrapper around auth-* authentification emacs utils.
     (global-undo-tree-mode)
     :defer t
     :diminish 'undo-tree-mode)
-
-  ;; Show the argument list of a function in the echo area
-  (use-package eldoc
-    :diminish eldoc-mode
-    :commands turn-on-eldoc-mode
-    :defer t)
-
-  ;; Respect editor configs
-  (use-package editorconfig
-    :diminish editorconfig-mode
-    :config
-    (editorconfig-mode 1))
-
-  ;; Edit text area in chrome with emacs
-  (use-package atomic-chrome
-    :config
-    (atomic-chrome-start-server)
-    (setq atomic-chrome-buffer-open-style 'frame))
-
-  ;; Display used hotkeys in another window
-  (use-package command-log-mode
-    :diminish command-log-mode)
 #+END_SRC
 ** Highlight
 #+begin_src emacs-lisp
@@ -798,6 +823,9 @@ Easy use wrapper around auth-* authentification emacs utils.
     :defer t
     :init
     (add-hook 'prog-mode-hook 'highlight-numbers-mode))
+
+ ;; Always hightlight current line
+  (global-hl-line-mode t)
 #+end_src
 ** Minor-mode activation
 I use some minor modes based on some filetypes. This package is an helper which facilitates these
@@ -1089,6 +1117,12 @@ M-x langtool-check-done
 #+END_SRC
 ** Edit
 #+BEGIN_SRC emacs-lisp
+  ;; Respect editor configs
+  (use-package editorconfig
+    :diminish editorconfig-mode
+    :config
+    (editorconfig-mode 1))
+
  ;; Hungry deletion
   (use-package hungry-delete
     :diminish
@@ -3151,7 +3185,7 @@ Starting process in background is really nice to avoid being spammed. So let's m
 
 ** Paging support for comint
 In order to monitor each process started via comint, I use bifocal which splits the window accordingly.
-
+[[https://www.emacswiki.org/emacs/ComintMode][Comint mode]] is a package that defines a general command-interpreter-in-a-buffer.
 #+begin_src emacs-lisp
   (use-package bifocal
     :ensure t

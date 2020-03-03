@@ -31,6 +31,7 @@ emacs/.emacs.d/javadoc-cache/
 emacs/.emacs.d/emms/
 emacs/.emacs.d/emojis/
 emacs/.emacs.d/themes/
+emacs/.emacs.d/cnfonts/
 
 vim/.vim/.netrwhist
 vim/.vim/autoload
