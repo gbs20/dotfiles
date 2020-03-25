@@ -187,53 +187,8 @@ Finally, I use paradox to enhance the package listing experience.
 ;; 让 spacemacs mode-line 中的 Unicode 图标正确显示。
 (cnfonts-set-spacemacs-fallback-fonts)
 #+END_SRC
-
-#+BEGIN_SRC emacs-lisp :tangle no
-  ;; English Font
-  (defvar config-font-family "Monaco")
-  (defvar config-font-height 100
-    "font-height is 1/10pt so 120 == 120/10 == 12pt")
-
-  ;; Chinese Font
-  (dolist (charset '(kana han symbol cjk-misc bopomofo))
-    (set-fontset-font (frame-parameter nil 'font)
-                      charset (font-spec :family "WenQuanYi Micro Hei Mono"
-                                         :size 12)));;14
-
-  (set-face-attribute 'default nil
-                      :family config-font-family
-                      :height config-font-height)
-#+END_SRC
 ** Mode line
 #+BEGIN_SRC emacs-lisp
-  ;; Diminish, a feature that removes certain minor modes from mode-line.
-  (use-package diminish
-    :ensure t)
-
-  (use-package powerline
-    :ensure t
-    :config
-    (powerline-default-theme))
-  (use-package fancy-battery
-    :ensure t
-    :config
-    (fancy-battery-mode))
-
-;; displays current match and total matches information
-;; in the mode-line in various search modes.
-  (use-package anzu
-    :ensure t
-    :diminish
-    :config
-    (global-anzu-mode +1))
-
-  (use-package minions
-    :ensure t
-    :config (minions-mode 1))
-
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp :tangle no
   ;; Diminish, a feature that removes certain minor modes from mode-line.
   (use-package diminish
     :ensure t)
@@ -311,13 +266,17 @@ Finally, I use paradox to enhance the package listing experience.
 #+END_SRC
 ** Global theme
 #+BEGIN_SRC emacs-lisp
-  (use-package monokai-theme
-    :config
-    (load-theme 'monokai t))
-  ;;(load-theme 'solarized-dark t)
-  ;;(load-theme 'cyberpunk t)
-  ;;(add-to-list 'load-path"~/.emacs.d/themes")
-  ;;(require 'lazycat-theme)
+(use-package gruvbox-theme
+  :ensure t
+  :config
+  (load-theme 'gruvbox-light-soft t))
+;;(use-package monokai-theme
+;;  :config
+;;  (load-theme 'monokai t))
+;;(load-theme 'solarized-dark t)
+;;(load-theme 'cyberpunk t)
+;;(add-to-list 'load-path"~/.emacs.d/themes")
+;;(require 'lazycat-theme)
 #+END_SRC
 ** Frame
 *** Title
@@ -346,13 +305,40 @@ Finally, I use paradox to enhance the package listing experience.
 #+end_src
 *** Remove unused part
 #+begin_src emacs-lisp
-  (tool-bar-mode -1)
-  (menu-bar-mode -1)
-  (scroll-bar-mode -1);;(toggle-scroll-bar -1)
-  ;; Prevent the startup window
-  (setq inhibit-startup-message t)
-  ;; Setup fullscreen when startup
-  (setq initial-frame-alist (quote ((fullscreen . maximized))))
+;; Turn off mouse interface early in startup to avoid momentary display.
+(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
+(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+
+;; Prevent the startup window
+(setq inhibit-startup-message t)
+
+;; No fascists.
+;;(setq initial-scratch-message nil)
+
+;; Productive default mode.
+;;(setq initial-major-mode 'org-mode)
+
+;; No alarms.
+(setq ring-bell-function 'ignore)
+
+;; When on a tab, make the cursor the tab length…
+(setq-default x-stretch-cursor t)
+
+;; But never insert tabs…
+(set-default 'indent-tabs-mode nil)
+
+;; Except in Makefiles.
+(add-hook 'makefile-mode-hook 'indent-tabs-mode)
+
+;; Keep files clean.
+(add-hook 'before-save-hook 'whitespace-cleanup)
+
+;; Setup fullscreen when startup
+(setq initial-frame-alist (quote ((fullscreen . maximized))))
+#+end_src
+** Tab
+#+begin_src emacs-lisp
 #+end_src
 ** Buffer
 *** Org-mode
@@ -657,6 +643,7 @@ Finally, I use paradox to enhance the package listing experience.
 #+BEGIN_SRC emacs-lisp
 (use-package dashboard
   :ensure t
+  :disabled t
   :custom
   (dashboard-set-heading-icons t)
   (dashboard-set-navigator t)
@@ -673,12 +660,12 @@ Finally, I use paradox to enhance the package listing experience.
   :config
   ;; Set the title
   (setq dashboard-banner-logo-title
-	(concat "GNU Emacs " emacs-version " kernel "
-		(car (split-string (shell-command-to-string "uname -r") "-"))
-		" x86_64 Manjora Linux GTK " gtk-version-string))
+    (concat "GNU Emacs " emacs-version " kernel "
+        (car (split-string (shell-command-to-string "uname -r") "-"))
+        " x86_64 Manjora Linux GTK " gtk-version-string))
   ;; Set the banner
   (setq dashboard-startup-banner
-	(expand-file-name "emacs.png" user-emacs-directory))
+    (expand-file-name "emacs.png" user-emacs-directory))
 
   (global-page-break-lines-mode)
   (setq dashboard-page-separator "\n\f\f\n")
@@ -702,16 +689,16 @@ This section focus on defining some variables/helpers needed to have a more glob
   (add-to-list 'load-path default-plugin-dir)
 
   ;; Don't screw up my files with custom
-  ;;(setq custom-file (format "%s/custom.el" user-emacs-directory))
-  ;;(load custom-file 'noerror)
+  (setq custom-file (format "%s/custom.el" user-emacs-directory))
+  (load custom-file 'noerror)
 
   ;; Silence!!!!!!
   (setq save-abbrevs 'silently
-	ad-redefinition-action 'accept
+    ad-redefinition-action 'accept
 
-	;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
-	gc-cons-threshold 50000000
-	large-file-warning-threshold 100000000)
+    ;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
+    gc-cons-threshold 50000000
+    large-file-warning-threshold 100000000)
 #+END_SRC
 ** Identification helper
 Easy use wrapper around auth-* authentification emacs utils.
@@ -742,6 +729,10 @@ This section is about configuring global emacs helpers which are not specific to
 but are useful for any edition use-case in emacs.
 ** Global
 #+BEGIN_SRC emacs-lisp
+(use-package delight
+  :ensure t
+  :after use-package)
+
   ;; Set regex syntax to string for re-builder
   (setq reb-re-syntax 'string)
 
@@ -1253,6 +1244,7 @@ workflow.
 #+END_SRC
 
 ** Minibuffer
+** Minibuffer
 Minibuffer configuration part. Nothing really outstanding, just the classical stuff.
 
 #+begin_src emacs-lisp
@@ -1265,6 +1257,33 @@ Minibuffer configuration part. Nothing really outstanding, just the classical st
           resize-mini-windows t)
 
     (file-name-shadow-mode 1))
+#+end_src
+
+*** Maple minibuffer
+#+begin_src emacs-lisp
+  (use-package maple-minibuffer
+    :ensure quelpa
+    :quelpa (maple-minibuffer :fetcher github :repo "honmaple/emacs-maple-minibuffer")
+    :disabled t
+    :hook
+    (after-init . maple-minibuffer-mode)
+
+    :custom
+    (maple-minibuffer:position-type 'frame-center)
+    (maple-minibuffer:width 0.7)
+    (maple-minibuffer:action '(read-from-minibuffer read-string))
+    (maple-minibuffer:ignore-action '(evil-ex eval-expression org-schedule))
+    (maple-minibuffer:ignore-regexp '("^helm-"))
+
+    :config
+    ;; more custom parameters for frame
+    (defun maple-minibuffer:parameters ()
+      "Maple minibuffer parameters."
+      `((height . ,(or maple-minibuffer:height 10))
+        (width . ,(or maple-minibuffer:width (window-pixel-width)))
+        (left-fringe . 5)
+        (right-fringe . 5))))
+
 #+end_src
 
 ** Buffers
