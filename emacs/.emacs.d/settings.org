@@ -54,8 +54,8 @@ Here, we are initializing =use-package= in the classic way.
 #+END_SRC
 
 ** Quelpa
- Quelpa is super useful for developer package management. Adding the adaptation for the use-package
- makes it configuration file proof.
+Quelpa is super useful for developer package management. Adding the adaptation for the use-package
+makes it configuration file proof.
 
  #+begin_src emacs-lisp
    (use-package quelpa-use-package
@@ -179,6 +179,7 @@ Finally, I use paradox to enhance the package listing experience.
 #+END_SRC
 * Visual
 ** Font
+chinese fonts
 #+BEGIN_SRC emacs-lisp
 (use-package cnfonts
   :ensure t)
@@ -266,6 +267,28 @@ Finally, I use paradox to enhance the package listing experience.
 #+END_SRC
 ** Global theme
 #+BEGIN_SRC emacs-lisp
+(use-package doom-themes
+  :ensure t
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  (load-theme 'doom-one-light t)
+
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config)
+
+  ;; Enable custom neotree theme (all-the-icons must be installed!)
+  (doom-themes-neotree-config)
+  ;; or for treemacs users
+  (setq doom-themes-treemacs-theme "doom-colors") ; use the colorful treemacs theme
+  (doom-themes-treemacs-config)
+
+  ;; Corrects (and improves) org-mode's native fontification.
+  (doom-themes-org-config))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package gruvbox-theme
   :ensure t
   :config
@@ -598,7 +621,6 @@ Finally, I use paradox to enhance the package listing experience.
   (defun load-default-fonts ()
 
     (set-fontset-font "fontset-default" 'unicode "Dejavu Sans Mono")
-    (set-face-font 'default "Inconsolata-11")
 
     ;; The icons you see are not the correct icons until this is evaluated!
     (set-icon-fonts
@@ -1014,6 +1036,10 @@ Writing a text is difficult enough, having some helpers to check and correct the
 *** Spelling
 Configuration of the (fly) spelling for emacs. For spelling, I am using aspell.
 
+#+begin_src shell :tangle no
+sudo pacman -S aspell
+#+end_src
+
 #+begin_src emacs-lisp
   ;; Flyspell
 ;;  (use-package flyspell
@@ -1090,13 +1116,16 @@ Configuration of the (fly) spelling for emacs. For spelling, I am using aspell.
 *** English checking
 lang-tool is actually supported by emacs through a dedicated mode which allows to have syntax and
 typography checking.
+
 #+begin_src shell :tangle no
 sudo pacman -S languagetool
 #+end_src
+
 To check current buffer and show warnings.
 M-x langtool-check
 To finish checking. All langtool marker is removed.
 M-x langtool-check-done
+
 #+BEGIN_SRC emacs-lisp
   (use-package langtool
     :ensure quelpa
@@ -1243,7 +1272,6 @@ workflow.
     :config (goto-last-point-mode))
 #+END_SRC
 
-** Minibuffer
 ** Minibuffer
 Minibuffer configuration part. Nothing really outstanding, just the classical stuff.
 
@@ -1420,298 +1448,6 @@ Defining a simple helper to edit file as root using tramp
 (use-package 2048-game
   :commands (2048-game))
 #+END_SRC
-
-* Completion
-This part focuses on completion configuration. Language specific configurations are not done here
-but in the dedicate language configuration part. This section is just for global configuration.
-
-** Compdef
-#+begin_src emacs-lisp
-(use-package compdef :ensure t)
-#+end_src
-** Ivy/swipper/counsel
-I do prefer vertical completion, which is why I use extensively Ivy and extensions.
-
-#+begin_src emacs-lisp
-;; Generic completion frontend
-(use-package counsel
-  :ensure t
-  :bind
-  (("M-x" . counsel-M-x)
-   ("M-y" . counsel-yank-pop)
-   :map ivy-minibuffer-map
-   ("M-y" . ivy-next-line)))
-(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-;; Enhance M-x
-(use-package amx
-  :init (setq amx-history-length 20))
-
-(global-set-key (kbd "C-x C-f") #'counsel-find-file)
-(global-set-key (kbd "C-c r") #'counsel-recentf)
-
-(use-package flx)
-(use-package ivy-hydra)
-(use-package ivy
-  :diminish 'ivy-mode
-  :config
-  (ivy-mode t)
-  (setq ivy-display-style 'fancy
-        ivy-use-virtual-buffers t
-        enable-recursive-minibuffers t
-        ivy-use-selectable-prompt t)
-  ;; make everything fuzzy except swiper
-  (setq ivy-re-builders-alist
-        '((swiper . ivy--regex-plus)
-          (t . ivy--regex-fuzzy))))
-
-(global-set-key (kbd "C-r") #'swiper)
-(global-set-key (kbd "C-s") #'swiper)
-
-  (use-package ivy-rich
-    :ensure t
-    :config
-    (ivy-rich-mode 1)
-    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
-#+end_src
-** Helm
-I use Helm for some specific cases which requires an important visibility space completion.
-
-#+begin_src emacs-lisp
-  (use-package helm
-    :ensure t
-    :functions helm-show-completion-default-display-function
-    :config
-    (setq helm-scroll-amount 4 ; scroll 4 lines other window using M-<next>/M-<prior>
-          helm-quick-update t ; do not display invisible candidates
-          helm-idle-delay 0.01 ; be idle for this many seconds, before updating in delayed sources.
-          helm-input-idle-delay 0.01 ; be idle for this many seconds, before updating candidate buffer
-          helm-show-completion-display-function #'helm-show-completion-default-display-function
-          helm-split-window-default-side 'below ;; open helm buffer in another window
-          helm-split-window-inside-p t ;; open helm buffer inside current window, not occupy whole other window
-          helm-candidate-number-limit 200 ; limit the number of displayed canidates
-          helm-move-to-line-cycle-in-source nil ; move to end or beginning of source when reaching top or bottom of source.
-          )
-    )
-#+end_src
-** Company
-In order to have inline completion, really important for coding, I use company. However I adapted
-some facing attributes. Each language is also adding its backend when needed. Therefore, only global
-configuration here.
-
-#+begin_src emacs-lisp
-  ;; Company mode
-;;  (use-package company
-;;    :diminish 'company-mode
-;;    :config
-;;    (setq company-tooltip-align-annotations t)
-;;    (add-hook 'after-init-hook 'global-company-mode))
-
-  (use-package company
-    :ensure t
-    :hook
-    (emacs-lisp-mode . (lambda () (add-to-list (make-local-variable 'company-backends) '(company-elisp))))
-    :config
-
-    ;; Global
-    (setq company-idle-delay 1
-          company-minimum-prefix-length 1
-          company-show-numbers t
-          company-tooltip-limit 20)
-
-    ;; Facing
-    (unless (face-attribute 'company-tooltip :background)
-      (set-face-attribute 'company-tooltip nil :background "black" :foreground "gray40")
-      (set-face-attribute 'company-tooltip-selection nil :inherit 'company-tooltip :background "gray15")
-      (set-face-attribute 'company-preview nil :background "black")
-      (set-face-attribute 'company-preview-common nil :inherit 'company-preview :foreground "gray40")
-      (set-face-attribute 'company-scrollbar-bg nil :inherit 'company-tooltip :background "gray20")
-      (set-face-attribute 'company-scrollbar-fg nil :background "gray40"))
-
-    ;; Default backends
-    (setq company-backends '(company-capf company-files))
-
-    ;; Activating globally
-    (global-company-mode t))
-
-  (use-package company-quickhelp
-    :ensure t
-    :after company
-    :config
-    (company-quickhelp-mode 1))
-#+end_src
-** Templating
-I use templates for 2 use cases: the buffer edition and the file specific templates. Both are relying on *yasnippet*.
-
-*** Edition templates
-The default configuration of yasnippet consists of activating it and plugging it with company.
-Ivy-yasnippet is used for snippet discovery.
-#+BEGIN_SRC emacs-lisp
-  ;; Yasnippet, a template system for emacs
-;;  (use-package yasnippet
-;;    :ensure t
-;;    :config
-    ;; Adding yasnippet support to company
-;;    (add-to-list 'company-backends '(company-yasnippet))
-;;    :init
-;;    (yas-global-mode 1))
-
-;;  (use-package yasnippet-snippets
-;;    :ensure t)
-;;  (use-package yasnippet-classic-snippets
-;;    :ensure t)
-;;  (use-package ivy-yasnippet
-;;    :ensure t)
-  (use-package yasnippet
-    :ensure t
-    :config
-
-    ;; Adding yasnippet support to company
-    (eval-after-load 'company
-      '(lambda ()
-         (add-to-list 'company-backends 'company-yasnippet)))
-
-    ;; Add third parties snippets
-    (defvar third-parties-snippet-dir (format "%s/third_parties/snippets" user-emacs-directory)
-      "Directory containing my own snippets")
-
-    (defun third-parties-snippets-initialize ()
-      (add-to-list 'yas-snippet-dirs 'third-parties-snippet-dir t)
-      (yas-load-directory third-parties-snippet-dir t))
-
-    (eval-after-load 'yasnippet '(third-parties-snippets-initialize))
-
-    ;; Activate global
-    (yas-global-mode))
-
-  ;; Load official snippets
-  (use-package yasnippet-snippets
-    :ensure t)
-  (use-package yasnippet-classic-snippets
-    :ensure t)
-
-  ;; Connect with ivy to have a list on demand
-  (use-package ivy-yasnippet
-    :ensure t)
-
-#+END_SRC
-*** Filetype templates
-This part is using yatemplate (an over-layer of yasnippet) coupled with auto-insert to have a set of
-file type dedicated templates. The templates are available in =third_parties/templates= directory.
-=M-x auto-insert= will put some predefined text at the beginning of the buffer.
-
-#+begin_src emacs-lisp
-  (use-package yatemplate
-    :after yasnippet
-    :config
-
-    ;; Define template directory
-    (setq yatemplate-dir (concat user-emacs-directory "/third_parties/templates"))
-
-    ;; Coupling with auto-insert
-    (setq auto-insert-alist nil)
-    (yatemplate-fill-alist)
-    ;; (add-hook 'find-file-hook 'auto-insert)
-    )
-#+end_src
-** Prescient
-Prescient helps to sort candidates by last used first and then sorting by length.
-
-#+begin_src emacs-lisp
-  (use-package prescient
-    :ensure t
-    :config (prescient-persist-mode))
-
-  (use-package ivy-prescient
-    :ensure t
-    :config (ivy-prescient-mode))
-
-  (use-package company-prescient
-    :ensure t
-    :config (company-prescient-mode))
-#+end_src
-* Compilation
-I develop with emacs, so compiling is actually a big part of my life. Therefore, I modified baseline
-compilation mechanisms as well as fly checking.
-
-** Baseline compilation
-I just modify a little bit the default compilation to be a little more "user friendly".
-
-#+begin_src emacs-lisp
-  (defun my-compile-autoclose (buffer string)
-    "Auto close compile log if there are no errors"
-    (when (string-match "finished" string)
-          (delete-window (get-buffer-window buffer t))
-          (bury-buffer-internal buffer)))
-
-  (use-package compile
-    :defer
-    :diminish compilation-in-progress
-    :init
-    (setq compilation-scroll-output t)
-    :config
-    (defun my-colorize-compilation-buffer ()
-          (read-only-mode 'toggle)
-          (ansi-color-apply-on-region compilation-filter-start (point))
-          (read-only-mode 'toggle))
-    (add-hook 'compilation-filter-hook 'my-colorize-compilation-buffer)
-    (add-to-list 'compilation-finish-functions #'my-compile-autoclose)
-
-    (setq compilation-always-kill t)
-    (setq compilation-ask-about-save nil)
-    (setq compilation-scroll-output 'first-error)
-
-    ;; the next-error function weirdly stops at "In file included from
-    ;; config.cpp:14:0:". Stop that:
-    ;; http://stackoverflow.com/questions/15489319/how-can-i-skip-in-file-included-from-in-emacs-c-compilation-mode
-    (setcar (nthcdr 5 (assoc 'gcc-include compilation-error-regexp-alist-alist)) 0)
-    )
-#+end_src
-
-** Flychecking
-For the fly checking, I use flycheck instead of flymake. So I adapted it for my needs by also adding proselint support.
-
-#+begin_src emacs-lisp
-  ;; Disable checking doc
-  (use-package flycheck
-    :ensure t
-    :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
-    :hydra
-    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
-                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
-                     :color teal :hint nil)
-                    "Errors"
-                    ("f"  flycheck-error-list-set-filter                            "Filter")
-                    ("j"  flycheck-next-error                                       "Next")
-                    ("k"  flycheck-previous-error                                   "Previous")
-                    ("gg" flycheck-first-error                                      "First")
-                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
-                    ("<" hydra-project/body "back")
-                    ("q"   nil "cancel" :color blue))
-
-    :config
-    (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
-
-    (flycheck-define-checker proselint
-      "A linter for prose."
-      :command ("proselint" source-inplace)
-      :error-patterns
-      ((warning line-start (file-name) ":" line ":" column ": "
-                (id (one-or-more (not (any " "))))
-                (message) line-end))
-      :modes (text-mode markdown-mode gfm-mode org-mode))
-    )
-#+end_src
-
-** Task runner
-#+begin_src emacs-lisp
-  (use-package taskrunner
-    :ensure t)
-
-  (use-package ivy-taskrunner
-    :ensure quelpa
-    :quelpa (ivy-taskrunner :fetcher "github" :repo "emacs-taskrunner/ivy-taskrunner")
-    :bind ("C-c C-g b" . ivy-taskrunner))
-#+end_src
 
 * Org
 <s TAB : insert source block
@@ -2908,6 +2644,307 @@ It is useful to find some items in org files based on a query.
            .
            (lambda () (require 'eshell-z)))))
 #+END_SRC
+* Helm dash
+#+BEGIN_SRC emacs-lisp
+(use-package helm-dash
+  :ensure t)
+#+END_SRC
+
+
+* Completion
+This part focuses on completion configuration. Language specific configurations are not done here
+but in the dedicate language configuration part. This section is just for global configuration.
+
+** Compdef
+#+begin_src emacs-lisp
+(use-package compdef :ensure t)
+#+end_src
+** Ivy/swipper/counsel
+I do prefer vertical completion, which is why I use extensively Ivy and extensions.
+
+#+begin_src emacs-lisp
+;; Generic completion frontend
+(use-package counsel
+  :ensure t
+  :bind
+  (("M-x" . counsel-M-x)
+   ("M-y" . counsel-yank-pop)
+   :map ivy-minibuffer-map
+   ("M-y" . ivy-next-line)))
+(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+;; Enhance M-x
+(use-package amx
+  :init (setq amx-history-length 20))
+
+(global-set-key (kbd "C-x C-f") #'counsel-find-file)
+(global-set-key (kbd "C-c r") #'counsel-recentf)
+
+(use-package flx)
+(use-package ivy-hydra)
+(use-package ivy
+  :diminish 'ivy-mode
+  :config
+  (ivy-mode t)
+  (setq ivy-display-style 'fancy
+        ivy-use-virtual-buffers t
+        enable-recursive-minibuffers t
+        ivy-use-selectable-prompt t)
+  ;; make everything fuzzy except swiper
+  (setq ivy-re-builders-alist
+        '((swiper . ivy--regex-plus)
+          (t . ivy--regex-fuzzy))))
+
+(global-set-key (kbd "C-r") #'swiper)
+(global-set-key (kbd "C-s") #'swiper)
+
+  (use-package ivy-rich
+    :ensure t
+    :config
+    (ivy-rich-mode 1)
+    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+#+end_src
+** Helm
+I use Helm for some specific cases which requires an important visibility space completion.
+
+#+begin_src emacs-lisp
+  (use-package helm
+    :ensure t
+    :functions helm-show-completion-default-display-function
+    :config
+    (setq helm-scroll-amount 4 ; scroll 4 lines other window using M-<next>/M-<prior>
+          helm-quick-update t ; do not display invisible candidates
+          helm-idle-delay 0.01 ; be idle for this many seconds, before updating in delayed sources.
+          helm-input-idle-delay 0.01 ; be idle for this many seconds, before updating candidate buffer
+          helm-show-completion-display-function #'helm-show-completion-default-display-function
+          helm-split-window-default-side 'below ;; open helm buffer in another window
+          helm-split-window-inside-p t ;; open helm buffer inside current window, not occupy whole other window
+          helm-candidate-number-limit 200 ; limit the number of displayed canidates
+          helm-move-to-line-cycle-in-source nil ; move to end or beginning of source when reaching top or bottom of source.
+          )
+    )
+#+end_src
+** Company
+In order to have inline completion, really important for coding, I use company. However I adapted
+some facing attributes. Each language is also adding its backend when needed. Therefore, only global
+configuration here.
+
+#+begin_src emacs-lisp
+  ;; Company mode
+;;  (use-package company
+;;    :diminish 'company-mode
+;;    :config
+;;    (setq company-tooltip-align-annotations t)
+;;    (add-hook 'after-init-hook 'global-company-mode))
+
+  (use-package company
+    :ensure t
+    :hook
+    (emacs-lisp-mode . (lambda () (add-to-list (make-local-variable 'company-backends) '(company-elisp))))
+    :config
+
+    ;; Global
+    (setq company-idle-delay 1
+          company-minimum-prefix-length 1
+          company-show-numbers t
+          company-tooltip-limit 20)
+
+    ;; Facing
+    (unless (face-attribute 'company-tooltip :background)
+      (set-face-attribute 'company-tooltip nil :background "black" :foreground "gray40")
+      (set-face-attribute 'company-tooltip-selection nil :inherit 'company-tooltip :background "gray15")
+      (set-face-attribute 'company-preview nil :background "black")
+      (set-face-attribute 'company-preview-common nil :inherit 'company-preview :foreground "gray40")
+      (set-face-attribute 'company-scrollbar-bg nil :inherit 'company-tooltip :background "gray20")
+      (set-face-attribute 'company-scrollbar-fg nil :background "gray40"))
+
+    ;; Default backends
+    (setq company-backends '(company-capf company-files))
+
+    ;; Activating globally
+    (global-company-mode t))
+
+  (use-package company-quickhelp
+    :ensure t
+    :after company
+    :config
+    (company-quickhelp-mode 1))
+#+end_src
+** Templating
+I use templates for 2 use cases: the buffer edition and the file specific templates. Both are relying on *yasnippet*.
+
+*** Edition templates
+The default configuration of yasnippet consists of activating it and plugging it with company.
+Ivy-yasnippet is used for snippet discovery.
+#+BEGIN_SRC emacs-lisp
+  ;; Yasnippet, a template system for emacs
+;;  (use-package yasnippet
+;;    :ensure t
+;;    :config
+    ;; Adding yasnippet support to company
+;;    (add-to-list 'company-backends '(company-yasnippet))
+;;    :init
+;;    (yas-global-mode 1))
+
+;;  (use-package yasnippet-snippets
+;;    :ensure t)
+;;  (use-package yasnippet-classic-snippets
+;;    :ensure t)
+;;  (use-package ivy-yasnippet
+;;    :ensure t)
+  (use-package yasnippet
+    :ensure t
+    :config
+
+    ;; Adding yasnippet support to company
+    (eval-after-load 'company
+      '(lambda ()
+         (add-to-list 'company-backends 'company-yasnippet)))
+
+    ;; Add third parties snippets
+    (defvar third-parties-snippet-dir (format "%s/third_parties/snippets" user-emacs-directory)
+      "Directory containing my own snippets")
+
+    (defun third-parties-snippets-initialize ()
+      (add-to-list 'yas-snippet-dirs 'third-parties-snippet-dir t)
+      (yas-load-directory third-parties-snippet-dir t))
+
+    (eval-after-load 'yasnippet '(third-parties-snippets-initialize))
+
+    ;; Activate global
+    (yas-global-mode))
+
+  ;; Load official snippets
+  (use-package yasnippet-snippets
+    :ensure t)
+  (use-package yasnippet-classic-snippets
+    :ensure t)
+
+  ;; Connect with ivy to have a list on demand
+  (use-package ivy-yasnippet
+    :ensure t)
+
+#+END_SRC
+*** Filetype templates
+This part is using yatemplate (an over-layer of yasnippet) coupled with auto-insert to have a set of
+file type dedicated templates. The templates are available in =third_parties/templates= directory.
+
+To put some predefined text at the beginning of the buffer.
+M-x *auto-insert*
+
+#+begin_src emacs-lisp
+  (use-package yatemplate
+    :after yasnippet
+    :config
+
+    ;; Define template directory
+    (setq yatemplate-dir (concat user-emacs-directory "/third_parties/templates"))
+
+    ;; Coupling with auto-insert
+    (setq auto-insert-alist nil)
+    (yatemplate-fill-alist)
+    ;; (add-hook 'find-file-hook 'auto-insert)
+    )
+#+end_src
+** Prescient
+Prescient helps to sort candidates by last used first and then sorting by length.
+
+#+begin_src emacs-lisp
+  (use-package prescient
+    :ensure t
+    :config (prescient-persist-mode))
+
+  (use-package ivy-prescient
+    :ensure t
+    :config (ivy-prescient-mode))
+
+  (use-package company-prescient
+    :ensure t
+    :config (company-prescient-mode))
+#+end_src
+* Compilation
+I develop with emacs, so compiling is actually a big part of my life. Therefore, I modified baseline
+compilation mechanisms as well as fly checking.
+
+** Baseline compilation
+I just modify a little bit the default compilation to be a little more "user friendly".
+
+#+begin_src emacs-lisp
+(defun my-compile-autoclose (buffer string)
+  "Auto close compile log if there are no errors"
+  (when (and (not (string-match-p (buffer-name buffer) "*grep*"))
+             (string-match "finished" string))
+        (delete-window (get-buffer-window buffer t))
+        (bury-buffer-internal buffer)))
+
+  (use-package compile
+    :defer
+    :diminish compilation-in-progress
+    :init
+    (setq compilation-scroll-output t)
+    :config
+    (defun my-colorize-compilation-buffer ()
+          (read-only-mode 'toggle)
+          (ansi-color-apply-on-region compilation-filter-start (point))
+          (read-only-mode 'toggle))
+    (add-hook 'compilation-filter-hook 'my-colorize-compilation-buffer)
+    (add-to-list 'compilation-finish-functions #'my-compile-autoclose)
+
+    (setq compilation-always-kill t)
+    (setq compilation-ask-about-save nil)
+    (setq compilation-scroll-output 'first-error)
+
+    ;; the next-error function weirdly stops at "In file included from
+    ;; config.cpp:14:0:". Stop that:
+    ;; http://stackoverflow.com/questions/15489319/how-can-i-skip-in-file-included-from-in-emacs-c-compilation-mode
+    (setcar (nthcdr 5 (assoc 'gcc-include compilation-error-regexp-alist-alist)) 0)
+    )
+#+end_src
+
+** Flychecking
+For the fly checking, I use flycheck instead of flymake. So I adapted it for my needs by also adding proselint support.
+
+#+begin_src emacs-lisp
+  ;; Disable checking doc
+  (use-package flycheck
+    :ensure t
+    :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
+    :hydra
+    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
+                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
+                     :color teal :hint nil)
+                    "Errors"
+                    ("f"  flycheck-error-list-set-filter                            "Filter")
+                    ("j"  flycheck-next-error                                       "Next")
+                    ("k"  flycheck-previous-error                                   "Previous")
+                    ("gg" flycheck-first-error                                      "First")
+                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
+                    ("<" hydra-project/body "back")
+                    ("q"   nil "cancel" :color blue))
+
+    :config
+    (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+
+    (flycheck-define-checker proselint
+      "A linter for prose."
+      :command ("proselint" source-inplace)
+      :error-patterns
+      ((warning line-start (file-name) ":" line ":" column ": "
+                (id (one-or-more (not (any " "))))
+                (message) line-end))
+      :modes (text-mode markdown-mode gfm-mode org-mode))
+    )
+#+end_src
+
+** Task runner
+#+begin_src emacs-lisp
+  (use-package taskrunner
+    :ensure t)
+
+  (use-package ivy-taskrunner
+    :ensure quelpa
+    :quelpa (ivy-taskrunner :fetcher "github" :repo "emacs-taskrunner/ivy-taskrunner")
+    :bind ("C-c C-g b" . ivy-taskrunner))
+#+end_src
 
 * Project management
 ** Configuration projectile
@@ -3215,6 +3252,8 @@ In order to monitor each process started via comint, I use bifocal which splits 
     :config
     (bifocal-global-mode 1))
 #+end_src
+
+
 * Notification
 ** Sauron
 #+begin_src emacs-lisp
@@ -3910,6 +3949,95 @@ I actually use this part for minor correction. The tags are done when abcde is c
 
 * Language Server
 #+BEGIN_SRC emacs-lisp
+(use-package lsp-mode
+  :ensure t
+  :hydra
+  (lsp-hydra (:exit t :hint nil)
+    "
+ Buffer^^               Server^^                   Symbol
+-------------------------------------------------------------------------------------
+ [_f_] format           [_M-r_] restart            [_d_] declaration  [_i_] implementation  [_o_] documentation
+ [_m_] imenu            [_S_]   shutdown           [_D_] definition   [_t_] type            [_r_] rename
+ [_x_] execute action   [_M-s_] describe session   [_R_] references   [_s_] signature"
+    ("d"   lsp-find-declaration)
+    ("D"   lsp-ui-peek-find-definitions)
+    ("R"   lsp-ui-peek-find-references)
+    ("i"   lsp-ui-peek-find-implementation)
+    ("t"   lsp-find-type-definition)
+    ("s"   lsp-signature-help)
+    ("o"   lsp-describe-thing-at-point)
+    ("r"   lsp-rename)
+
+    ("f"   lsp-format-buffer)
+    ("m"   lsp-ui-imenu)
+    ("x"   lsp-execute-code-action)
+
+    ("M-s" lsp-describe-session)
+    ("M-r" lsp-restart-workspace)
+    ("S"   lsp-shutdown-workspace)
+    ("q"   nil "cancel" :color blue))
+
+  :commands (lsp lsp-deferred)
+
+  :hook ((c-mode c++-mode go-mode) . lsp)
+
+  :bind
+  (:map lsp-mode-map
+        ("C-h M-h" . lsp-hydra/body))
+
+  :init
+  (setq lsp-before-save-edits t
+        lsp-inhibit-message t
+        lsp-eldoc-render-all nil
+        lsp-highlight-symbol-at-point nil
+        lsp-prefer-flymake nil
+        lsp-idle-delay 0.500))
+
+(use-package company-lsp
+  :ensure t
+  :after company lsp-mode
+  :commands company-lsp
+  ;; :compdef lsp-mode
+  ;; :company company-lsp
+  :hook
+  (lsp-mode . company-lsp-hook)
+
+  :init
+  (defun company-lsp-hook ()
+    (make-local-variable 'company-backends)
+    (setq company-backends (copy-tree company-backends))
+    (set 'company-backends (append '(company-lsp) company-backends)))
+
+  :config
+  (setq company-lsp-enable-snippet t
+        company-lsp-cache-candidates 'auto))
+
+(use-package lsp-ui
+  :ensure t
+  :after lsp-mode
+  :commands lsp-ui-mode
+  :config
+  (setq lsp-ui-doc-enable t
+        lsp-ui-doc-use-webkit nil
+        lsp-ui-doc-delay 0.2
+        lsp-ui-doc-include-signature t
+        lsp-ui-doc-position 'top
+        lsp-eldoc-enable-hover nil ; Disable eldoc displays in minibuffer
+
+        lsp-ui-sideline-enable t
+        lsp-ui-sideline-show-hover nil
+        lsp-ui-sideline-show-diagnostics nil
+        lsp-ui-sideline-ignore-duplicate t))
+
+(use-package dap-mode
+  :ensure t
+  :commands dap-debug
+  :after lsp-mode
+  :init
+  (dap-mode t)
+  (dap-ui-mode t))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no
   ;; A client for Language Server Protocol servers
   ;;(use-package eglot
     ;;:hook (prog-mode . eglot-ensure))
@@ -3947,14 +4075,17 @@ I actually use this part for minor correction. The tags are done when abcde is c
     (lsp-ui-doc-header t)
     (lsp-ui-doc-include-signature t)
     (lsp-ui-doc-use-childeframe t)
-    (lsp-ui-doc-position 'top)
+    (lsp-ui-doc-position 'at-point)
     (lsp-ui-doc-border (face-foreground 'default))
+
     (lsp-ui-sideline-enable nil)
     (lsp-ui-sideline-ignore-duplicate t)
     (lsp-ui-sideline-show-code-actions nil)
+
     (lsp-ui-flycheck-enable t)
     (lsp-ui-flycheck-list-position 'right)
     (lsp-ui-flycheck-live-reporting t)
+
     (lsp-ui-peek-enable t)
     (lsp-ui-peek-list-width 60)
     (lsp-ui-peek-list-height 25)
@@ -3992,45 +4123,49 @@ I actually use this part for minor correction. The tags are done when abcde is c
           company-lsp-cache-candidates nil))
 #+END_SRC
 * Language cpp
+#+begin_src shell :tangle no
+sudo pacman -S global
+#+end_src
+
 #+BEGIN_SRC emacs-lisp
-  ;; C/C++ Mode
-  (use-package cc-mode
-    :ensure nil
-    :bind (:map c-mode-base-map
-           ("C-c c" . compile))
-    :hook (c-mode-common . (lambda ()
-                             (c-set-style "linux")
-                             (setq tab-width 4)
-                             (setq c-basic-offset 4))))
+;; C/C++ Mode
+(use-package cc-mode
+  :ensure nil
+  :bind (:map c-mode-base-map
+         ("C-c c" . compile))
+  :hook (c-mode-common . (lambda ()
+                           (c-set-style "linux")
+                           (setq tab-width 4)
+                           (setq c-basic-offset 4))))
 
-  (use-package modern-cpp-font-lock
-    :diminish
-    :init (modern-c++-font-lock-global-mode t))
+(use-package modern-cpp-font-lock
+  :diminish
+  :init (modern-c++-font-lock-global-mode t))
 
-  ;; Emacs frontend to GNU GLobal source code tagging system
-  (use-package ggtags
-    :init
-    (ggtags-mode 1)
-    (add-hook 'c-mode-common-hook
-              (lambda ()
-                (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-                  (ggtags-mode 1))))
-    :config
-    (dolist (map (list ggtags-mode-map dired-mode-map))
-      (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
-      (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
-      (define-key map (kbd "C-c g r") 'ggtags-find-reference)
-      (define-key map (kbd "C-c g f") 'ggtags-find-file)
-      (define-key map (kbd "C-c g c") 'ggtags-create-tags)
-      (define-key map (kbd "C-c g u") 'ggtags-update-tags)
-      (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
-      (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
-      (define-key map (kbd "M-,") 'pop-tag-mark)
-      (define-key map (kbd "C-c <") 'ggtags-prev-mark)
-      (define-key map (kbd "C-c >") 'ggtags-next-mark)))
+;; Emacs frontend to GNU GLobal source code tagging system
+(use-package ggtags
+  :init
+  (ggtags-mode 1)
+  (add-hook 'c-mode-common-hook
+            (lambda ()
+              (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+                (ggtags-mode 1))))
+  :config
+  (dolist (map (list ggtags-mode-map dired-mode-map))
+    (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
+    (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
+    (define-key map (kbd "C-c g r") 'ggtags-find-reference)
+    (define-key map (kbd "C-c g f") 'ggtags-find-file)
+    (define-key map (kbd "C-c g c") 'ggtags-create-tags)
+    (define-key map (kbd "C-c g u") 'ggtags-update-tags)
+    (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
+    (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
+    (define-key map (kbd "M-,") 'pop-tag-mark)
+    (define-key map (kbd "C-c <") 'ggtags-prev-mark)
+    (define-key map (kbd "C-c >") 'ggtags-next-mark)))
 
-
-   ;; C/C++/Objective-C support
+;; sudo pacman -S ccls
+;; C/C++/Objective-C support
 ;;   (use-package ccls
 ;;     :defines projectile-project-root-files-top-down-recurring
 ;;     :hook ((c-mode c++-mode objc-mode cuda-mode) . (lambda ()
@@ -4042,47 +4177,35 @@ I actually use this part for minor correction. The tags are done when abcde is c
 ;;             (append '("compile_commands.json"
 ;;                       ".ccls")
 ;;                     projectile-project-root-files-top-down-recurring))))
-
 #+END_SRC
 
 * Language elisp
 #+BEGIN_SRC emacs-lisp
-  ;; String manipulation routines for emacs lisp
-  (use-package s
-    :ensure t)
+;; String manipulation routines for emacs lisp
+(use-package s
+  :ensure t)
 
-  ;; Minor mode for performing structured editing of S-expression data
-  (use-package paredit
-    :init
-    (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
-    (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-    (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
-    (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
-    (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-    (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
-    :bind (("C-c d" . paredit-forward-down))
-    :config
-    (eldoc-add-command
-     'paredit-backward-delete
-     'paredit-close-round))
+;; Minor mode for performing structured editing of S-expression data
+(use-package paredit
+  :init
+  (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
+  (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+  (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
+  (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
+  (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+  (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
+  :bind (("C-c d" . paredit-forward-down))
+  :config
+  (eldoc-add-command
+   'paredit-backward-delete
+   'paredit-close-round))
 
-  ;; Ensure paredit is used EVERYWHERE!
-  (use-package paredit-everywhere
-    :ensure t
-    :diminish paredit-everywhere-mode
-    :config
-    (add-hook 'list-mode-hook #'paredit-everywhere-mode))
-
-  ;; (use-package highlight-parentheses
-  ;;   :ensure t
-  ;;   :diminish highlight-parentheses-mode
-  ;;   :config
-  ;;   (add-hook 'emacs-lisp-mode-hook
-  ;;             (lambda()
-  ;;               (highlight-parentheses-mode)
-  ;;               )))
-
-  ;; (global-highlight-parentheses-mode)
+;; Ensure paredit is used EVERYWHERE!
+(use-package paredit-everywhere
+  :ensure t
+  :diminish paredit-everywhere-mode
+  :config
+  (add-hook 'list-mode-hook #'paredit-everywhere-mode))
 #+END_SRC
 
 * Language scheme
@@ -4146,242 +4269,248 @@ I actually use this part for minor correction. The tags are done when abcde is c
 * Language HTML, css
 ** Global web configuration
 #+begin_src emacs-lisp
-  (use-package web-mode
-    :ensure t
-    :mode
-    ("\\.phtml\\'" "\\.tpl\\.php\\'" "\\.[agj]sp\\'" "\\.as[cp]x\\'"
-    "\\.erb\\'" "\\.mustache\\'" "\\.djhtml\\'" "\\.html?\\'")
+(use-package web-mode
+  :ensure t
+  :mode
+  ("\\.phtml\\'" "\\.tpl\\.php\\'" "\\.[agj]sp\\'" "\\.as[cp]x\\'"
+  "\\.erb\\'" "\\.mustache\\'" "\\.djhtml\\'" "\\.html?\\'")
 
-    :init
-    (setq web-mode-markup-indent-offset 2
-          web-mode-code-indent-offset 2
-          web-mode-css-indent-offset 2
+  :init
+  (setq web-mode-markup-indent-offset 2
+        web-mode-code-indent-offset 2
+        web-mode-css-indent-offset 2
 
-          web-mode-enable-auto-pairing t
-          web-mode-enable-auto-expanding t
-          web-mode-enable-css-colorization t)
+         web-mode-enable-auto-pairing t
+        web-mode-enable-auto-expanding t
+        web-mode-enable-css-colorization t)
 
-    :config
-    ;; Template
-    (setq web-mode-engines-alist
-          '(("php"    . "\\.phtml\\'")
-            ("blade"  . "\\.blade\\."))
-          )
+  :config
+  ;; Template
+  (setq web-mode-engines-alist
+        '(("php"    . "\\.phtml\\'")
+          ("blade"  . "\\.blade\\."))
+        )
 
-    )
+   )
 
-  (use-package web-beautify
-    :ensure t
-    :commands (web-beautify-css
-               web-beautify-css-buffer
-               web-beautify-html
-               web-beautify-html-buffer
-               web-beautify-js
-               web-beautify-js-buffer))
+(use-package web-beautify
+  :ensure t
+  :commands (web-beautify-css
+             web-beautify-css-buffer
+             web-beautify-html
+             web-beautify-html-buffer
+             web-beautify-js
+             web-beautify-js-buffer))
 
-  (use-package web-completion-data
-    :ensure t)
+(use-package web-completion-data
+  :ensure t)
 
-  (use-package web-mode-edit-element
-    :ensure t)
-#+end_src
+(use-package web-mode-edit-element
+  :ensure t)
+#end_src
 ** EMMET
 #+begin_src emacs-lisp
-  (use-package emmet-mode
-    :ensure t
-    :diminish (emmet-mode . "ε")
-    :bind* (("C-)" . emmet-next-edit-point)
-            ("C-(" . emmet-prev-edit-point))
-    :commands (emmet-mode
-               emmet-next-edit-point
-               emmet-prev-edit-point)
-    :hook
-    ((sgml-mode-hook . emmet-mode)
-     (html-mode . emmet-mode)
-     (web-mode . emmet-mode))
-    :init
-    (setq emmet-indentation 2
-          emmet-move-cursor-between-quotes t))
+(use-package emmet-mode
+  :ensure t
+  :diminish (emmet-mode . "ε")
+  :bind* (("C-)" . emmet-next-edit-point)
+          ("C-(" . emmet-prev-edit-point))
+  :commands (emmet-mode
+             emmet-next-edit-point
+             emmet-prev-edit-point)
+  :hook
+  ((sgml-mode-hook . emmet-mode)
+   (html-mode . emmet-mode)
+   (web-mode . emmet-mode))
+  :init
+  (setq emmet-indentation 2
+        emmet-move-cursor-between-quotes t))
 #+end_src
 ** Completion
 #+begin_src emacs-lisp
-  (use-package company-web
-    :ensure t
-    :compdef (web-mode)
-    :company (company-web-html))
+(use-package company-web
+  :ensure t
+  :compdef (web-mode)
+  :company (company-web-html))
 #+end_src
 * Language markdown
+#+begin_src shell :tangle no
+sudo pacman -S pandoc
+sudo pop install grip
+#+end_src
+
+编译和维护命令 C-c C-c
+样式: C-c C-s
+超链接: C-c C-a
+
 ** Global
 #+begin_src emacs-lisp
 ;; Major mode for editing Markdown formatted text
-  (use-package markdown-mode
-    :defer t
-    :commands (markdown-mode gfm-mode)
-    :mode (("README\\.md\\'" . gfm-mode)
-           ("\\.md\\'" . markdown-mode)
-           ("\\.markdown\\'" . markdown-mode))
-    :init (setq markdown-command "/usr/bin/pandoc"))
+(use-package markdown-mode
+  :defer t
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "/usr/bin/pandoc"))
 
-  (use-package markdown-mode+
-    :ensure t
-    :after markdown-mode)
+(use-package markdown-mode+
+  :ensure t
+  :after markdown-mode)
 #+end_src
 ** Syntax highlight in block
 #+begin_src emacs-lisp
-  (use-package poly-markdown
-    :ensure t
-    :disabled t)
+(use-package poly-markdown
+  :ensure t
+  :disabled t)
 #+end_src
 ** Visualize GFM rendering
+C-c C-c g
 #+begin_src emacs-lisp
-  (use-package grip-mode
-    :ensure t
-    :commands (grip-mode)
-    :bind (:map markdown-mode-command-map
-           ("g" . grip-mode)))
+(use-package grip-mode
+  :ensure t
+  :commands (grip-mode)
+  :bind (:map markdown-mode-command-map
+         ("g" . grip-mode)))
 #+end_src
 
 * Language Latex
 ** Global
 #+begin_src emacs-lisp
-  (use-package tex-site
-    :ensure auctex
-    :after (tex latex)
-    :hook
-    (LaTeX-mode . turn-off-auto-fill)
-    (LaTeX-mode . (lambda () (TeX-fold-mode t)))
-    (LaTeX-mode . flyspell-mode)
-    (LaTeX-mode . LaTeX-math-mode)
-    (LaTeX-mode . outline-minor-mode)
-    (LaTeX-mode . TeX-source-correlate-mode)
+(use-package tex-site
+  :ensure auctex
+  :after (tex latex)
+  :hook
+  (LaTeX-mode . turn-off-auto-fill)
+  (LaTeX-mode . (lambda () (TeX-fold-mode t)))
+  (LaTeX-mode . flyspell-mode)
+  (LaTeX-mode . LaTeX-math-mode)
+  (LaTeX-mode . outline-minor-mode)
+  (LaTeX-mode . TeX-source-correlate-mode)
 
-    :config
+  :config
 
-    ;; Spelling
-    (setq ispell-tex-skip-alists
-          '((
-             ;;("%\\[" . "%\\]") ; AMStex block comment...
-             ;; All the standard LaTeX keywords from L. Lamport's guide:
-             ;; \cite, \hspace, \hspace*, \hyphenation, \include, \includeonly
-             ;; \input, \label, \nocite, \rule (in ispell - rest included here)
-             ("\\\\addcontentsline"              ispell-tex-arg-end 2)
-             ("\\\\add\\(tocontents\\|vspace\\)" ispell-tex-arg-end)
-             ("\\\\\\([aA]lph\\|arabic\\)"   ispell-tex-arg-end)
-             ("\\\\author"                         ispell-tex-arg-end)
-             ;; New regexps here --- kjh
-             ("\\\\\\(text\\|paren\\)cite" ispell-tex-arg-end)
-             ("\\\\cite\\(t\\|p\\|year\\|yearpar\\)" ispell-tex-arg-end)
-             ("\\\\bibliographystyle"                ispell-tex-arg-end)
-             ("\\\\makebox"                  ispell-tex-arg-end 0)
-             ("\\\\e?psfig"                  ispell-tex-arg-end)
-             ("\\\\document\\(class\\|style\\)" .
-              "\\\\begin[ \t\n]*{[ \t\n]*document[ \t\n]*}"))
-            (
-             ;; delimited with \begin.  In ispell: displaymath, eqnarray,
-             ;; eqnarray*, equation, minipage, picture, tabular,
-             ;; tabular* (ispell)
-             ("\\(figure\\|table\\)\\*?"     ispell-tex-arg-end 0)
-             ("\\(equation\\|eqnarray\\)\\*?"     ispell-tex-arg-end 0)
-             ("list"                                 ispell-tex-arg-end 2)
-             ("program" . "\\\\end[ \t\n]*{[ \t\n]*program[ \t\n]*}")
-             ("verbatim\\*?"."\\\\end[ \t\n]*{[ \t\n]*verbatim\\*?[ \t\n]*}")
-             ("lstlisting\\*?"."\\\\end[ \t\n]*{[ \t\n]*lstlisting\\*?[ \t\n]*}"))))
+  ;; Spelling
+  (setq ispell-tex-skip-alists
+        '((
+           ;;("%\\[" . "%\\]") ; AMStex block comment...
+           ;; All the standard LaTeX keywords from L. Lamport's guide:
+           ;; \cite, \hspace, \hspace*, \hyphenation, \include, \includeonly
+           ;; \input, \label, \nocite, \rule (in ispell - rest included here)
+           ("\\\\addcontentsline"              ispell-tex-arg-end 2)
+           ("\\\\add\\(tocontents\\|vspace\\)" ispell-tex-arg-end)
+           ("\\\\\\([aA]lph\\|arabic\\)"   ispell-tex-arg-end)
+           ("\\\\author"                         ispell-tex-arg-end)
+           ;; New regexps here --- kjh
+           ("\\\\\\(text\\|paren\\)cite" ispell-tex-arg-end)
+           ("\\\\cite\\(t\\|p\\|year\\|yearpar\\)" ispell-tex-arg-end)
+           ("\\\\bibliographystyle"                ispell-tex-arg-end)
+           ("\\\\makebox"                  ispell-tex-arg-end 0)
+           ("\\\\e?psfig"                  ispell-tex-arg-end)
+           ("\\\\document\\(class\\|style\\)" .
+            "\\\\begin[ \t\n]*{[ \t\n]*document[ \t\n]*}"))
+          (
+           ;; delimited with \begin.  In ispell: displaymath, eqnarray,
+           ;; eqnarray*, equation, minipage, picture, tabular,
+           ;; tabular* (ispell)
+           ("\\(figure\\|table\\)\\*?"     ispell-tex-arg-end 0)
+           ("\\(equation\\|eqnarray\\)\\*?"     ispell-tex-arg-end 0)
+           ("list"                                 ispell-tex-arg-end 2)
+           ("program" . "\\\\end[ \t\n]*{[ \t\n]*program[ \t\n]*}")
+           ("verbatim\\*?"."\\\\end[ \t\n]*{[ \t\n]*verbatim\\*?[ \t\n]*}")
+           ("lstlisting\\*?"."\\\\end[ \t\n]*{[ \t\n]*lstlisting\\*?[ \t\n]*}"))))
 
-    ;; Pdf activated by default
-    (TeX-global-PDF-mode 1)
+  ;; Pdf activated by default
+  (TeX-global-PDF-mode 1)
 
-    ;; Diverse
-    (setq-default TeX-master nil)
-    (setq TeX-parse-self t
-          TeX-auto-save t)
+  ;; Diverse
+  (setq-default TeX-master nil)
+  (setq TeX-parse-self t
+        TeX-auto-save t)
 
-    ;; Minor helpers for comment and quotes
-    (add-to-list 'LaTeX-verbatim-environments "comment")
-    (setq TeX-open-quote "\enquote{"
-          TeX-close-quote "}")
+  ;; Minor helpers for comment and quotes
+  (add-to-list 'LaTeX-verbatim-environments "comment")
+  (setq TeX-open-quote "\enquote{"
+        TeX-close-quote "}")
 
-    ;; Indentation
-    (setq LaTeX-indent-level 4
-          LaTeX-item-indent 0
-          TeX-brace-indent-level 4
-          TeX-newline-function 'newline-and-indent)
+  ;; Indentation
+  (setq LaTeX-indent-level 4
+        LaTeX-item-indent 0
+        TeX-brace-indent-level 4
+        TeX-newline-function 'newline-and-indent)
 
+  (defadvice LaTeX-fill-region-as-paragraph (around LaTeX-sentence-filling)
+    "Start each sentence on a new line."
+    (let ((from (ad-get-arg 0))
+          (to-marker (set-marker (make-marker) (ad-get-arg 1)))
+          tmp-end)
+      (while (< from (marker-position to-marker))
+        (forward-sentence)
+        ;; might have gone beyond to-marker --- use whichever is smaller:
+        (ad-set-arg 1 (setq tmp-end (min (point) (marker-position to-marker))))
+        ad-do-it
+        (ad-set-arg 0 (setq from (point)))
+        (unless (or
+                 (bolp)
+                 (looking-at "\\s *$"))
+          (LaTeX-newline)))
+      (set-marker to-marker nil)))
+  (ad-activate 'LaTeX-fill-region-as-paragraph)
 
-    (defadvice LaTeX-fill-region-as-paragraph (around LaTeX-sentence-filling)
-      "Start each sentence on a new line."
-      (let ((from (ad-get-arg 0))
-            (to-marker (set-marker (make-marker) (ad-get-arg 1)))
-            tmp-end)
-        (while (< from (marker-position to-marker))
-          (forward-sentence)
-          ;; might have gone beyond to-marker --- use whichever is smaller:
-          (ad-set-arg 1 (setq tmp-end (min (point) (marker-position to-marker))))
-          ad-do-it
-          (ad-set-arg 0 (setq from (point)))
-          (unless (or
-                   (bolp)
-                   (looking-at "\\s *$"))
-            (LaTeX-newline)))
-        (set-marker to-marker nil)))
-    (ad-activate 'LaTeX-fill-region-as-paragraph)
+  ;; PDF/Tex correlation
+  (setq TeX-source-correlate-method 'synctex)
 
-
-
-    ;; PDF/Tex correlation
-    (setq TeX-source-correlate-method 'synctex)
-
-
-    ;; Keys
-    (define-key LaTeX-mode-map (kbd "C-c C-=") 'align-current))
+  ;; Keys
+  (define-key LaTeX-mode-map (kbd "C-c C-=") 'align-current))
 #+end_src
 ** Bibtex
 *** Global
 #+begin_src emacs-lisp
-  (use-package bibtex
-    :config
-    (defun bibtex-generate-autokey ()
-      (let* ((bibtex-autokey-names nil)
-             (bibtex-autokey-year-length 2)
-             (bibtex-autokey-name-separator "\0")
-             (names (split-string (bibtex-autokey-get-names) "\0"))
-             (year (bibtex-autokey-get-year))
-             (name-char (cond ((= (length names) 1) 4)
-                              ((= (length names) 2) 2)
-                              (t 1)))
-             (existing-keys (bibtex-parse-keys))
-             key)
-        (setq names (mapconcat (lambda (x)
-                                 (substring x 0 name-char))
-                               names
-                               ""))
-        (setq key (format "%s%s" names year))
-        (let ((ret key))
-          (loop for c from ?a to ?z
-                while (assoc ret existing-keys)
-                do (setq ret (format "%s%c" key c)))
-          ret)))
+(use-package bibtex
+  :config
+  (defun bibtex-generate-autokey ()
+    (let* ((bibtex-autokey-names nil)
+           (bibtex-autokey-year-length 2)
+           (bibtex-autokey-name-separator "\0")
+           (names (split-string (bibtex-autokey-get-names) "\0"))
+           (year (bibtex-autokey-get-year))
+           (name-char (cond ((= (length names) 1) 4)
+                            ((= (length names) 2) 2)
+                            (t 1)))
+           (existing-keys (bibtex-parse-keys))
+           key)
+      (setq names (mapconcat (lambda (x)
+                               (substring x 0 name-char))
+                             names
+                             ""))
+      (setq key (format "%s%s" names year))
+      (let ((ret key))
+        (loop for c from ?a to ?z
+              while (assoc ret existing-keys)
+              do (setq ret (format "%s%c" key c)))
+        ret)))
 
-    (setq bibtex-align-at-equal-sign t
-          bibtex-autokey-name-year-separator ""
-          bibtex-autokey-year-title-separator ""
-          bibtex-autokey-titleword-first-ignore '("the" "a" "if" "and" "an")
-          bibtex-autokey-titleword-length 100
-          bibtex-autokey-titlewords 1))
+  (setq bibtex-align-at-equal-sign t
+        bibtex-autokey-name-year-separator ""
+        bibtex-autokey-year-title-separator ""
+        bibtex-autokey-titleword-first-ignore '("the" "a" "if" "and" "an")
+        bibtex-autokey-titleword-length 100
+        bibtex-autokey-titlewords 1))
 #+end_src
 *** Formatting
 #+BEGIN_SRC emacs-lisp
-  (use-package bibclean-format
-    :ensure t
-    :hook
-    (bibtex-mode . bibclean-format-on-save-mode)
+(use-package bibclean-format
+  :ensure t
+  :hook
+  (bibtex-mode . bibclean-format-on-save-mode)
 
-    :commands (bibclean-format)
+  :commands (bibclean-format)
 
-    :bind
-    (:map bibtex-mode-map
-          ("C-c f" . bibclean-format))
-    :config
-    (setq bibclean-format-args '("--max-width" "0" "--align-equal")))
+  :bind
+  (:map bibtex-mode-map
+        ("C-c f" . bibclean-format))
+  :config
+  (setq bibclean-format-args '("--max-width" "0" "--align-equal")))
 #+END_SRC
 ** Completion
 #+begin_src emacs-lisp
@@ -4531,77 +4660,81 @@ I actually use this part for minor correction. The tags are done when abcde is c
 #+END_SRC
 
 * Language python
+#+begin_src shell :tangle no
+sudo pip install 'python-language-server[all]'
+#+end_src
+
 ** Global configuration
 #+begin_src emacs-lisp
-  (use-package python
-    :mode
-    ("\\.py\\'" . python-mode)
-    ("\\.wsgi$" . python-mode)
+(use-package python
+  :mode
+  ("\\.py\\'" . python-mode)
+  ("\\.wsgi$" . python-mode)
 
-    :init
-    (setq-default indent-tabs-mode nil)
+  :init
+  (setq-default indent-tabs-mode nil)
 
-    :config
-    (setq python-indent-offset 4))
+  :config
+  (setq python-indent-offset 4))
 #+end_src
 ** Lsp (with microsoft language server)
 #+BEGIN_SRC emacs-lisp
-  (use-package lsp-python-ms
-    :ensure t
-    :demand
-    :hook (python-mode . lsp-deferred)  ; or lsp-deferred
-    :init
-    (setq lsp-python-ms-dir "/usr/lib"
-          lsp-python-ms-executable "/usr/bin/pyls")) ; mspyls ?
+(use-package lsp-python-ms
+  :ensure t
+  :demand
+  :hook (python-mode . lsp-deferred)  ; or lsp-deferred
+  :init
+  (setq lsp-python-ms-dir "/usr/lib"
+        lsp-python-ms-executable "/usr/bin/pyls")) ; mspyls ?
 #+END_SRC
 ** Pipenv
 #+begin_src emacs-lisp
-  (use-package pipenv
-    :ensure t
-    :hook
-    ((python-mode . pipenv-mode))
+(use-package pipenv
+  :ensure t
+  :hook
+  ((python-mode . pipenv-mode))
 
-    :init
-    (setq pipenv-projectile-after-switch-function
-          #'pipenv-projectile-after-switch-extended))
+  :init
+  (setq pipenv-projectile-after-switch-function
+        #'pipenv-projectile-after-switch-extended))
 #+end_src
 ** Conda
 #+begin_src emacs-lisp
-  (use-package conda
-    :ensure t
-    :init
-    (setq conda-anaconda-home (expand-file-name "~/.conda"))
-    :config
-    ;; If you want interactive shell support, include:
-    (conda-env-initialize-interactive-shells)
-    ;; If you want eshell support, include:
-    (conda-env-initialize-eshell)
-    ;; If you want auto-activation, include:
-    (conda-env-autoactivate-mode t)
-    ;; Activate the project/virtual env you want to use.
-    ;; Via M-x conda-env-activate RET analyticd-pysystemtrade
-    ;; or
-    ;; (conda-env-activate "analyticd-pysystemtrade")
-    )
+(use-package conda
+  :ensure t
+  :init
+  (setq conda-anaconda-home (expand-file-name "~/.conda"))
+  :config
+  ;; If you want interactive shell support, include:
+  (conda-env-initialize-interactive-shells)
+  ;; If you want eshell support, include:
+  (conda-env-initialize-eshell)
+  ;; If you want auto-activation, include:
+  (conda-env-autoactivate-mode t)
+  ;; Activate the project/virtual env you want to use.
+  ;; Via M-x conda-env-activate RET analyticd-pysystemtrade
+  ;; or
+  ;; (conda-env-activate "analyticd-pysystemtrade")
+  )
 #+end_src
 ** Interpreter configuration
 #+begin_src emacs-lisp
-  (use-package ein
-    :ensure t
-    :config
+(use-package ein
+  :ensure t
+  :config
 
-    (cond
-     ((eq system-type 'darwin) (setq ein:console-args '("--gui=osx" "--matplotlib=osx" "--colors=Linux")))
-     ((eq system-type 'gnu/linux) (setq ein:console-args '("--gui=gtk3" "--matplotlib=gtk3" "--colors=Linux"))))
+  (cond
+   ((eq system-type 'darwin) (setq ein:console-args '("--gui=osx" "--matplotlib=osx" "--colors=Linux")))
+   ((eq system-type 'gnu/linux) (setq ein:console-args '("--gui=gtk3" "--matplotlib=gtk3" "--colors=Linux"))))
 
-    (setq ein:query-timeout 1000))
+  (setq ein:query-timeout 1000))
 #+end_src
 ** Sphinx documentation
 #+begin_src emacs-lisp
-  (use-package sphinx-doc
-    :ensure t
-    :hook
-    (python-mode . (lambda () (sphinx-doc-mode t))))
+(use-package sphinx-doc
+  :ensure t
+  :hook
+  (python-mode . (lambda () (sphinx-doc-mode t))))
 #+end_src
 ** Elpy
 #+BEGIN_SRC emacs-lisp
@@ -4611,48 +4744,57 @@ I actually use this part for minor correction. The tags are done when abcde is c
 #+END_SRC
 
 * Language Java
+#+begin_src shell :tangle no
+sudo pacman -S maven
+#+end_src
+
 *** Global (lsp-java)
-#+begin_src emacs-lisp
-  (use-package lsp-java
-    :ensure t
-    :hook
-    (java-mode . lsp)
+#+begin_src emacs-lisp :tangle no
+(use-package lsp-java
+  :ensure t
+  :hook
+  (java-mode . lsp)
 
-    :config
-    (setq lsp-java-save-action-organize-imports nil))
+  :config
+  (setq lsp-java-save-action-organize-imports nil))
 
-  (use-package dap-java :disabled t)
-  (use-package lsp-java-treemacs :disabled t)
+(use-package dap-java :disabled t)
+(use-package lsp-java-treemacs :disabled t)
 #+end_src
 *** Snippets
-#+begin_src emacs-lisp
-  (use-package java-snippets
-    :ensure t)
+#+begin_src emacs-lisp :tangle no
+(use-package java-snippets
+  :ensure t)
 #+end_src
 *** Javadoc
-#+begin_src emacs-lisp
-  (use-package javadoc-lookup
-    :ensure t
-    :config
-    (when (file-exists-p "/usr/share/doc/java8-openjdk/api")
-      (javadoc-add-roots "/usr/share/doc/java8-openjdk/api"))
+#+begin_src emacs-lisp :tangle no
+(use-package javadoc-lookup
+  :ensure t
+  :config
+  (when (file-exists-p "/usr/share/doc/java8-openjdk/api")
+    (javadoc-add-roots "/usr/share/doc/java8-openjdk/api"))
 
-    (javadoc-add-artifacts [org.lwjgl.lwjgl lwjgl "2.8.2"]
-                           [com.nullprogram native-guide "0.2"]
-                           [org.apache.commons commons-math3 "3.0"]
-                           ;; [de.dfki.lt.jtok jtok-core "1.9.3"]
-                           ))
-
+  (javadoc-add-artifacts [org.lwjgl.lwjgl lwjgl "2.8.2"]
+                         [com.nullprogram native-guide "0.2"]
+                         [org.apache.commons commons-math3 "3.0"]
+                         ;; [de.dfki.lt.jtok jtok-core "1.9.3"]
+                         ))
 #+end_src
 
 * Language go
 Go code helpers. [[https://tleyden.github.io/blog/2014/05/22/configure-emacs-as-a-go-editor-from-scratch/][see also]]
 
 #+begin_src shell :tangle no
+sudo pacman -S go
+# plugin
 go get -u github.com/nsf/gocode
 go get -u github.com/rogpeppe/godef
 go get -u golang.org/x/tools/cmd/guru
 go get -u golang.org/x/tools/cmd/goimports
+# language server
+go get golang.org/x/tools/gopls@latest
+# config
+zshrc: GOPATH,GOPROXY
 #+end_src
 
 Format
@@ -4674,49 +4816,49 @@ Go uses tabs, so lets set the indent to a sane mode
 Packages that you need for a nice Go setup
 
 #+begin_src emacs-lisp
-  (use-package go-mode
-    :ensure t
-    :bind (("C-c t t" . go-test-current-test)
-           ("C-c t p" . go-test-current-project)
-           ("C-c t c" . go-test-current-coverage)
-           ("C-c t f" . go-test-current-file))
-    :config
-    (setq gofmt-command "goimports")
-    (add-hook 'before-save-hook 'gofmt-before-save))
+(use-package go-mode
+  :ensure t
+  :bind (("C-c t t" . go-test-current-test)
+         ("C-c t p" . go-test-current-project)
+         ("C-c t c" . go-test-current-coverage)
+         ("C-c t f" . go-test-current-file))
+  :config
+  (setq gofmt-command "goimports")
+  (add-hook 'before-save-hook 'gofmt-before-save))
 
-  (use-package exec-path-from-shell
-    :config
-    (exec-path-from-shell-copy-env "GOPATH")
-    (exec-path-from-shell-copy-env "GOPROXY")
-    (when (memq window-system '(mac ns x))
-      (exec-path-from-shell-initialize)))
+(use-package exec-path-from-shell
+  :config
+  (exec-path-from-shell-copy-env "GOPATH")
+  (exec-path-from-shell-copy-env "GOPROXY")
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize)))
 
-  (use-package go-guru
-    :ensure t)
+(use-package go-guru
+  :ensure t)
 
-  (use-package go-errcheck
-    :ensure t)
+(use-package go-errcheck
+  :ensure t)
 
-  ;; Yasnippets
-  (use-package go-snippets
-    :ensure t)
+;; Yasnippets
+(use-package go-snippets
+  :ensure t)
 
-  ;; eldoc integration
-  (use-package go-eldoc
-    :ensure t)
+;; eldoc integration
+(use-package go-eldoc
+  :ensure t)
 
-  ;; (use-package gocode
-  ;;   :ensure t)
+;; (use-package gocode
+;;   :ensure t)
 
-  ;; (use-package godef
-  ;;   :ensure t)
+;; (use-package godef
+;;   :ensure t)
 
-  (use-package gotest
-    :ensure t)
+(use-package gotest
+  :ensure t)
 
-  (use-package flycheck-golangci-lint
-    :ensure t
-    :hook (go-mode . flycheck-golangci-lint-setup))
+(use-package flycheck-golangci-lint
+  :ensure t
+  :hook (go-mode . flycheck-golangci-lint-setup))
 #+end_src
 * Documentation
 ** Emacs

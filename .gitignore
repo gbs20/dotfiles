@@ -33,6 +33,7 @@ emacs/.emacs.d/emojis/
 emacs/.emacs.d/themes/
 emacs/.emacs.d/cnfonts/
 emacs/.emacs.d/auto-save/
+emacs/.emacs.d/taskrunner-tasks.eld
 
 vim/.vim/.netrwhist
 vim/.vim/autoload
