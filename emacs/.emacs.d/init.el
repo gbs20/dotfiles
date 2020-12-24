@@ -1,5 +1,4 @@
-
-(package-initialize)
+;; emacs initial file
 
 (require 'org)
 (org-babel-load-file

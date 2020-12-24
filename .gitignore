@@ -25,6 +25,7 @@ emacs/.emacs.d/pyim/
 emacs/.emacs.d/snippets/
 emacs/.emacs.d/.mc-lists.el
 # emacs/.emacs.d/third_parties
+emacs/.emacs.d/site_lisp
 emacs/.emacs.d/var/
 emacs/.emacs.d/quelpa/
 emacs/.emacs.d/javadoc-cache/
@@ -34,6 +35,15 @@ emacs/.emacs.d/themes/
 emacs/.emacs.d/cnfonts/
 emacs/.emacs.d/auto-save/
 emacs/.emacs.d/taskrunner-tasks.eld
+emacs/.emacs.d/.dap-breakpoints
+emacs/.emacs.d/eaf/
+emacs/.emacs.d/early-init.el
+emacs/.emacs.d/plugins/bibtex-utils/
+emacs/.emacs.d/plugins/sauron-mode-line.el
+emacs/.emacs.d/site-lisp/
+emacs/.emacs.d/third_parties/english-teacher.el/
+emacs/.emacs.d/third_parties/go-translate/
+emacs/.emacs.d/third_parties/snippets/python-mode/
 
 vim/.vim/.netrwhist
 vim/.vim/autoload
