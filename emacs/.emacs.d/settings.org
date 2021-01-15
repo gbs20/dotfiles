@@ -2,8 +2,9 @@
 #+AUTHOR: Jackiebin
 #+KEYWORDS: emacs, org-mode
 
-This is my version of an configuration file for GNU Emacs. I modeled this set of files based off of seblemaguer's dotfiles,
+  This is my version of an configuration file for GNU Emacs. I modeled this set of files based off of seblemaguer's dotfiles,
 at this repository: https://github.com/seblemaguer/dotfiles
+  Have not yet formed my own style, cut and paste from the Internet.
 
 * Package management
 The first part of the configuration is to prepare the package management. I am using =use-package= as
@@ -208,6 +209,7 @@ This section focus on defining some variables/helpers needed to have a more glob
 (defvar default-plugin-dir (format "%s/plugins" user-emacs-directory)
   "The plugins directory")
 (add-to-list 'load-path default-plugin-dir)
+(add-to-list 'load-path "~/.emacs.d/site-lisp/")
 
 ;; Don't screw up my files with custom
 (setq custom-file (format "%s/custom.el" user-emacs-directory))
@@ -297,7 +299,7 @@ Defining a simple helper to edit file as root using tramp
   ;; (vertical-bar   (doom-darken base5 0.4))
   ;; (doom-darken bg 0.4)
   :config
-  (load-theme 'doom-dracula t)
+  (load-theme 'doom-palenight t)
   (doom-themes-neotree-config)
   (doom-themes-org-config)
   ;; Modeline
@@ -305,8 +307,9 @@ Defining a simple helper to edit file as root using tramp
     :custom
     (doom-modeline-buffer-file-name-style 'truncate-with-project)
     (doom-modeline-icon t)
-    (doom-modeline-major-mode-icon nil)
+    (doom-modeline-major-mode-icon t)
     (doom-modeline-minor-modes nil)
+    (doom-modeline-height 15)
     :hook
     (after-init . doom-modeline-mode)
     :config
@@ -433,10 +436,10 @@ Defining a simple helper to edit file as root using tramp
    ;;(menu-bar-display-line-numbers-mode 'relative)
 
   ;; Hook line numbers to only when files are opened, also use linum-mode for emacs-version< 26
-  (if (version< emacs-version "26")
-      (global-linum-mode)
-    (add-hook 'text-mode-hook #'display-line-numbers-mode)
-    (add-hook 'prog-mode-hook #'display-line-numbers-mode))
+  ;;(if (version< emacs-version "26")
+  ;;    (global-linum-mode)
+  ;;  (add-hook 'text-mode-hook #'display-line-numbers-mode)
+  ;;  (add-hook 'prog-mode-hook #'display-line-numbers-mode))
 
   ;; Y or n is enough for me
   (fset 'yes-or-no-p 'y-or-n-p)
@@ -581,7 +584,6 @@ sudo pacman -S nerd-fonts-fira-code
                     100)
                '(85 . 85) '(100 . 100))))))
 
-
 #+end_src
 *** Remove unused part
 #+begin_src emacs-lisp
@@ -611,7 +613,7 @@ sudo pacman -S nerd-fonts-fira-code
 (add-hook 'makefile-mode-hook 'indent-tabs-mode)
 
 ;; Keep files clean.
-(add-hook 'before-save-hook 'whitespace-cleanup)
+;;(add-hook 'before-save-hook 'whitespace-cleanup);;重复
 
 ;; Setup fullscreen when startup
 (setq initial-frame-alist (quote ((fullscreen . maximized))))
@@ -665,7 +667,50 @@ Minibuffer configuration part. Nothing really outstanding, just the classical st
         (right-fringe . 5))))
 
 #+end_src
+** Toggles for line numbers and whitespace indicators
 
+*Display line numbers (buffer-local)*
+  I seldom use line numbers, but here it is.  This toggles the setting for the local buffer and also activates /hl-line-mode/.
+*Display invisible characters (whitespace)*
+  Viewing invisible characters (whitespace) can be very helpful under certain circumstances.  Generally though, I do not keep it active.
+
+As for /delete-trailing-whitespace/, I prefer to call it manually because sometimes it causes problems, such as with diffs.
+#+begin_src emacs-lisp
+(use-package display-line-numbers
+  :config
+  ;; Set absolute line numbers.  A value of "relative" is also useful.
+  (setq display-line-numbers-type t)
+  ;; Those two variables were introduced in Emacs 27.1
+  (setq display-line-numbers-major-tick 0)
+  (setq display-line-numbers-minor-tick 0)
+  ;; Use absolute numbers in narrowed buffers
+  (setq display-line-numbers-widen t)
+
+  (define-minor-mode prot/display-line-numbers-mode
+    "Toggle `display-line-numbers-mode' and `hl-line-mode'."
+    :init-value nil
+    :global nil
+    (if prot/display-line-numbers-mode
+        (progn
+          (display-line-numbers-mode 1)
+          (hl-line-mode 1)
+          (setq-local truncate-lines t))
+      (display-line-numbers-mode -1)
+      (hl-line-mode -1)
+      (setq-local truncate-lines nil)))
+  :bind ("<f11>" . prot/display-line-numbers-mode))
+
+(use-package whitespace
+  :config
+  (defun prot/toggle-invisibles ()
+    "Toggles the display of indentation and space characters."
+    (interactive)
+    (if (bound-and-true-p whitespace-mode)
+        (whitespace-mode -1)
+      (whitespace-mode)))
+  :bind (("<f6>" . prot/toggle-invisibles)
+         ("C-c z" . delete-trailing-whitespace)))
+#+end_src
 ** mode line
 *** global
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -2036,6 +2081,27 @@ Evil Nerd Commenter, a tool that helps you comment code efficiently.
     :config
     (pdfgrep-mode))
 #+END_SRC
+** vterm
+#+begin_src emacs-lisp
+(use-package term
+  :config
+  (setq explicit-shell-file-name "zsh") ;; Change this to bash, etc
+  ;;(setq explicit-zsh-args '())         ;; Use 'explicit-<shell>-args for shell-specific args
+
+  ;; Match the default Bash shell prompt.  Update this if you have a custom prompt
+  (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *"))
+
+(use-package eterm-256color
+  :hook (term-mode . eterm-256color-mode))
+
+(use-package vterm
+  :ensure t
+  :commands vterm
+  :config
+  (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
+  ;;(setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
+  (setq vterm-max-scrollback 10000))
+#+end_src
 ** Eshell
 #+BEGIN_SRC emacs-lisp
 (setq eshell-prompt-function
@@ -2972,6 +3038,16 @@ I actually use this part for minor correction. The tags are done when abcde is c
   :custom
   (eaf-find-alternate-file-in-dired t)
   :config
+  (setq eaf-browser-default-search-engine "Bing")
+  (setq eaf-browser-search-engines '(("Baidu" . "https://www.baidu.com/s?wd=%s")
+                                   ("Bing" . "https://cn.bing.com/search?q=%s")))
+  (eaf-setq eaf-browse-blank-page-url "https://www.baidu.com")
+
+  (eaf-setq eaf-browser-remember-history "true")
+  ;;(eaf-setq eaf-browser-default-zoom "1.5")
+  (eaf-setq eaf-terminal-font-family "WenQuanYi Micro Hei")
+  (eaf-setq eaf-browser-dark-mode "false")
+
   (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
   (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding)
   (eaf-bind-key take_photo "p" eaf-camera-keybinding))
@@ -3584,6 +3660,38 @@ It is useful to find some items in org files based on a query.
 This part focuses on completion configuration. Language specific configurations are not done here
 but in the dedicate language configuration part. This section is just for global configuration.
 
+** orderless
+#+begin_src emacs-lisp
+(use-package prot-orderless
+  :load-path "~/.emacs.d/site-lisp/prot-lisp"
+  :demand
+  :config
+  (setq prot-orderless-default-styles
+        '(orderless-prefixes
+          orderless-literal
+          orderless-strict-leading-initialism
+          orderless-regexp
+          orderless-flex))
+  (setq prot-orderless-alternative-styles
+        '(orderless-literal
+          orderless-prefixes
+          orderless-strict-leading-initialism
+          orderless-regexp)))
+
+(use-package orderless
+  :ensure t
+  :demand
+  :after prot-orderless
+  :config
+  (setq orderless-component-separator " +")
+  (setq orderless-matching-styles prot-orderless-default-styles)
+  (setq orderless-style-dispatchers
+        '(prot-orderless-literal-dispatcher
+          prot-orderless-initialism-dispatcher))
+  ;; SPC should never complete: use it for `orderless' groups.
+  :bind (:map minibuffer-local-completion-map
+              ("SPC" . nil)))
+#+end_src
 ** Compdef
 #+begin_src emacs-lisp
 (use-package compdef :ensure t)
@@ -3903,10 +4011,12 @@ For the fly checking, I use flycheck instead of flymake. So I adapted it for my 
 The commands are based on http://endlessparentheses.com/improving-projectile-with-extra-commands.html?source=rss
 #+BEGIN_SRC emacs-lisp
 ;; ripgrep
-(use-package rg)
+(use-package rg
+  :ensure t)
 
 ;; A project interaction library
 (use-package projectile
+  :ensure t
   :after (rg)
   :config
   (setq projectile-project-search-path '("~/dev"))
@@ -4407,6 +4517,21 @@ The C-z binding is disabled elsewhere in this document.  It minimises
   :hook (after-init . remind-bindings-initialise)
   :bind (("<f10>" . 'remind-bindings-togglebuffer)   ;; toggle buffer
          ("C-<f10>" . 'remind-bindings-specific-mode))) ;; buffer-specific only
+#+end_src
+* Custom Functions
+** Change letter case
+#+begin_src emacs-lisp
+(defun upcase-backward-word (arg)
+  (interactive "p")
+  (upcase-word (- arg)))
+
+(defun downcase-backward-word (arg)
+  (interactive "p")
+  (downcase-word (- arg)))
+
+(defun capitalize-backward-word (arg)
+  (interactive "p")
+  (capitalize-word (- arg)))
 #+end_src
 
 
@@ -5281,7 +5406,13 @@ Packages that you need for a nice Go setup
   (use-package man
     :ensure t
     :config
-    (setq Man-notify-method 'pushy)
+    ;;(setq Man-notify-method 'pushy)
+    (add-to-list 'display-buffer-alist
+         '("\\`\\*Man .*\\*\\'" .
+           (display-buffer-reuse-mode-window
+            (inhibit-same-window . nil)
+            (mode . Man-mode))))
+
     (setq woman-manpath
           `(
             "/usr/share/man/" "/usr/local/man/" ;; System
@@ -5319,6 +5450,15 @@ Config-general-mode is applied for all unix configuration files.
   (use-package logview
     :ensure t
     :mode ("syslog\\(?:\\.[0-9]+\\)" "\\.log\\(?:\\.[0-9]+\\)?\\'"))
+#+end_src
+** systemd
+#+begin_src emacs-lisp
+(use-package systemd
+  :ensure t
+  :mode
+  ("\\.service\\'" "\\.timer\\'" "\\.target\\'" "\\.mount\\'"
+   "\\.automount\\'" "\\.slice\\'" "\\.socket\\'" "\\.path\\'"
+   "\\.netdev\\'" "\\.network\\'" "\\.link\\'"))
 #+end_src
 ** yaml
 #+begin_src emacs-lisp
