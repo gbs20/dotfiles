@@ -44,6 +44,7 @@ emacs/.emacs.d/site-lisp/
 emacs/.emacs.d/third_parties/english-teacher.el/
 emacs/.emacs.d/third_parties/go-translate/
 emacs/.emacs.d/third_parties/snippets/python-mode/
+emacs/.emacs.d/settings.org.bakup
 
 vim/.vim/.netrwhist
 vim/.vim/autoload
