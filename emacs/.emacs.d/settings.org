@@ -3174,6 +3174,26 @@ M-x org-edit-src-code : edit source block
 #+end_src
 
 
+* citre
+#+begin_src emacs-lisp
+  (use-package citre
+    :ensure t
+    :defer t
+    :init
+    ;; This is needed in `:init' block for lazy load to work.
+    (require 'citre-config)
+    ;; Bind your frequently used commands.
+    (global-set-key (kbd "M-.") 'citre-jump)
+    (global-set-key (kbd "M-,") 'citre-jump-back)
+    (global-set-key (kbd "C-x c p") 'citre-ace-peek)
+    :config
+    (setq
+     ;; Set this if readtags is not in your path.
+     ;;citre-readtags-program "/path/to/readtags"
+     ;; Set this if you use project management plugin like projectile.  It's
+     ;; only used to display paths relatively, and doesn't affect actual use.
+     citre-project-root-function #'projectile-project-root))
+#+end_src
 * Completion
 This part focuses on completion configuration. Language specific configurations are not done here
 but in the dedicate language configuration part. This section is just for global configuration.
@@ -3406,7 +3426,6 @@ Prescient helps to sort candidates by last used first and then sorting by length
   :commands turn-on-eldoc-mode
   :defer t)
 #+end_src
-
 
 * Compilation
 I develop with emacs, so compiling is actually a big part of my life. Therefore, I modified baseline
@@ -4185,6 +4204,7 @@ sudo pacman -S global
 
         ;; Emacs frontend to GNU GLobal source code tagging system
         (use-package ggtags
+          :disabled t
           :init
           (ggtags-mode 1)
           (add-hook 'c-mode-common-hook
