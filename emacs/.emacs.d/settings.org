@@ -289,64 +289,70 @@ Defining a simple helper to edit file as root using tramp
 
 * Theme and mode line
 #+begin_src emacs-lisp
-(use-package doom-themes
-  :custom
-  (doom-themes-enable-italic t)
-  (doom-themes-enable-bold t)
-  :custom-face
-  ;; (vertical-bar   (doom-darken base5 0.4))
-  ;; (doom-darken bg 0.4)
-  :config
-  (load-theme 'doom-palenight t)
-  (doom-themes-neotree-config)
-  (doom-themes-org-config)
-  ;; Modeline
-  (use-package doom-modeline
+  (use-package doom-themes
     :custom
-    (doom-modeline-buffer-file-name-style 'truncate-with-project)
-    (doom-modeline-icon t)
-    (doom-modeline-major-mode-icon t)
-    (doom-modeline-minor-modes nil)
-    (doom-modeline-height 15)
-    :hook
-    (after-init . doom-modeline-mode)
+    (doom-themes-enable-italic t)
+    (doom-themes-enable-bold t)
+    :custom-face
+    ;; (vertical-bar   (doom-darken base5 0.4))
+    ;; (doom-darken bg 0.4)
     :config
-    (set-cursor-color "cyan")
-    (line-number-mode 0)
-    (column-number-mode 0)
-    (doom-modeline-def-modeline 'main
-      '(bar window-number matches buffer-info remote-host buffer-position parrot selection-info)
-      '(misc-info persp-name lsp github debug minor-modes input-method major-mode process vcs checker))))
+    ;;(load-theme 'doom-palenight t)
+    ;;(load-theme 'doom-dark+ t)
+    (load-theme 'doom-dracula t)
+    (doom-themes-neotree-config)
+    (doom-themes-org-config)
+    ;; Modeline
+    (use-package doom-modeline
+      :custom
+      (doom-modeline-buffer-file-name-style 'truncate-with-project)
+      (doom-modeline-icon t)
+      (doom-modeline-major-mode-icon t)
+      (doom-modeline-minor-modes nil)
+      (doom-modeline-height 15)
+      ; use unicode as a fallback (instead of ASCII) when not using icons
+      (setq doom-modeline-unicode-fallback t)
+      ; don't display the buffer encoding
+      (setq doom-modeline-buffer-encoding nil)
+      :hook
+      (after-init . doom-modeline-mode)
+      :config
+      (set-cursor-color "cyan")
+      (line-number-mode 0)
+      (column-number-mode 0)
+      (doom-modeline-def-modeline 'main
+        '(bar window-number matches buffer-info remote-host buffer-position parrot selection-info)
+        '(misc-info persp-name lsp github debug minor-modes input-method major-mode process vcs checker))))
 
-(use-package hide-mode-line
-  :ensure t
-  :hook
-  ((neotree-mode imenu-list-minor-mode minimap-mode) . hide-mode-line-mode))
+  (use-package hide-mode-line
+    :ensure t
+    :hook
+    ((neotree-mode imenu-list-minor-mode minimap-mode) . hide-mode-line-mode))
 
-(use-package nyan-mode
-   :custom
-   (nyan-cat-face-number 4)
-   (nyan-animate-nyancat t))
-   ;;:hook
-   ;;(doom-modeline-mode . nyan-mode))
+  (use-package nyan-mode
+     :custom
+     (nyan-cat-face-number 4)
+     (nyan-animate-nyancat t))
+     ;;:hook
+     ;;(doom-modeline-mode . nyan-mode))
 
-;; Visually highlight the selected buffer.
-(use-package dimmer
-  :disabled
-  :ensure t
-  :custom
-  (dimmer-fraction 0.5)
-  (dimmer-exclusion-regexp-list
-       '(".*Minibuf.*"
-         ".*which-key.*"
-         ".*NeoTree.*"
-         ".*Messages.*"
-         ".*Async.*"
-         ".*Warnings.*"
-         ".*LV.*"
-         ".*Ilist.*"))
-  :config
-  (dimmer-mode t))
+  ;; Visually highlight the selected buffer.
+  (use-package dimmer
+    :disabled
+    :ensure t
+    :custom
+    (dimmer-fraction 0.5)
+    (dimmer-exclusion-regexp-list
+         '(".*Minibuf.*"
+           ".*which-key.*"
+           ".*NeoTree.*"
+           ".*Messages.*"
+           ".*Async.*"
+           ".*Warnings.*"
+           ".*LV.*"
+           ".*Ilist.*"))
+    :config
+    (dimmer-mode t))
 #+end_src
 * global theme
 #+begin_src emacs-lisp :tangle no
@@ -473,16 +479,6 @@ Defining a simple helper to edit file as root using tramp
     (setq mac-command-modifier 'meta)
     (setq mac-option-modifier nil))
 #+END_SRC
-
-
-* Evil
-#+begin_src emacs-lisp
-  (use-package evil
-    :disabled
-    :ensure t
-    :config
-    (evil-mode 1))
-#+end_src
 
 
 * emacs concept
@@ -625,106 +621,8 @@ sudo pacman -S nerd-fonts-fira-code
 (setq split-height-threshold nil)
 (setq split-width-threshold 0)
 #+end_src
-*** display window
-#+begin_src emacs-lisp :tangle no
-(use-package window
-  :init
-  (setq display-buffer-alist
-        '(;; top side window
-          ("\\**prot-elfeed-bongo-queue.*"
-           (display-buffer-reuse-window display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . -2))
-          ("\\*\\(prot-elfeed-mpv-output\\|world-clock\\).*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . -1))
-          ("\\*\\(Flymake\\|Package-Lint\\|vc-git :\\).*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . 0)
-           (window-parameters . ((no-other-window . t))))
-          ("\\*Messages.*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . 1)
-           (window-parameters . ((no-other-window . t))))
-          ("\\*\\(Backtrace\\|Warnings\\|Compile-Log\\)\\*"
-           (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . 2)
-           (window-parameters . ((no-other-window . t))))
-          ;; bottom side window
-          ("\\*\\(Embark\\)?.*Completions.*"
-           (display-buffer-in-side-window)
-           (side . bottom)
-           (slot . 0)
-           (window-parameters . ((no-other-window . t)
-                                 (mode-line-format . none))))
-          ;; left side window
-          ("\\*Help.*"
-           (display-buffer-in-side-window)
-           (window-width . 0.20)       ; See the :hook
-           (side . left)
-           (slot . 0)
-           (window-parameters . ((no-other-window . t))))
-          ;; right side window
-          ("\\*Faces\\*"
-           (display-buffer-in-side-window)
-           (window-width . 0.25)
-           (side . right)
-           (slot . 0)
-           (window-parameters
-            . ((mode-line-format
-                . (" "
-                   mode-line-buffer-identification)))))
-          ("\\*Custom.*"
-           (display-buffer-in-side-window)
-           (window-width . 0.25)
-           (side . right)
-           (slot . 1)
-           (window-parameters . ((no-other-window . t))))
-          ;; bottom buffer (NOT side window)
-          ("\\*\\vc-\\(incoming\\|outgoing\\).*"
-           (display-buffer-at-bottom))
-          ("\\*\\(Output\\|Register Preview\\).*"
-           (display-buffer-at-bottom)
-           (window-parameters . ((no-other-window . t))))
-          ("\\*.*\\([^E]eshell\\|shell\\|v?term\\).*"
-           (display-buffer-reuse-mode-window display-buffer-at-bottom)
-           (window-height . 0.2)
-           ;; (mode . '(eshell-mode shell-mode))
-           )))
-  (setq window-combination-resize t)
-  (setq even-window-sizes 'height-only)
-  (setq window-sides-vertical nil)
-  (setq switch-to-buffer-in-dedicated-window 'pop)
-  ;; Hooks' syntax is controlled by the `use-package-hook-name-suffix'
-  ;; variable.  The "-hook" suffix is intentional.
-  :hook ((help-mode-hook . visual-line-mode)
-         (custom-mode-hook . visual-line-mode))
-  :bind (("s-n" . next-buffer)
-         ("s-p" . previous-buffer)
-         ("s-o" . other-window)
-         ("s-2" . split-window-below)
-         ("s-3" . split-window-right)
-         ("s-0" . delete-window)
-         ("s-1" . delete-other-windows)
-         ("s-!" . delete-other-windows-vertically) ; s-S-1
-         ("s-5" . delete-frame)
-         ("C-x _" . balance-windows)
-         ("C-x +" . balance-windows-area)
-         ("s-q" . window-toggle-side-windows)))
-#+end_src
 ** minibuffer
-Minibuffer configuration part. Nothing really outstanding, just the classical stuff.
-
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package minibuffer
     ;; :hook
     ;; (eval-expression-minibuffer-setup .  #'eldoc-mode)
@@ -3279,357 +3177,6 @@ M-x org-edit-src-code : edit source block
 * Completion
 This part focuses on completion configuration. Language specific configurations are not done here
 but in the dedicate language configuration part. This section is just for global configuration.
-** embark
-#+begin_src emacs-lisp :tangle no
-(use-package marginalia
-  :ensure t
-  :config
-  (marginalia-mode))
-
-(use-package embark
-  :ensure t
-  :bind
-  ("C-S-a" . embark-act))              ; pick some comfortable binding
-
-;; Consult users will also want the embark-consult package.
-(use-package embark-consult
-  :ensure t
-  :after (embark consult)
-  :demand t ; only necessary if you have the hook below
-  ;; if you want to have consult previews as you move around an
-  ;; auto-updating embark collect buffer
-  :hook
-  (embark-collect-mode . embark-consult-preview-minor-mode))
-#+end_src
-** selectrum
-#+begin_src emacs-lisp
-    (use-package selectrum
-      :ensure t
-      :after orderless
-      :config
-      (setq completion-styles '(orderless))
-      (setq orderless-skip-highlighting (lambda () selectrum-is-active))
-      (setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
-      :hook (after-init . selectrum-mode))
-#+end_src
-
-#+begin_src emacs-lisp :tangle no
-    (use-package prescient
-      :ensure t
-      :config
-      (prescient-persist-mode 1))
-    (use-package selectrum-prescient
-      :ensure t
-      :config
-      (selectrum-prescient-mode 1))
-      (global-set-key [remap execute-extended-command] 'execute-extended-command)
-#+end_src
-** orderless
-#+begin_src emacs-lisp
-(use-package prot-orderless
-  :load-path "~/.emacs.d/site-lisp/prot-lisp"
-  :demand
-  :config
-  (setq prot-orderless-default-styles
-        '(orderless-prefixes
-          orderless-literal
-          orderless-strict-leading-initialism
-          orderless-regexp
-          orderless-flex))
-  (setq prot-orderless-alternative-styles
-        '(orderless-literal
-          orderless-prefixes
-          orderless-strict-leading-initialism
-          orderless-regexp)))
-
-(use-package orderless
-  :ensure t
-  :demand
-  :after prot-orderless
-  :config
-  (setq orderless-component-separator " +")
-  (setq orderless-matching-styles prot-orderless-default-styles)
-  (setq orderless-style-dispatchers
-        '(prot-orderless-literal-dispatcher
-          prot-orderless-initialism-dispatcher))
-  ;; SPC should never complete: use it for `orderless' groups.
-  :bind (:map minibuffer-local-completion-map
-              ("SPC" . nil)))
-#+end_src
-** Completion annotations (marginalia)
-#+begin_src emacs-lisp
-(use-package marginalia
-  :ensure t
-  :demand
-  :config
-  (setq marginalia-annotators
-        '(marginalia-annotators-heavy
-          marginalia-annotators-light))
-  (marginalia-mode 1))
-#+end_src
-** Minibuffer configurations and extras (prot-minibuffer.el)
-#+begin_src emacs-lisp
-(use-package prot-minibuffer
-  :load-path "~/.emacs.d/site-lisp/prot-lisp"
-  :demand
-  :bind (("s-v" . prot-minibuffer-focus-mini-or-completions)
-         :map completion-list-mode-map
-         ("M-v" . prot-minibuffer-focus-mini)
-         ("h" . prot-simple-describe-symbol) ; from `prot-simple.el'
-         ;; Those are DE FACTO DEPRECATED generic actions for the
-         ;; "*Completions*" buffer.  I normally use `embark' and its own
-         ;; buffers.
-         ("w" . prot-minibuffer-completions-kill-symbol-at-point)
-         ("i" . prot-minibuffer-completions-insert-symbol-at-point)
-         ("j" . prot-minibuffer-completions-insert-symbol-at-point-exit))
-  :hook (minibuffer-setup-hook . prot-minibuffer-mini-cursor))
-
-(use-package minibuffer
-  :demand
-  :after prot-minibuffer
-  :config
-  (setq completion-styles '(orderless partial-completion))
-  (setq completion-category-defaults nil)
-  (setq completion-cycle-threshold 3)
-  (setq completion-flex-nospace t)
-  (setq completion-pcm-complete-word-inserts-delimiters t)
-  (setq completion-pcm-word-delimiters "-_./:| ")
-  (setq completion-show-help nil)
-  (setq completion-auto-help nil)
-  (setq completion-ignore-case t)
-  (setq-default case-fold-search t)   ; For general regexp
-
-  ;; The following two are updated in Emacs 28.  They concern the
-  ;; *Completions* buffer.  Note that I actually do not use that buffer,
-  ;; because I rely on Embark's version of it.
-  (setq completions-format 'vertical)
-  (setq completions-detailed t)
-
-  (setq read-buffer-completion-ignore-case t)
-  (setq read-file-name-completion-ignore-case t)
-
-  (setq enable-recursive-minibuffers t)
-  (setq read-answer-short t)
-  (setq resize-mini-windows t)
-  (setq minibuffer-eldef-shorten-default t)
-
-  (file-name-shadow-mode 1)
-  (minibuffer-depth-indicate-mode 1)
-  (minibuffer-electric-default-mode 1)
-
-  ;; Defines, among others, aliases for common minibuffer commands to
-  ;; Super-KEY.  Normally these should go in individual package
-  ;; declarations, but their grouping here makes things easier to
-  ;; understand.  Besides, they are related to the minibuffer.
-  :bind (("s-b" . switch-to-buffer)
-         ("s-B" . switch-to-buffer-other-window)
-         ("s-f" . find-file)
-         ("s-F" . find-file-other-window)
-         ("s-d" . dired)
-         ("s-D" . dired-other-window)
-         :map minibuffer-local-completion-map
-         ("<tab>" . minibuffer-force-complete)
-         ;; De facto deprecated as I use Embark and its own completions'
-         ;; buffer.
-         :map completion-list-mode-map
-         ("n" . next-line)
-         ("p" . previous-line)
-         ("f" . next-completion)
-         ("b" . previous-completion)))
-#+end_src
-** Enhanced minibuffer commands (consult.el and prot-consult.el)
-#+begin_src emacs-lisp
-(use-package consult
-  :ensure t
-  :demand
-  :config
-  (setq consult-line-numbers-widen t)
-  (setq completion-in-region-function #'consult-completion-in-region)
-  (setq consult-async-min-input 3)
-  (setq consult-async-input-debounce 0.5)
-  (setq consult-async-input-throttle 0.8)
-  (setq consult-narrow-key ">")
-  ;; NOTE: check `embark-consult' for previews that can be used with the
-  ;; default minibuffer and Embark collections.
-  :bind (("C-x M-:" . consult-complex-command)
-         ("C-x M-m" . consult-minor-mode-menu)
-         ("C-x M-k" . consult-kmacro)
-         ("M-g g" . consult-goto-line)
-         ("M-g M-g" . consult-goto-line)
-         ("M-X" . consult-mode-command)
-         ("M-K" . consult-keep-lines)  ; M-S-k is similar to M-S-5 (M-%)
-         ("M-F" . consult-flush-lines) ; M-S-f is similar to M-S-5 (M-%)
-         ("M-s m" . consult-mark)
-         :map consult-narrow-map
-         ("?" . consult-narrow-help)))
-
-(use-package prot-consult
-  :load-path "~/.emacs.d/site-lisp/prot-lisp"
-  :after (consult prot-pulse)
-  :config
-  (setq consult-project-root-function #'prot-consult-project-root)
-  (setq prot-consult-add-advice-set-hooks t)
-  (setq prot-consult-command-centre-list
-        '(consult-line
-          prot-consult-line
-          consult-mark))
-  (setq prot-consult-command-top-list
-        '(consult-outline
-          consult-imenu
-          prot-consult-outline
-          prot-consult-imenu))
-  (prot-consult-set-up-hooks-mode 1)
-  :bind (("M-s i" . prot-consult-imenu)
-         ("M-s s" . prot-consult-outline)    ; M-s o is `occur'
-         ("M-s y" . prot-consult-yank)
-         ("M-s l" . prot-consult-line)
-         ("M-s f" . prot-consult-fd)
-         ("M-s g" . prot-consult-rg)))
-#+end_src
-** Extended minibuffer actions and more (embark.el and prot-embark.el)
-在当前语境下，去了解此时keymap的内容，有两种方式：设置 which－key，或者调用emark－act后，按C－h
-
-Working with sets of possible targets：
-+ embark-collect-snapshot：produces a buffer listing all the current candidates
-+ embark-collect-live：conflict with visual completion UIs
-+ embark-export：open a buffer in an appropriate major mode for the set of candidates.
-在minibuffer中已经输入了一些字符，无缝切换到不同的命令
-+ embark-become:在minibuffer中起作用
-
-#+begin_src emacs-lisp
-  (use-package embark
-    ;; Note that this gets only the main library.  That repo contains
-    ;; other packages as well (which are small *.el files that are
-    ;; distributed separately).
-    :ensure t
-    :demand
-    :diminish embark-collect-zebra-minor-mode
-    :after prot-minibuffer
-    :config
-    (setq embark-collect-initial-view-alist
-          '((file . list)
-            (buffer . list)
-            (symbol . list)
-            (line . list)
-            (xref-location . list)
-            (kill-ring . zebra)
-            (t . list)))
-    (setq embark-collect-live-update-delay 0.5)
-    (setq embark-collect-live-initial-delay 0.8)
-
-    ;; Please don't read too much into the names of those faces.  Just
-    ;; green and yellow.
-    (setq embark-action-indicator (propertize "Act" 'face 'success))
-    (setq embark-become-indicator (propertize "Become" 'face 'warning))
-
-     ;; NOTE: I keep this around for when I do videos, otherwise I do not
-     ;; use it.  It requires `which-key' to display key hints.
-     (setq embark-action-indicator
-           (lambda (map)
-             (which-key--show-keymap "Embark" map nil nil 'no-paging)
-             #'which-key--hide-popup-ignore-command)
-           embark-become-indicator embark-action-indicator)
-    :hook ((minibuffer-setup-hook . embark-collect-completions-after-input)
-           (embark-post-action-hook . embark-collect--update-linked)
-           (embark-collect-mode-hook . hl-line-mode))
-    :bind (("C-," . embark-act)
-           :map minibuffer-local-completion-map
-           ("C-," . embark-act)
-           ("C-." . embark-act-noexit)
-           ("C->" . embark-become)
-           ("M-q" . embark-collect-toggle-view) ; parallel of `fill-paragraph'
-           ;; NOTE: to switch to the live collection buffer, I use
-           ;; `prot-minibuffer-focus-mini-or-completions' which is bound
-           ;; to "s-v".
-           :map embark-collect-mode-map
-           ("C-," . embark-act)
-           ("C-." . embark-act-noexit)
-           ("," . embark-act)
-           ("." . embark-act-noexit)
-           ("M-q" . embark-collect-toggle-view)
-           :map embark-symbol-map
-           ("." . embark-find-definition)
-           ("k" . describe-keymap)))
-
-  ;; Integration with Consult.  Note that the package is `embark-consult',
-  ;; but because it comes from the same repo as Embark I prefer to use
-  ;; this straight.el directive (check the main embark package above).
-  (use-package embark
-    :ensure t
-    :after (embark consult)
-    ;; ;; Use the hook, or check `prot-embark-consult-preview-toggle'.
-    ;; :hook (embark-collect-mode-hook . embark-consult-preview-minor-mode)
-    :bind (:map embark-collect-mode-map
-           ("C-j" . embark-consult-preview-at-point)))
-
-  (use-package prot-embark
-    :load-path "~/.emacs.d/site-lisp/prot-lisp"
-    :demand
-    :after embark
-    :hook (embark-collect-post-revert-hook . prot-embark--collect-fit-window)
-    :bind (:map embark-collect-mode-map
-           ("h" . prot-simple-describe-symbol)  ; from `prot-simple.el'
-           ("C-g" . prot-embark-keyboard-quit)
-           ("C-k" . prot-embark-collection-kill-line)
-           ("C-M-n" . prot-embark-completions-act-next)
-           ("C-M-p" . prot-embark-completions-act-previous)
-           ("C-M-j" . prot-embark-completions-act-current)
-           ("C-M-v" . prot-embark-consult-preview-toggle) ; "view", "visualise" mnemonic
-           ("C-n" . prot-embark-next-line-or-mini)
-           ("C-p" . prot-embark-previous-line-or-mini)
-           ("M-F" . prot-embark-collection-flush-lines) ; M-S-f like M-S-5 (M-%)
-           ("M-K" . prot-embark-collection-keep-lines)  ; M-S-k like M-S-5 (M-%)
-           :map minibuffer-local-completion-map
-           ("C-n" . prot-embark-switch-to-completions-top)
-           ("C-p" . prot-embark-switch-to-completions-bottom)
-           ("C-l" . prot-embark-completions-toggle)))
-#+end_src
-
-** isearch
-#+begin_src emacs-lisp
-  (use-package isearch
-    :diminish
-    :config
-    (setq search-highlight t)
-    (setq search-whitespace-regexp ".*?")
-    (setq isearch-lax-whitespace t)
-    (setq isearch-regexp-lax-whitespace nil)
-    (setq isearch-lazy-highlight t)
-    ;; All of the following variables were introduced in Emacs 27.1.
-    (setq isearch-lazy-count t)
-    (setq lazy-count-prefix-format nil)
-    (setq lazy-count-suffix-format " (%s/%s)")
-    (setq isearch-yank-on-move 'shift)
-    (setq isearch-allow-scroll 'unlimited)
-    :bind (:map minibuffer-local-isearch-map
-           ("M-/" . isearch-complete-edit)
-           :map isearch-mode-map
-           ("C-g" . isearch-cancel)       ; instead of `isearch-abort'
-           ("M-/" . isearch-complete)))
-
-  (use-package replace
-    :config
-    (setq list-matching-lines-jump-to-current-line t)
-    :hook ((occur-mode-hook . hl-line-mode)
-           (occur-mode-hook . (lambda ()
-                                (toggle-truncate-lines t))))
-    :bind (("M-s M-o" . multi-occur)
-           :map occur-mode-map
-           ("t" . toggle-truncate-lines)))
-
-  (use-package prot-search
-    :load-path "~/.emacs.d/site-lisp/prot-lisp"
-    :bind (("M-s %" . prot-search-isearch-replace-symbol)
-           ("M-s M-<" . prot-search-isearch-beginning-of-buffer)
-           ("M-s M->" . prot-search-isearch-end-of-buffer)
-           ("M-s u" . prot-search-occur-urls)
-           ("M-s M-u" . prot-search-occur-browse-url)
-           :map isearch-mode-map
-           ("<up>" . prot-search-isearch-repeat-backward)
-           ("<down>" . prot-search-isearch-repeat-forward)
-           ("<backspace>" . prot-search-isearch-abort-dwim)
-           ("<C-return>" . prot-search-isearch-other-end)))
-#+end_src
 ** Compdef
 #+begin_src emacs-lisp
 (use-package compdef :ensure t)
@@ -3637,68 +3184,69 @@ Working with sets of possible targets：
 ** Ivy/swipper/counsel
 I do prefer vertical completion, which is why I use extensively Ivy and extensions.
 
-#+begin_src emacs-lisp :tangle no
-;; Generic completion frontend
-(use-package counsel
-  :ensure t
-  :bind
-  (("M-x" . counsel-M-x)
-   ("M-y" . counsel-yank-pop)
-   :map ivy-minibuffer-map
-   ("M-y" . ivy-next-line)))
-(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-;; Enhance M-x
-(use-package amx
-  :init (setq amx-history-length 20))
+#+begin_src emacs-lisp
+  ;; Generic completion frontend
+  (use-package counsel
+    :ensure t
+    :bind
+    (("M-x" . counsel-M-x)
+     ("M-y" . counsel-yank-pop)
+     :map ivy-minibuffer-map
+     ("M-y" . ivy-next-line)))
+  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+  ;; Enhance M-x
+  (use-package amx
+    :init (setq amx-history-length 20))
 
-(global-set-key (kbd "C-x C-f") #'counsel-find-file)
-(global-set-key (kbd "C-c r") #'counsel-recentf)
+  (global-set-key (kbd "C-x C-f") #'counsel-find-file)
+  (global-set-key (kbd "C-c r") #'counsel-recentf)
 
-(use-package flx)
-(use-package ivy-hydra)
-(use-package ivy
-  :diminish 'ivy-mode
-  :config
-  (ivy-mode t)
-  (setq ivy-display-style 'fancy
-        ivy-use-virtual-buffers t
-        enable-recursive-minibuffers t
-        ivy-use-selectable-prompt t)
-  ;; make everything fuzzy except swiper
-  (setq ivy-re-builders-alist
-        '((swiper . ivy--regex-plus)
-          (t . ivy--regex-fuzzy))))
+  (use-package flx :ensure t)
+  (use-package ivy-hydra :ensure t)
+  (use-package ivy
+    :ensure t
+    :diminish 'ivy-mode
+    :config
+    (ivy-mode t)
+    (setq ivy-display-style 'fancy
+          ivy-use-virtual-buffers t
+          enable-recursive-minibuffers t
+          ivy-use-selectable-prompt t)
+    ;; make everything fuzzy except swiper
+    (setq ivy-re-builders-alist
+          '((swiper . ivy--regex-plus)
+            (t . ivy--regex-fuzzy))))
 
-(global-set-key (kbd "C-r") #'swiper)
-(global-set-key (kbd "C-s") #'swiper)
+  (global-set-key (kbd "C-r") #'swiper)
+  (global-set-key (kbd "C-s") #'swiper)
 
-(use-package ivy-rich
-  :ensure t
-  :config
-  (ivy-rich-mode 1)
-  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+  (use-package ivy-rich
+    :ensure t
+    :config
+    (ivy-rich-mode 1)
+    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
 
-;; Show ivy frame using posframe
-(use-package ivy-posframe
-  :ensure t
-  :custom
-  (ivy-display-function #'ivy-posframe-display-at-frame-center)
-  ;; (ivy-posframe-width 130)
-  ;; (ivy-posframe-height 11)
-  (ivy-posframe-parameters
-    '((left-fringe . 5)
-      (right-fringe . 5)))
-  :custom-face
-  (ivy-posframe ((t (:background "#282a36"))))
-  (ivy-posframe-border ((t (:background "#6272a4"))))
-  (ivy-posframe-cursor ((t (:background "#61bfff"))))
-  :hook
-  (ivy-mode . ivy-posframe-enable))
+  ;; Show ivy frame using posframe
+  (use-package ivy-posframe
+    :ensure t
+    :custom
+    (ivy-display-function #'ivy-posframe-display-at-frame-center)
+    ;; (ivy-posframe-width 130)
+    ;; (ivy-posframe-height 11)
+    (ivy-posframe-parameters
+      '((left-fringe . 5)
+        (right-fringe . 5)))
+    :custom-face
+    (ivy-posframe ((t (:background "#282a36"))))
+    (ivy-posframe-border ((t (:background "#6272a4"))))
+    (ivy-posframe-cursor ((t (:background "#61bfff"))))
+    :hook
+    (ivy-mode . ivy-posframe-enable))
 #+end_src
 ** Helm
 I use Helm for some specific cases which requires an important visibility space completion.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package helm
     :ensure t
     :functions helm-show-completion-default-display-function
@@ -3837,7 +3385,7 @@ M-x *auto-insert*
 ** Prescient
 Prescient helps to sort candidates by last used first and then sorting by length.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 (use-package prescient
   :ensure t
   :config (prescient-persist-mode))
@@ -3858,6 +3406,7 @@ Prescient helps to sort candidates by last used first and then sorting by length
   :commands turn-on-eldoc-mode
   :defer t)
 #+end_src
+
 
 * Compilation
 I develop with emacs, so compiling is actually a big part of my life. Therefore, I modified baseline
@@ -4475,143 +4024,123 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 
 * Language Server
 #+BEGIN_SRC emacs-lisp
-    ;; [[http://blog.binchen.org/posts/how-to-speed-up-lsp-mode][How to speed up lsp-mode]]
-      (with-eval-after-load 'lsp-mode
-        ;; enable log only for debug
-        (setq lsp-log-io nil)
+      ;; [[http://blog.binchen.org/posts/how-to-speed-up-lsp-mode][How to speed up lsp-mode]]
+        (with-eval-after-load 'lsp-mode
+          ;; don't ping LSP lanaguage server too frequently
+          (defvar lsp-on-touch-time 0)
+          (defadvice lsp-on-change (around lsp-on-change-hack activate)
+            ;; don't run `lsp-on-change' too frequently
+            (when (> (- (float-time (current-time))
+                        lsp-on-touch-time) 30) ;; 30 seconds
+              (setq lsp-on-touch-time (float-time (current-time)))
+              ad-do-it)))
 
-        ;; use `evil-matchit' instead
-        (setq lsp-enable-folding nil)
+        (defun my-connect-lsp (&optional no-reconnect)
+          "Connect lsp server.  If NO-RECONNECT is t, don't shutdown existing lsp connection."
+          (interactive "P")
+          (when (and (not no-reconnect)
+                     (fboundp 'lsp-disconnect))
+            (lsp-disconnect))
+          (when (and buffer-file-name
+                     (not (member (file-name-extension buffer-file-name)
+                                  '("json"))))
+            (unless (and (boundp 'lsp-mode) lsp-mode)
+              (if (derived-mode-p 'js2-mode) (setq-local lsp-enable-imenu nil))
+              (lsp-deferred))))
 
-        ;; no real time syntax check
-        ;;(setq lsp-diagnostic-package :none)
+          ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+          (setq lsp-keymap-prefix "C-c l")
 
-        ;; handle yasnippet by myself
-        (setq lsp-enable-snippet nil)
-
-        ;; use `company-ctags' only.
-        ;; Please note `company-lsp' is automatically enabled if installed
-        (setq lsp-enable-completion-at-point nil)
-
-        ;; turn off for better performance
-        (setq lsp-enable-symbol-highlighting nil)
-
-        ;; use ffip instead
-        (setq lsp-enable-links nil)
-
-        ;; auto restart lsp
-        (setq lsp-restart 'auto-restart)
-
-        ;; @see https://github.com/emacs-lsp/lsp-mode/pull/1498 and code related to auto configure.
-        ;; Require clients could be slow.
-        ;; I only load `lsp-clients' because it includes the js client which I'm interested
-        ;;(setq lsp-client-packages '(lsp-clients))
-
-        ;; don't scan 3rd party javascript libraries
-        (push "[/\\\\][^/\\\\]*\\.\\(json\\|html\\|jade\\)$" lsp-file-watch-ignored) ; json
-
-        ;; don't ping LSP lanaguage server too frequently
-        (defvar lsp-on-touch-time 0)
-        (defadvice lsp-on-change (around lsp-on-change-hack activate)
-          ;; don't run `lsp-on-change' too frequently
-          (when (> (- (float-time (current-time))
-                      lsp-on-touch-time) 30) ;; 30 seconds
-            (setq lsp-on-touch-time (float-time (current-time)))
-            ad-do-it)))
-
-      (defun my-connect-lsp (&optional no-reconnect)
-        "Connect lsp server.  If NO-RECONNECT is t, don't shutdown existing lsp connection."
-        (interactive "P")
-        (when (and (not no-reconnect)
-                   (fboundp 'lsp-disconnect))
-          (lsp-disconnect))
-        (when (and buffer-file-name
-                   (not (member (file-name-extension buffer-file-name)
-                                '("json"))))
-          (unless (and (boundp 'lsp-mode) lsp-mode)
-            (if (derived-mode-p 'js2-mode) (setq-local lsp-enable-imenu nil))
-            (lsp-deferred))))
-
-        ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-        (setq lsp-keymap-prefix "C-c l")
-
-        (use-package lsp-mode
-            :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-                    (c++-mode . lsp)
-                    (c-mode . lsp)
-                    ;; if you want which-key integration
-                    (lsp-mode . lsp-enable-which-key-integration))
-            :commands lsp)
-
-;;  (add-hook 'c++-mode-hook #'my-connect-lsp)
-;;  (add-hook 'c-mode-hook #'my-connect-lsp)
-
-        (setq gc-cons-threshold (* 100 1024 1024)
-              read-process-output-max (* 1024 1024)
-              treemacs-space-between-root-nodes nil
-              lsp-idle-delay 0.1 ;; clangd is fast
-              lsp-modeline-code-actions-mode t
-              ;; be more ide-ish
-              lsp-modeline-code-actions-mode t
-              ;;lsp-headerline-breadcrumb-enable t  ;;面包屑导航
-        )
-
-        ;; optionally
-        ;; LSP UI tools
-          (use-package lsp-ui
+          (use-package lsp-mode
             :custom
-            ;; lsp-ui-doc
-            (lsp-ui-doc-enable nil)
-            (lsp-ui-doc-header t)
-            (lsp-ui-doc-include-signature nil)
-            (lsp-ui-doc-position 'top) ;; top, bottom, or at-point
-            (lsp-ui-doc-max-width 120)
-            (lsp-ui-doc-max-height 30)
-            (lsp-ui-doc-use-childframe t)
-            (lsp-ui-doc-use-webkit t)
-            ;; lsp-ui-flycheck
-            (lsp-ui-flycheck-enable nil)
-            ;; lsp-ui-sideline
-            (lsp-ui-sideline-enable nil)
-            (lsp-ui-sideline-ignore-duplicate t)
-            (lsp-ui-sideline-show-symbol t)
-            (lsp-ui-sideline-show-hover t)
-            (lsp-ui-sideline-show-diagnostics nil)
-            (lsp-ui-sideline-show-code-actions t)
-            (lsp-ui-sideline-code-actions-prefix "")
-            ;; lsp-ui-imenu
-            (lsp-ui-imenu-enable t)
-            (lsp-ui-imenu-kind-position 'top)
-            ;; lsp-ui-peek
-            (lsp-ui-peek-enable t)
-            (lsp-ui-peek-peek-height 20)
-            (lsp-ui-peek-list-width 50)
-            (lsp-ui-peek-fontify 'on-demand) ;; never, on-demand, or always
-            :preface
-            (defun jackiebin/toggle-lsp-ui-doc ()
-              (interactive)
-              (if lsp-ui-doc-mode
-                (progn
-                  (lsp-ui-doc-mode -1)
-                  (lsp-ui-doc--hide-frame))
-                 (lsp-ui-doc-mode 1)))
-            :bind
-            ;; Tip： 设置开关，手动打开某些特性
-            (:map lsp-mode-map
-            ("C-c C-r" . lsp-ui-peek-find-references)
-            ("C-c C-j" . lsp-ui-peek-find-definitions)
-            ("C-c i"   . lsp-ui-peek-find-implementation)
-            ("C-c m"   . lsp-ui-imenu)
-            ("C-c s"   . lsp-ui-sideline-mode)
-            ("C-c d"   . jackiebin/toggle-lsp-ui-doc))
-            :hook
-            (lsp-mode . lsp-ui-mode))
+            ;; enable log only for debug
+            (lsp-log-io nil)
+            ;; handle yasnippet by myself
+            (lsp-enable-snippet nil)
+            ;; turn off for better performance
+            (lsp-enable-symbol-highlighting nil)
+            ;; use `company-ctags' only.
+            ;; Please note `company-lsp' is automatically enabled if installed
+            (lsp-enable-completion-at-point nil)
+            ;; auto restart lsp
+            (lsp-restart 'auto-restart)
 
-        ;; if you are ivy user
-        (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
-        (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+              :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
+                      (c++-mode . lsp)
+                      (c-mode . lsp)
+                      ;; if you want which-key integration
+                      (lsp-mode . lsp-enable-which-key-integration))
+              :commands lsp)
 
-        (use-package posframe :ensure t)
+  ;;  (add-hook 'c++-mode-hook #'my-connect-lsp)
+  ;;  (add-hook 'c-mode-hook #'my-connect-lsp)
+
+          (setq gc-cons-threshold (* 100 1024 1024)
+                read-process-output-max (* 1024 1024)
+                treemacs-space-between-root-nodes nil
+                lsp-idle-delay 0.1 ;; clangd is fast
+                lsp-modeline-code-actions-mode t
+                ;; be more ide-ish
+                lsp-modeline-code-actions-mode t
+                ;;lsp-headerline-breadcrumb-enable t  ;;面包屑导航
+          )
+
+          ;; optionally
+          ;; LSP UI tools
+            (use-package lsp-ui
+              :custom
+              ;; lsp-ui-doc
+              (lsp-ui-doc-enable nil)
+              (lsp-ui-doc-header t)
+              (lsp-ui-doc-include-signature nil)
+              (lsp-ui-doc-position 'top) ;; top, bottom, or at-point
+              (lsp-ui-doc-max-width 120)
+              (lsp-ui-doc-max-height 30)
+              (lsp-ui-doc-use-childframe t)
+              (lsp-ui-doc-use-webkit t)
+              ;; lsp-ui-flycheck
+              (lsp-ui-flycheck-enable nil)
+              ;; lsp-ui-sideline
+              (lsp-ui-sideline-enable nil)
+              (lsp-ui-sideline-ignore-duplicate t)
+              (lsp-ui-sideline-show-symbol t)
+              (lsp-ui-sideline-show-hover t)
+              (lsp-ui-sideline-show-diagnostics nil)
+              (lsp-ui-sideline-show-code-actions t)
+              (lsp-ui-sideline-code-actions-prefix "")
+              ;; lsp-ui-imenu
+              (lsp-ui-imenu-enable t)
+              (lsp-ui-imenu-kind-position 'top)
+              ;; lsp-ui-peek
+              (lsp-ui-peek-enable t)
+              (lsp-ui-peek-peek-height 20)
+              (lsp-ui-peek-list-width 50)
+              (lsp-ui-peek-fontify 'on-demand) ;; never, on-demand, or always
+              :preface
+              (defun jackiebin/toggle-lsp-ui-doc ()
+                (interactive)
+                (if lsp-ui-doc-mode
+                  (progn
+                    (lsp-ui-doc-mode -1)
+                    (lsp-ui-doc--hide-frame))
+                   (lsp-ui-doc-mode 1)))
+              :bind
+              ;; Tip： 设置开关，手动打开某些特性
+              (:map lsp-mode-map
+              ("C-c C-r" . lsp-ui-peek-find-references)
+              ("C-c C-j" . lsp-ui-peek-find-definitions)
+              ("C-c i"   . lsp-ui-peek-find-implementation)
+              ("C-c m"   . lsp-ui-imenu)
+              ("C-c s"   . lsp-ui-sideline-mode)
+              ("C-c d"   . jackiebin/toggle-lsp-ui-doc))
+              :hook
+              (lsp-mode . lsp-ui-mode))
+
+          ;; if you are ivy user
+          (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+          (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+
+          (use-package posframe :ensure t)
 #+END_SRC
 
 * Language cpp
@@ -4656,7 +4185,6 @@ sudo pacman -S global
 
         ;; Emacs frontend to GNU GLobal source code tagging system
         (use-package ggtags
-        :disabled t
           :init
           (ggtags-mode 1)
           (add-hook 'c-mode-common-hook
