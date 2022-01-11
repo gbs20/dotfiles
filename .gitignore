@@ -45,6 +45,7 @@ emacs/.emacs.d/third_parties/english-teacher.el/
 emacs/.emacs.d/third_parties/go-translate/
 emacs/.emacs.d/third_parties/snippets/python-mode/
 emacs/.emacs.d/settings.org.bakup
+emacs/.emacs.d/eln-cache/
 
 vim/.vim/.netrwhist
 vim/.vim/autoload
