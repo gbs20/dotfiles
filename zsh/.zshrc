@@ -234,3 +234,5 @@ myman() {
 export EDITOR=vim
 
 
+export NEMU_HOME=/home/gbshen/ics2021/nemu
+export AM_HOME=/home/gbshen/ics2021/abstract-machine
