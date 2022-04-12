@@ -211,8 +211,8 @@ Defining a simple helper to edit file as root using tramp
   (use-package srcery-theme
     :ensure t
     :config
-    (load-theme 'srcery t)
-  )
+    (load-theme 'srcery t))
+
   ;; Modeline
   (use-package doom-modeline
     :ensure t
@@ -765,8 +765,13 @@ Never lose your cursor again
     :init
     (add-hook 'prog-mode-hook 'highlight-numbers-mode))
 
+  (use-package auto-highlight-symbol
+    :ensure t
+    :config
+    (global-auto-highlight-symbol-mode t))
+
   ;; Always hightlight current line
-  (global-hl-line-mode t)
+  ;;(global-hl-line-mode t)
 #+end_src
 ** Minor-mode activation
 I use some minor modes based on some filetypes. This package is an helper which facilitates these
@@ -776,6 +781,11 @@ activations.
 (use-package auto-minor-mode
   :ensure t)
 #+end_src
+** mark and region
+The mark ring
+每次你跳转了光标(文本搜索或者按下了 M-<或 M->)，
+Emacs使用mark标记下你的前一个位置.
+C-x C-x exchange-point-and-mark
 ** bookmark
 ** register
 ** mode
@@ -843,42 +853,12 @@ front and rear of the visited file name.  Thus, a buffer visiting file
   #+end_src
 ** Editing
 *** Navigation
-This part is dedicated to the configuration for buffer (even large) navigation.
-**** Scrolling (and fast please !)
-#+begin_src emacs-lisp
-  (use-package fast-scroll
-    :ensure t
-    :hook
-    (fast-scroll-start      . (lambda () (flycheck-mode -1)))
-    (fast-scroll-end        . (lambda () (flycheck-mode 1)))
-
-    :config
-    (fast-scroll-config)
-    (fast-scroll-mode 1))
-
-  ;; Disable re-center of the cursor to the middle of page when scroll hits top or bottom of the page
-  (setq scroll-conservatively 101)
-
-  (use-package scrollkeeper
-    :disabled t
-    :ensure quelpa
-    :quelpa (scrollkeeper :fetcher github :repo "alphapapa/scrollkeeper.el")
-    :general ([remap scroll-up-command] #'scrollkeeper-contents-up
-              [remap scroll-down-command] #'scrollkeeper-contents-down))
-#+end_src
-
-By default, page scrolling should keep the point at the same visual position, rather than force it to
-the top or bottom of the viewport. This eliminates the friction of guessing where the point has warped to.
-
-As for per-line scrolling, I dislike the default behaviour of visually re-centring the point: it is too
-aggressive as a standard mode of interaction. With the following setq-default, the point will stay at the top/bottom
-of the screen while moving in that direction (use C-l to reposition it).
 #+begin_src emacs-lisp
   (use-package emacs
-    :disabled t
+    :ensure nil
     :config
-    (setq-default scroll-preserve-screen-position t)
-    (setq-default scroll-conservatively 1) ; affects `scroll-step'
+    ;;(setq-default scroll-preserve-screen-position t)
+    (setq-default scroll-conservatively 101) ; affects `scroll-step'
     (setq-default scroll-margin 0))
 #+end_src
 
@@ -1058,140 +1038,6 @@ M-x org-edit-src-code : edit source block
             (?I . "Important"))))
 #+end_src
 
-** PDF
-*** Global
-  #+begin_src emacs-lisp :tangle no
-    (use-package pdf-tools
-      :functions
-      (pdf-history-backward
-       pdf-history-forward
-       pdf-links-action-perfom
-       pdf-links-isearch-link
-       pdf-view-enlarge
-       pdf-view-shrink
-       pdf-view-scale-reset
-       pdf-view-fit-height-to-window
-       pdf-view-fit-width-to-window
-       pdf-view-fit-page-to-window
-       pdf-view-next-page-command
-       pdf-view-previous-page-command
-       pdf-view-dark-minor-mode)
-
-
-      :hook
-      (pdf-view-mode . (lambda ()
-                         (pdf-misc-size-indication-minor-mode)
-                         (pdf-links-minor-mode)
-                         (pdf-isearch-minor-mode)
-                         (cua-mode 0)))
-
-      :bind
-      (:map pdf-view-mode-map
-            ("/" . hydra-pdftools/body)
-            ("<s-spc>" .  pdf-view-scroll-down-or-next-page)
-            ("<C-s>" . isearch-forward)
-            ("g"  . pdf-view-first-page)
-            ("G"  . pdf-view-last-page)
-            ("l"  . image-forward-hscroll)
-            ("h"  . image-backward-hscroll)
-            ("j"  . pdf-view-next-page)
-            ("k"  . pdf-view-previous-page)
-            ("e"  . pdf-view-goto-page)
-            ("u"  . pdf-view-revert-buffer)
-            ("al" . pdf-annot-list-annotations)
-            ("ad" . pdf-annot-delete)
-            ("aa" . pdf-annot-attachment-dired)
-            ("am" . pdf-annot-add-markup-annotation)
-            ("at" . pdf-annot-add-text-annotation)
-            ("y"  . pdf-view-kill-ring-save)
-            ("i"  . pdf-misc-display-metadata)
-            ("s"  . pdf-occur)
-            ("b"  . pdf-view-set-slice-from-bounding-box)
-            ("r"  . pdf-view-reset-slice))
-
-      :hydra
-      (hydra-pdftools (:color blue :hint nil)
-                      "
-                PDF tools
-
-             Move  History   Scale/Fit                  Annotations     Search/Link     Do
-          ------------------------------------------------------------------------------------------------
-               ^^_g_^^      _B_    ^↧^    _+_    ^ ^     _al_: list    _s_: search    _u_: revert buffer
-               ^^^↑^^^      ^↑^    _H_    ^↑^  ↦ _W_ ↤   _am_: markup  _o_: outline   _i_: info
-               ^^_p_^^      ^ ^    ^↥^    _0_    ^ ^     _at_: text    _F_: link      _d_: dark mode
-               ^^^↑^^^      ^↓^  ╭─^─^─┐  ^↓^  ╭─^ ^─┐   _ad_: delete  _f_: search link
-          _h_ ←pag_e_→ _l_  _N_  │ _P_ │  _-_    _b_     _aa_: dired
-               ^^^↓^^^      ^ ^  ╰─^─^─╯  ^ ^  ╰─^ ^─╯   _y_:  yank
-               ^^_n_^^      ^ ^  _r_eset slice box
-               ^^^↓^^^
-               ^^_G_^^
-          "
-                      ("<ESC>" nil "quit")
-                      ("al" pdf-annot-list-annotations)
-                      ("ad" pdf-annot-delete)
-                      ("aa" pdf-annot-attachment-dired)
-                      ("am" pdf-annot-add-markup-annotation)
-                      ("at" pdf-annot-add-text-annotation)
-                      ("y"  pdf-view-kill-ring-save)
-                      ("+" pdf-view-enlarge :color red)
-                      ("-" pdf-view-shrink :color red)
-                      ("0" pdf-view-scale-reset)
-                      ("H" pdf-view-fit-height-to-window)
-                      ("W" pdf-view-fit-width-to-window)
-                      ("P" pdf-view-fit-page-to-window)
-                      ("n" pdf-view-next-page-command :color red)
-                      ("p" pdf-view-previous-page-command :color red)
-                      ("d" pdf-view-dark-minor-mode)
-                      ("b" pdf-view-set-slice-from-bounding-box)
-                      ("r" pdf-view-reset-slice)
-                      ("g" pdf-view-first-page)
-                      ("G" pdf-view-last-page)
-                      ("e" pdf-view-goto-page)
-                      ("o" pdf-outline)
-                      ("s" pdf-occur)
-                      ("i" pdf-misc-display-metadata)
-                      ("u" pdf-view-revert-buffer)
-                      ("F" pdf-links-action-perfom)
-                      ("f" pdf-links-isearch-link)
-                      ("B" pdf-history-backward :color red)
-                      ("N" pdf-history-forward :color red)
-                      ("l" image-forward-hscroll :color red)
-                      ("h" image-backward-hscroll :color red))
-
-      :magic ("%PDF" . pdf-view-mode)
-
-      :config
-      ;; Install what need to be installed !
-      (pdf-tools-install t t t)
-
-      ;; open pdfs scaled to fit page
-      (setq-default pdf-view-display-size 'fit-page)
-
-      ;; automatically annotate highlights
-      (setq pdf-annot-activate-created-annotations t)
-
-      ;; more fine-grained zooming
-      (setq pdf-view-resize-factor 1.1))
-
-    (use-package pdf-view-restore
-      :ensure t
-      :after pdf-tools
-      :hook
-      (pdf-view-mode-hook . pdf-view-restore-mode))
-  #+end_src
-*** Grepping
-#+BEGIN_SRC emacs-lisp :tangle no
-  (use-package pdfgrep
-    :config
-    (pdfgrep-mode))
-#+END_SRC
-** vterm
-#+begin_src emacs-lisp
-(use-package vterm
-  :ensure t
-  :config
-  (setq vterm-max-scrollback 10000))
-#+end_src
 ** which-key
 #+BEGIN_SRC emacs-lisp
   ;; Display available keybindings in a popup
@@ -1210,32 +1056,6 @@ M-x org-edit-src-code : edit source block
     (setq which-key-separator " → " )
     (setq which-key-special-keys nil)
     (which-key-mode 1))
-#+END_SRC
-** Dashboard
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package dashboard
-  :ensure t
-  :custom
-  (dashboard-set-heading-icons t)
-  (dashboard-set-navigator t)
-  :config
-  ;; Set the title
-  (setq dashboard-banner-logo-title
-    (concat "GNU Emacs " emacs-version " kernel "
-        (car (split-string (shell-command-to-string "uname -r") "-"))
-        " x86_64 Manjora Linux GTK " gtk-version-string))
-  ;;(setq dashboard-startup-banner
-  ;;  (expand-file-name "emacs.png" user-emacs-directory))
-  (setq dashboard-startup-banner 'logo
-  ;;      dashboard-center-content t
-        dashboard-set-file-icons t)
-
-  (global-page-break-lines-mode)
-  (setq dashboard-page-separator "\n\f\f\n")
-  (setq dashboard-items '((recents . 12)))
-  (setq dashboard-modify-heading-icons '((recents . "file-text")))
-
-  (dashboard-setup-startup-hook))
 #+END_SRC
 ** multiple cursors
 #+begin_src emacs-lisp
@@ -1264,290 +1084,7 @@ M-x org-edit-src-code : edit source block
 ;;  :config
 ;;  (delete-selection-mode t))
 #+end_src
-** System
-*** Docker
-#+begin_src emacs-lisp
-;; Manage docker from Emacs.
-  (use-package docker
-    :ensure t
-    :commands (docker))
 
-  (use-package docker-api
-    :ensure t)
-
-  (use-package docker-tramp
-    :ensure t)
-
-  (use-package dockerfile-mode
-    :ensure t)
-#+end_src
-*** SSH
-#+begin_src emacs-lisp
-;; Support for remote logins using ssh in Emacs
-  (use-package ssh :ensure t)
-;; A deployment plugin via Tramp for Emacs.
-  (use-package ssh-deploy :ensure t)
-#+end_src
-*** Cron
-#+BEGIN_SRC emacs-lisp
-  (use-package crontab-mode
-    :ensure t)
-#+END_SRC
-*** Monitoring
-#+begin_src emacs-lisp
-;; tiny graphical system monitor
-  (use-package symon
-    :ensure t)
-#+end_src
-*** Clipboard
-Read clipboard history from Parcellite/Clipit on Linux and Flycut on OS X
-#+begin_src emacs-lisp
-  (use-package cliphist
-    :ensure t)
-#+end_src
-
-*** systctl
-#+begin_src emacs-lisp
-;; Manage sysctl through Emacs
-  (use-package sysctl :ensure t :commands (sysctl))
-#+end_src
-*** Locate
-#+begin_src emacs-lisp
-  (use-package ellocate
-    :ensure t
-    :commands (ellocate))
-#+end_src
-*** System package
-#+begin_src emacs-lisp
-;; functions to manage system packages
-  (use-package system-packages
-      :ensure t
-      :config
-      (setq system-packages-supported-package-managers
-            '(
-              (trizen .
-                      ((default-sudo . nil)
-                       (install . "trizen -S --noconfirm")
-                       (search . "trizen -Ss")
-                       (uninstall . "trizen -Rns")
-                       (update . "trizen -Syu --noconfirm")
-                       (clean-cache . "trizen -Sc")
-                       (log . "cat /var/log/trizen.log")
-                       (get-info . "trizen -Qi")
-                       (get-info-remote . "trizen -Si")
-                       (list-files-provided-by . "trizen -Ql")
-                       (verify-all-packages . "trizen -Qkk")
-                       (verify-all-dependencies . "trizen -Dk")
-                       (remove-orphaned . "trizen -Rns $(trizen -Qtdq)")
-                       (list-installed-packages . "trizen -Qe")
-                       (list-installed-packages-all . "trizen -Q")
-                       (list-dependencies-of . "trizen -Qi")
-                       (noconfirm . "--noconfirm")))
-              )
-
-            system-packages-use-sudo nil
-            system-packages-package-manager 'trizen)
-      )
-#+end_src
-** Internet/network
-*** IRC
-Circe, a Client for IRC in Emacs, see [[https://github.com/jorgenschaefer/circe/wiki/Configuration][Circe Configuration]].
-Setting nickserv-password: (setq auth-sources '("~/.authinfo.gpg"))
-**** Global
-#+begin_src emacs-lisp
-  (use-package circe
-    :ensure t
-    :bind ("<S-f2>" . circe-init)
-    :hook
-    (circe-chat-mode . disable-global-facilities)
-
-    :config
-
-    ;; Defining the networks
-    (setq circe-network-options
-           '(("Freenode"
-             :tls t
-             :nick "sgb20"
-             :channels ("#emacs")
-             ;;:nickserv-password my-irc-password
-             :server-buffer-name "⇄ freenode")))
-
-    ;; Completion
-    (setq circe-use-cycle-completion t)
-
-    ;; Spam information reduction
-    (setq circe-reduce-lurker-spam t)
-
-    ;; Tracking
-    (setq lui-track-bar-behavior 'before-switch-to-buffer)
-    (enable-lui-track-bar)
-
-    ;; spell checking
-    (add-hook 'circe-channel-mode-hook 'turn-on-flyspell)
-    (setq lui-max-buffer-size 30000
-          lui-flyspell-p t
-          lui-flyspell-alist '(("." "american")))
-
-    ;; Formatting / Visual
-    (enable-circe-color-nicks)
-    (setq lui-time-stamp-position 'right-margin
-          lui-time-stamp-format "[%Y-%m-%d %H:%M:%S]"
-          lui-fill-type nil)
-    (enable-circe-display-images)
-
-    (defun my-lui-setup ()
-      (setq
-       fringes-outside-margins t
-       right-margin-width 21
-       word-wrap t
-       wrap-prefix "    "))
-    (add-hook 'lui-mode-hook 'my-lui-setup)
-
-    ;; Connection
-    (defun circe-network-connected-p (network)
-      "Return non-nil if there's any Circe server-buffer whose
-    `circe-netwok' is NETWORK."
-      (catch 'return
-        (dolist (buffer (circe-server-buffers))
-          (with-current-buffer buffer
-            (if (string= network circe-network)
-                (throw 'return t))))))
-
-     (defun circe-maybe-connect (network)
-       "Connect to NETWORK, but ask user for confirmation if it's
-    already been connected to."
-       (interactive "sNetwork: ")
-       (if (or (not (circe-network-connected-p network))
-               (y-or-n-p (format "Already connected to %s, reconnect?" network)))
-           (circe network)))
-
-     (defun my-irc-password (server)
-       "Return the password for the `SERVER'."
-       (my:auth-source-get-passwd :host server))
-
-     ;; Shortcut
-     (defun circe-init ()
-       "Connect to IRC"
-       (interactive)
-       (if (circe-network-connected-p "Freenode")
-           (switch-to-buffer "⇄ freenode")
-         (progn
-           (circe-maybe-connect "Freenode"))))
-    )
-#+end_src
-**** Logging
-#+begin_src emacs-lisp
-  (use-package lui-logging
-    :commands (enable-lui-logging))
-
-#+end_src
-**** Autopasting
-#+begin_src emacs-lisp
-  (use-package lui-autopaste
-    :config
-    (add-hook 'circe-channel-mode-hook 'enable-lui-autopaste)
-    (defvar lui-autopaste-service-gist-url nil
-      "The URL for the last gist.")
-
-    (defun lui-autopaste-service-gist (text)
-      "Paste TEXT to github using gist.el."
-      ;; It's so great gist works with callbacks! It's so much fun to
-      ;; work around that!
-      (setq lui-autopaste-service-gist-url 'waiting)
-      (with-temp-buffer
-        (insert text)
-        (gist-region (point-min) (point-max) nil
-                     (lambda (gist)
-                       (when (eq lui-autopaste-service-gist-url
-                                 'waiting)
-                         (setq lui-autopaste-service-gist-url
-                               (oref gist :html-url)))))) ;; FIXME: this provokes a Warning: Unknown slot ‘:html-url’
-      (let ((wait 0))
-        (while (and (< wait 10)
-                    (eq lui-autopaste-service-gist-url
-                        'waiting))
-          (sit-for 0.1 )
-          (setq wait (1+ wait))))
-      (if (eq lui-autopaste-service-gist-url 'waiting)
-          (progn
-            (setq lui-autopaste-service-gist-url nil)
-            (error "Couldn't create gist"))
-        (prog1 lui-autopaste-service-gist-url
-          (setq lui-autopaste-service-gist-url nil))))
-
-
-    (setq lui-autopaste-function 'lui-autopaste-service-gist))
-#+end_src
-**** Some coloring
-#+begin_src emacs-lisp
-  (use-package lui-irc-colors
-    :after circe
-    :config
-    (add-to-list 'lui-pre-output-hook 'lui-irc-colors))
-#+end_src
-**** Notification
-#+begin_src emacs-lisp :tangle no
-  (use-package circe-notifications
-    :ensure t
-    :commands (enable-circe-notifications)
-    :custom (circe-notifications-alert-style 'sauron-mode-line-style)
-    :hook
-    (circe-server-connected . enable-circe-notifications))
-#+end_src
-*** RSS
-**** Global
-#+begin_src emacs-lisp
-  (use-package elfeed
-    :ensure t
-    :commands (elfeed)
-    :no-require t
-    :bind (([f9] . elfeed))
-
-    :config
-    ;; Change the storage directory
-    (setq elfeed-db-directory "~/org/elfeed")
-
-    ;; Formatting dates
-    (setq elfeed-search-date-format '("%Y-%m-%d %H:%M" 17 :left)))
-#+end_src
-**** Org connection
-github homepage: https://github.com/remyhonig/elfeed-org
-C-c C-o:org-open-at-point
-#+begin_src emacs-lisp :tangle no
-  (use-package elfeed-org
-    :ensure t
-    :no-require t
-    :config
-    (when (file-exists-p "~/org/organisation/rss.org")
-      (progn
-        (elfeed-org)
-        (setq rmh-elfeed-org-files (list "~/org/organisation/rss.org"))
-        (rmh-elfeed-org-process rmh-elfeed-org-files rmh-elfeed-org-tree-id)))
-
-    (elfeed-update-background-start))
-#+end_src
-**** Goodies
-#+BEGIN_SRC emacs-lisp
-  (use-package elfeed-goodies
-    :ensure t
-    :disabled t
-    :config
-    (elfeed-goodies/setup))
-#+END_SRC
-**** Notification part
-#+begin_src emacs-lisp :tangle no
-  (use-package sauron-elfeed
-    :config
-    (cl-loop for feed in elfeed-feeds
-             do (when (member 'mustread (cdr feed))
-                  (puthash (car feed) 3 sauron-elfeed-prio-hash))))
-
-#+end_src
-** Helm dash
-#+BEGIN_SRC emacs-lisp
-(use-package helm-dash
-  :ensure t)
-#+END_SRC
 ** Writing
 *** Inspiration helpers
 As I write papers, it is useful to have some helper to start to have the inspiration.
@@ -1680,8 +1217,9 @@ M-x langtool-check-done
   :config (pyim-basedict-enable))
 #+END_SRC
 
-** format
-*** format-all
+
+* format
+** format-all
 We can globally reformat the buffer relying on external tool. =format-all= is here for this.
 
 #+begin_src emacs-lisp
@@ -1690,16 +1228,8 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
     :commands (format-all-buffer format-all-mode))
   (setq clang-format-style-option "google")
 #+end_src
-*** editor configs
-#+begin_src emacs-lisp
-  ;; Respect editor configs
-  (use-package editorconfig
-    :ensure t
-    :diminish editorconfig-mode
-    :config
-    (editorconfig-mode 1))
-#+end_src
-*** Indentation
+
+** Indentation
 #+begin_src emacs-lisp
   (use-package highlight-indent-guides
     :ensure t
@@ -1709,180 +1239,128 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
     :config
     (setq highlight-indent-guides-method 'character));;fill, column, character, bitmap
 #+end_src
+* Manual
+** manpage
+#+begin_src emacs-lisp
+  (use-package man
+  :ensure nil
+  :config
+  (setq Man-notify-method 'aggressive))
+#+end_src
 
-* emacs pleasure
-** 2048 game
+** Helm dash
+Offline documentation browser for +150 APIs using Dash docsets.
 #+BEGIN_SRC emacs-lisp
-(use-package 2048-game
-  :commands (2048-game))
-#+END_SRC
-** Music
-*** Global
-#+begin_src shell :tangle no
-sudo pacman -S mpv
-#+end_src
-#+begin_src emacs-lisp
-  (use-package emms
-    :ensure t
-    :commands (emms emms-browse-by-artist)
-    :bind
-    (("<f5>"            . emms-browse-by-artist)
-     ("S-<f5>"          . emms-playlist-mode-go)
-     ("<XF86AudioPlay>" . emms-pause)
-     ("<XF86AudioStop>" . emms-stop)
-     ("<XF86AudioPrev>" . emms-previous)
-     ("<XF86AudioNext>" . emms-next))
-
-    :config
-
-    (emms-all)
-
-    ;; Use mpv player
-    (setq emms-player-list '(emms-player-mpv))
-
-    ;; A minor macos adaptation
-    (when (eq system-type 'darwin)
-      (setq emms-source-file-gnu-find "/usr/local/bin/gfind"))
-
-    ;; Some behaviour definition
-    (setq later-do-interval 0.0001
-          emms-directory "~/.emacs.d/emms"
-          emms-playlist-buffer-name "*Music*"
-          emms-source-file-default-directory (expand-file-name "~/Music")
-          emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find
-          emms-show-format "NP: %s"
-          emms-playlist-default-major-mode 'emms-playlist-mode
-          emms-repeat-playlist t
-          emms-mode-line-mode-line-function nil  ;; Don't want any info in the mode line
-          emms-mode-line-titlebar-function 'emms-mode-line-playlist-current) ;; Put info in the titlebar
-
-    ;; Visualisation activation/deactivation
-    (emms-mode-line nil)
-    ;; (emms-playing-time-disable-display)
-
-    ;; Enable cache
-    (when (fboundp 'emms-cache)
-      (emms-cache 1))
-
-    ;; Adapt track description format
-    (defun track-description (track)
-      "Return a description of the current TRACK."
-      (if (and (emms-track-get track 'info-artist)
-               (emms-track-get track 'info-title))
-          (let ((pmin (emms-track-get track 'info-playing-time-min))
-                (psec (emms-track-get track 'info-playing-time-sec))
-                (ptot (emms-track-get track 'info-playing-time))
-                (art  (emms-track-get track 'info-artist))
-                (tit  (emms-track-get track 'info-title))
-                (alb  (emms-track-get track 'info-album)))
-            (cond ((and pmin psec) (format "%s - %s - %s [%02d:%02d]" art alb tit pmin psec))
-                  (ptot (format  "%s - %s - %s [%02d:%02d]" art alb tit (/ ptot 60) (% ptot 60)))
-                  (t (emms-track-simple-description track))))
-        (emms-track-simple-description track)))
-    (setq emms-track-description-function 'track-description)
-
-    ;; taken from http://emacs.stackexchange.com/questions/21747/emms-how-can-i-have-a-progress-bar?rq=1
-    (defun emms-indicate-seek (_sec)
-      "Show the progress bar when seek."
-      (let* ((total-playing-time (emms-track-get
-                                  (emms-playlist-current-selected-track)
-                                  'info-playing-time))
-             (elapsed/total (/ (* 100 emms-playing-time) total-playing-time)))
-        (with-temp-message (format "[%-100s] %2d%% ([%02d:%02d]/[%02d:%02d])"
-                                   (make-string elapsed/total ?=)
-                                   elapsed/total
-                                   (/ emms-playing-time 60) (% emms-playing-time 60)
-                                   (/ total-playing-time 60) (% total-playing-time 60))
-          (sit-for 2))))
-    (add-hook 'emms-player-seeked-functions #'emms-indicate-seek 'append))
-
-  (use-package emms-info-libtag
-    :after emms
-    :config
-
-    (setq emms-info-asynchronously nil
-          emms-info-functions '(emms-info-libtag)))
-#+end_src
-*** Tagging using emms
-I actually use this part for minor correction. The tags are done when abcde is converting the cd
-#+begin_src emacs-lisp
-  (use-package emms-mark-ext
-    :ensure t
-    :hook
-    (emms-playlist-mode . emms-mark-ext-hook)
-    :commands (emms-mark-ext-hook))
-#+end_src
-*** Browser
-#+begin_src emacs-lisp
-  (use-package emms-browser
-    :after emms
-    :hook
-    (emms-browser-show-display . (lambda () (hl-line-mode 1)))
-
-    :config
-    (emms-browser-make-filter "all-files" (emms-browser-filter-only-type 'file))
-
-    (setq emms-browser-info-artist-format "%i☢ %n"
-          emms-browser-info-album-format "%i%cS [%y] %n"
-          emms-browser-info-title-format "%i♪ %T. %t [%d]"
-          emms-browser-playlist-info-album-format "%cS %a - %A : "
-          emms-browser-playlist-info-title-format "%T. %t [%d]"))
-#+end_src
-
-** kana
-#+BEGIN_SRC emacs-lisp
-(use-package kana
+(use-package helm-dash
   :ensure t)
 #+END_SRC
-** eaf
+
+* Syntax checking
 #+begin_src emacs-lisp
-  (use-package eaf
-    :disabled t
-    :load-path "~/.emacs.d/site-lisp/emacs-application-framework" ; Set to "/usr/share/emacs/site-lisp/eaf" if installed from AUR
-    :custom
-    (eaf-find-alternate-file-in-dired t)
-    :config
-    (setq eaf-browser-default-search-engine "Bing")
-    (setq eaf-browser-search-engines '(("Baidu" . "https://www.baidu.com/s?wd=%s")
-                                     ("Bing" . "https://cn.bing.com/search?q=%s")))
-    (eaf-setq eaf-browse-blank-page-url "https://www.baidu.com")
-
-    (eaf-setq eaf-browser-remember-history "true")
-    ;;(eaf-setq eaf-browser-default-zoom "1.5")
-    (eaf-setq eaf-terminal-font-family "WenQuanYi Micro Hei")
-    (eaf-setq eaf-browser-dark-mode "false")
-
-    (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
-    (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding)
-    (eaf-bind-key take_photo "p" eaf-camera-keybinding))
-#+end_src
-** command log
-  ;; Display used hotkeys in another window
-  ;;(use-package command-log-mode
-  ;;  :diminish command-log-mode)
-
-
-* citre
-#+begin_src emacs-lisp :tangle no
-  (use-package citre
+  ;; Disable checking doc
+  (use-package flycheck
     :ensure t
-    :defer t
-    :init
-    ;; This is needed in `:init' block for lazy load to work.
-    (require 'citre-config)
-    ;; Bind your frequently used commands.
-    (global-set-key (kbd "M-.") 'citre-jump)
-    (global-set-key (kbd "M-,") 'citre-jump-back)
-    (global-set-key (kbd "C-x c p") 'citre-ace-peek)
+    :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
+    :hydra
+    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
+                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
+                     :color teal :hint nil)
+                    "Errors"
+                    ("f"  flycheck-error-list-set-filter                            "Filter")
+                    ("j"  flycheck-next-error                                       "Next")
+                    ("k"  flycheck-previous-error                                   "Previous")
+                    ("gg" flycheck-first-error                                      "First")
+                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
+                    ("<" hydra-project/body "back")
+                    ("q"   nil "cancel" :color blue))
+
     :config
-    (setq
-     ;; Set this if readtags is not in your path.
-     ;;citre-readtags-program "/path/to/readtags"
-     ;; Set this if you use project management plugin like projectile.  It's
-     ;; only used to display paths relatively, and doesn't affect actual use.
-     citre-project-root-function #'projectile-project-root))
+    (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+
+    (flycheck-define-checker proselint
+      "A linter for prose."
+      :command ("proselint" source-inplace)
+      :error-patterns
+      ((warning line-start (file-name) ":" line ":" column ": "
+                (id (one-or-more (not (any " "))))
+                (message) line-end))
+      :modes (text-mode markdown-mode gfm-mode org-mode))
+    )
 #+end_src
-* embark
+* Templating
+I use templates for 2 use cases: the buffer edition and the file specific templates. Both are relying on *yasnippet*.
+
+** Edition templates
+The default configuration of yasnippet consists of activating it and plugging it with company.
+Ivy-yasnippet is used for snippet discovery.
+#+BEGIN_SRC emacs-lisp
+;; Yasnippet, a template system for emacs
+  (use-package yasnippet
+    :ensure t
+    :config
+
+    ;; Adding yasnippet support to company
+    (eval-after-load 'company
+      '(lambda ()
+         (add-to-list 'company-backends 'company-yasnippet)))
+
+    ;; Add third parties snippets
+    (defvar third-parties-snippet-dir (format "%s/third_parties/snippets" user-emacs-directory)
+      "Directory containing my own snippets")
+
+    (defun third-parties-snippets-initialize ()
+      (add-to-list 'yas-snippet-dirs 'third-parties-snippet-dir t)
+      (yas-load-directory third-parties-snippet-dir t))
+
+    (eval-after-load 'yasnippet '(third-parties-snippets-initialize))
+
+    ;; Activate global
+    (yas-global-mode))
+
+  ;; Load official snippets
+  (use-package yasnippet-snippets
+    :ensure t)
+  (use-package yasnippet-classic-snippets
+    :ensure t)
+
+  ;; Connect with ivy to have a list on demand
+  (use-package ivy-yasnippet
+    :ensure t)
+
+#+END_SRC
+** Filetype templates
+This part is using yatemplate (an over-layer of yasnippet) coupled with auto-insert to have a set of
+file type dedicated templates. The templates are available in =third_parties/templates= directory.
+
+To put some predefined text at the beginning of the buffer.
+M-x *auto-insert*
+
+#+begin_src emacs-lisp
+  (use-package yatemplate
+    :ensure t
+    :after yasnippet
+    :config
+
+    ;; Define template directory
+    (setq yatemplate-dir (concat user-emacs-directory "/third_parties/templates"))
+
+    ;; Coupling with auto-insert
+    (setq auto-insert-alist nil)
+    (yatemplate-fill-alist)
+    ;; (add-hook 'find-file-hook 'auto-insert)
+    )
+#+end_src
+
+
+* Completion
+This part focuses on completion configuration. Language specific configurations are not done here
+but in the dedicate language configuration part. This section is just for global configuration.
+** Compdef
+compdef sets backends as a local variable for that specific mode.
+#+begin_src emacs-lisp
+;;(use-package compdef :ensure t)
+#+end_src
+** embark
 #+begin_src emacs-lisp
 (use-package marginalia
   :ensure t
@@ -1916,13 +1394,6 @@ I actually use this part for minor correction. The tags are done when abcde is c
   ;; auto-updating embark collect buffer
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
-#+end_src
-* Completion
-This part focuses on completion configuration. Language specific configurations are not done here
-but in the dedicate language configuration part. This section is just for global configuration.
-** Compdef
-#+begin_src emacs-lisp
-(use-package compdef :ensure t)
 #+end_src
 ** Ivy/swipper/counsel
 I do prefer vertical completion, which is why I use extensively Ivy and extensions.
@@ -2087,69 +1558,7 @@ configuration here.
   :ensure t
   :hook (company-mode . company-box-mode))
 #+end_src
-** Templating
-I use templates for 2 use cases: the buffer edition and the file specific templates. Both are relying on *yasnippet*.
 
-*** Edition templates
-The default configuration of yasnippet consists of activating it and plugging it with company.
-Ivy-yasnippet is used for snippet discovery.
-#+BEGIN_SRC emacs-lisp
-;; Yasnippet, a template system for emacs
-  (use-package yasnippet
-    :ensure t
-    :config
-
-    ;; Adding yasnippet support to company
-    (eval-after-load 'company
-      '(lambda ()
-         (add-to-list 'company-backends 'company-yasnippet)))
-
-    ;; Add third parties snippets
-    (defvar third-parties-snippet-dir (format "%s/third_parties/snippets" user-emacs-directory)
-      "Directory containing my own snippets")
-
-    (defun third-parties-snippets-initialize ()
-      (add-to-list 'yas-snippet-dirs 'third-parties-snippet-dir t)
-      (yas-load-directory third-parties-snippet-dir t))
-
-    (eval-after-load 'yasnippet '(third-parties-snippets-initialize))
-
-    ;; Activate global
-    (yas-global-mode))
-
-  ;; Load official snippets
-  (use-package yasnippet-snippets
-    :ensure t)
-  (use-package yasnippet-classic-snippets
-    :ensure t)
-
-  ;; Connect with ivy to have a list on demand
-  (use-package ivy-yasnippet
-    :ensure t)
-
-#+END_SRC
-*** Filetype templates
-This part is using yatemplate (an over-layer of yasnippet) coupled with auto-insert to have a set of
-file type dedicated templates. The templates are available in =third_parties/templates= directory.
-
-To put some predefined text at the beginning of the buffer.
-M-x *auto-insert*
-
-#+begin_src emacs-lisp
-  (use-package yatemplate
-    :ensure t
-    :after yasnippet
-    :config
-
-    ;; Define template directory
-    (setq yatemplate-dir (concat user-emacs-directory "/third_parties/templates"))
-
-    ;; Coupling with auto-insert
-    (setq auto-insert-alist nil)
-    (yatemplate-fill-alist)
-    ;; (add-hook 'find-file-hook 'auto-insert)
-    )
-#+end_src
 ** Prescient
 Prescient helps to sort candidates by last used first and then sorting by length.
 
@@ -2191,38 +1600,6 @@ Prescient helps to sort candidates by last used first and then sorting by length
     )
 #+end_src
 
-** Flychecking
-#+begin_src emacs-lisp
-  ;; Disable checking doc
-  (use-package flycheck
-    :ensure t
-    :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
-    :hydra
-    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
-                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
-                     :color teal :hint nil)
-                    "Errors"
-                    ("f"  flycheck-error-list-set-filter                            "Filter")
-                    ("j"  flycheck-next-error                                       "Next")
-                    ("k"  flycheck-previous-error                                   "Previous")
-                    ("gg" flycheck-first-error                                      "First")
-                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
-                    ("<" hydra-project/body "back")
-                    ("q"   nil "cancel" :color blue))
-
-    :config
-    (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
-
-    (flycheck-define-checker proselint
-      "A linter for prose."
-      :command ("proselint" source-inplace)
-      :error-patterns
-      ((warning line-start (file-name) ":" line ":" column ": "
-                (id (one-or-more (not (any " "))))
-                (message) line-end))
-      :modes (text-mode markdown-mode gfm-mode org-mode))
-    )
-#+end_src
 ** Keybinding
 #+begin_src emacs-lisp
   (defhydra hydra-next-error (global-map "C-x")
@@ -2242,6 +1619,7 @@ Prescient helps to sort candidates by last used first and then sorting by length
        nil :bind nil)
       ("q" nil            nil :color blue))
 #+end_src
+
 * Project management
 ** Configuration projectile
 The commands are based on http://endlessparentheses.com/improving-projectile-with-extra-commands.html?source=rss
@@ -2649,7 +2027,8 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 
 
 * Language Server
-#+BEGIN_SRC emacs-lisp
+** lsp
+#+begin_src emacs-lisp
 (use-package lsp-mode
   :ensure t
   :init
@@ -2667,7 +2046,7 @@ The C-z binding is disabled elsewhere in this document.  It minimises
   ;; handle yasnippet by myself
   (lsp-enable-snippet nil)
   ;; turn off for better performance
-  (lsp-enable-symbol-highlighting nil)
+  (lsp-enable-symbol-highlighting t)
   ;; use `company-ctags' only.
   ;; Please note `company-lsp' is automatically enabled if installed
   (lsp-enable-completion-at-point t)
@@ -2680,7 +2059,9 @@ The C-z binding is disabled elsewhere in this document.  It minimises
          ;; if you want which-key integration
          (lsp-mode . lsp-enable-which-key-integration))
   :commands lsp)
-
+#+end_src
+** lsp-ui
+#+begin_src emacs-lisp
 ;; optionally
 ;; LSP UI tools
 (use-package lsp-ui
@@ -2722,7 +2103,6 @@ The C-z binding is disabled elsewhere in this document.  It minimises
           (lsp-ui-doc--hide-frame))
       (lsp-ui-doc-mode 1)))
   :bind
-  ;; Tip： 设置开关，手动打开某些特性
   (:map lsp-mode-map
         ("C-c C-r" . lsp-ui-peek-find-references)
         ("C-c C-j" . lsp-ui-peek-find-definitions)
@@ -2738,9 +2118,27 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 (use-package lsp-treemacs :ensure t :commands lsp-treemacs-errors-list)
 
 (use-package posframe :ensure t)
-
-#+END_SRC
-
+#+end_src
+** citre
+#+begin_src emacs-lisp :tangle no
+  (use-package citre
+    :ensure t
+    :defer t
+    :init
+    ;; This is needed in `:init' block for lazy load to work.
+    (require 'citre-config)
+    ;; Bind your frequently used commands.
+    (global-set-key (kbd "M-.") 'citre-jump)
+    (global-set-key (kbd "M-,") 'citre-jump-back)
+    (global-set-key (kbd "C-x c p") 'citre-ace-peek)
+    :config
+    (setq
+     ;; Set this if readtags is not in your path.
+     ;;citre-readtags-program "/path/to/readtags"
+     ;; Set this if you use project management plugin like projectile.  It's
+     ;; only used to display paths relatively, and doesn't affect actual use.
+     citre-project-root-function #'projectile-project-root))
+#+end_src
 * Language cpp
 #+begin_src shell :tangle no
 sudo pacman -S global
@@ -2861,124 +2259,6 @@ sudo pacman -S global
     (setq geiser-active-implementations '(mit guile)))
 #+END_SRC
 
-* Language javascript
-#+BEGIN_SRC emacs-lisp
-(defun configure-web-mode-flycheck-checkers ()
-    (flycheck-mode)
-
-    ;; See if there is a node_modules directory
-    (let* ((root (locate-dominating-file
-                  (or (buffer-file-name) default-directory)
-                  "node_modules"))
-           (eslint (or (and root
-                            ;; Try the locally installed eslint
-                            (expand-file-name "node_modules/eslint/bin/eslint.js" root))
-
-                       ;; Try the global installed eslint
-                       (concat (string-trim (shell-command-to-string "npm config get prefix")) "/bin/eslint"))))
-
-      (when (and eslint (file-executable-p eslint))
-        (setq-local flycheck-javascript-eslint-executable eslint)))
-
-    (flycheck-select-checker 'javascript-eslint))
-
-(defun setup-javascript ()
-  (tide-setup)
-  (configure-web-mode-flycheck-checkers)
-  (yas-minor-mode)
-  (eldoc-mode +1)
-  (tide-hl-identifier-mode +1))
-
-(defun setup-js2 ()
-  (setq js-switch-indent-offset 2)
-  (flycheck-add-mode 'javascript-eslint 'js2-mode)
-  (setup-javascript))
-
-(defun setup-typescript ()
-  (flycheck-add-mode 'javascript-eslint 'typescript-mode)
-  (setup-javascript))
-
-;; TypeScript Interactive Development Environment
-(use-package tide
-  :config
-  :hook (typescript-mode . setup-typescript))
-
-;; JavaScript editing mode
-(use-package js2-mode
-  :mode ("\\.js\\'" . js2-mode)
-  :config
-  :hook (js2-mode . setup-js2))
-
-(use-package rjsx-mode :ensure t)
-#+END_SRC
-
-* Language HTML, css
-** Global web configuration
-#+begin_src emacs-lisp
-(use-package web-mode
-  :ensure t
-  :mode
-  ("\\.phtml\\'" "\\.tpl\\.php\\'" "\\.[agj]sp\\'" "\\.as[cp]x\\'"
-  "\\.erb\\'" "\\.mustache\\'" "\\.djhtml\\'" "\\.html?\\'")
-
-  :init
-  (setq web-mode-markup-indent-offset 2
-        web-mode-code-indent-offset 2
-        web-mode-css-indent-offset 2
-
-         web-mode-enable-auto-pairing t
-        web-mode-enable-auto-expanding t
-        web-mode-enable-css-colorization t)
-
-  :config
-  ;; Template
-  (setq web-mode-engines-alist
-        '(("php"    . "\\.phtml\\'")
-          ("blade"  . "\\.blade\\."))
-        )
-
-   )
-
-(use-package web-beautify
-  :ensure t
-  :commands (web-beautify-css
-             web-beautify-css-buffer
-             web-beautify-html
-             web-beautify-html-buffer
-             web-beautify-js
-             web-beautify-js-buffer))
-
-(use-package web-completion-data
-  :ensure t)
-
-(use-package web-mode-edit-element
-  :ensure t)
-#+end_src
-** EMMET
-#+begin_src emacs-lisp
-(use-package emmet-mode
-  :ensure t
-  :diminish (emmet-mode . "ε")
-  :bind* (("C-)" . emmet-next-edit-point)
-          ("C-(" . emmet-prev-edit-point))
-  :commands (emmet-mode
-             emmet-next-edit-point
-             emmet-prev-edit-point)
-  :hook
-  ((sgml-mode-hook . emmet-mode)
-   (html-mode . emmet-mode)
-   (web-mode . emmet-mode))
-  :init
-  (setq emmet-indentation 2
-        emmet-move-cursor-between-quotes t))
-#+end_src
-** Completion
-#+begin_src emacs-lisp
-(use-package company-web
-  :ensure t
-  :compdef (web-mode)
-  :company (company-web-html))
-#+end_src
 * Language markdown
 #+begin_src shell :tangle no
 sudo pacman -S pandoc
@@ -3021,291 +2301,6 @@ C-c C-c g
   :bind (:map markdown-mode-command-map
          ("g" . grip-mode)))
 #+end_src
-
-* Language Latex
-** Global
-#+begin_src emacs-lisp
-(use-package tex-site
-  :ensure auctex
-  :after (tex latex)
-  :hook
-  (LaTeX-mode . turn-off-auto-fill)
-  (LaTeX-mode . (lambda () (TeX-fold-mode t)))
-  (LaTeX-mode . flyspell-mode)
-  (LaTeX-mode . LaTeX-math-mode)
-  (LaTeX-mode . outline-minor-mode)
-  (LaTeX-mode . TeX-source-correlate-mode)
-
-  :config
-
-  ;; Spelling
-  (setq ispell-tex-skip-alists
-        '((
-           ;;("%\\[" . "%\\]") ; AMStex block comment...
-           ;; All the standard LaTeX keywords from L. Lamport's guide:
-           ;; \cite, \hspace, \hspace*, \hyphenation, \include, \includeonly
-           ;; \input, \label, \nocite, \rule (in ispell - rest included here)
-           ("\\\\addcontentsline"              ispell-tex-arg-end 2)
-           ("\\\\add\\(tocontents\\|vspace\\)" ispell-tex-arg-end)
-           ("\\\\\\([aA]lph\\|arabic\\)"   ispell-tex-arg-end)
-           ("\\\\author"                         ispell-tex-arg-end)
-           ;; New regexps here --- kjh
-           ("\\\\\\(text\\|paren\\)cite" ispell-tex-arg-end)
-           ("\\\\cite\\(t\\|p\\|year\\|yearpar\\)" ispell-tex-arg-end)
-           ("\\\\bibliographystyle"                ispell-tex-arg-end)
-           ("\\\\makebox"                  ispell-tex-arg-end 0)
-           ("\\\\e?psfig"                  ispell-tex-arg-end)
-           ("\\\\document\\(class\\|style\\)" .
-            "\\\\begin[ \t\n]*{[ \t\n]*document[ \t\n]*}"))
-          (
-           ;; delimited with \begin.  In ispell: displaymath, eqnarray,
-           ;; eqnarray*, equation, minipage, picture, tabular,
-           ;; tabular* (ispell)
-           ("\\(figure\\|table\\)\\*?"     ispell-tex-arg-end 0)
-           ("\\(equation\\|eqnarray\\)\\*?"     ispell-tex-arg-end 0)
-           ("list"                                 ispell-tex-arg-end 2)
-           ("program" . "\\\\end[ \t\n]*{[ \t\n]*program[ \t\n]*}")
-           ("verbatim\\*?"."\\\\end[ \t\n]*{[ \t\n]*verbatim\\*?[ \t\n]*}")
-           ("lstlisting\\*?"."\\\\end[ \t\n]*{[ \t\n]*lstlisting\\*?[ \t\n]*}"))))
-
-  ;; Pdf activated by default
-  (TeX-global-PDF-mode 1)
-
-  ;; Diverse
-  (setq-default TeX-master nil)
-  (setq TeX-parse-self t
-        TeX-auto-save t)
-
-  ;; Minor helpers for comment and quotes
-  (add-to-list 'LaTeX-verbatim-environments "comment")
-  (setq TeX-open-quote "\enquote{"
-        TeX-close-quote "}")
-
-  ;; Indentation
-  (setq LaTeX-indent-level 4
-        LaTeX-item-indent 0
-        TeX-brace-indent-level 4
-        TeX-newline-function 'newline-and-indent)
-
-  (defadvice LaTeX-fill-region-as-paragraph (around LaTeX-sentence-filling)
-    "Start each sentence on a new line."
-    (let ((from (ad-get-arg 0))
-          (to-marker (set-marker (make-marker) (ad-get-arg 1)))
-          tmp-end)
-      (while (< from (marker-position to-marker))
-        (forward-sentence)
-        ;; might have gone beyond to-marker --- use whichever is smaller:
-        (ad-set-arg 1 (setq tmp-end (min (point) (marker-position to-marker))))
-        ad-do-it
-        (ad-set-arg 0 (setq from (point)))
-        (unless (or
-                 (bolp)
-                 (looking-at "\\s *$"))
-          (LaTeX-newline)))
-      (set-marker to-marker nil)))
-  (ad-activate 'LaTeX-fill-region-as-paragraph)
-
-  ;; PDF/Tex correlation
-  (setq TeX-source-correlate-method 'synctex)
-
-  ;; Keys
-  (define-key LaTeX-mode-map (kbd "C-c C-=") 'align-current))
-#+end_src
-** Bibtex
-*** Global
-#+begin_src emacs-lisp
-(use-package bibtex
-  :config
-  (defun bibtex-generate-autokey ()
-    (let* ((bibtex-autokey-names nil)
-           (bibtex-autokey-year-length 2)
-           (bibtex-autokey-name-separator "\0")
-           (names (split-string (bibtex-autokey-get-names) "\0"))
-           (year (bibtex-autokey-get-year))
-           (name-char (cond ((= (length names) 1) 4)
-                            ((= (length names) 2) 2)
-                            (t 1)))
-           (existing-keys (bibtex-parse-keys))
-           key)
-      (setq names (mapconcat (lambda (x)
-                               (substring x 0 name-char))
-                             names
-                             ""))
-      (setq key (format "%s%s" names year))
-      (let ((ret key))
-        (loop for c from ?a to ?z
-              while (assoc ret existing-keys)
-              do (setq ret (format "%s%c" key c)))
-        ret)))
-
-  (setq bibtex-align-at-equal-sign t
-        bibtex-autokey-name-year-separator ""
-        bibtex-autokey-year-title-separator ""
-        bibtex-autokey-titleword-first-ignore '("the" "a" "if" "and" "an")
-        bibtex-autokey-titleword-length 100
-        bibtex-autokey-titlewords 1))
-#+end_src
-*** Formatting
-#+BEGIN_SRC emacs-lisp
-(use-package bibclean-format
-  :ensure t
-  :hook
-  (bibtex-mode . bibclean-format-on-save-mode)
-
-  :commands (bibclean-format)
-
-  :bind
-  (:map bibtex-mode-map
-        ("C-c f" . bibclean-format))
-  :config
-  (setq bibclean-format-args '("--max-width" "0" "--align-equal")))
-#+END_SRC
-** Completion
-#+begin_src emacs-lisp
-  ;; Completion
-  (setq TeX-auto-global (format "%s/auctex/style" user-emacs-directory))
-
-  (use-package company-auctex
-    :ensure t
-    :hook
-    (latex-mode . (company-auctex-init)))
-
-  (use-package company-bibtex
-    :ensure t
-    :compdef (latex-mode org-mode)
-    :company (company-bibtex))
-
-  (use-package company-reftex
-    :ensure t
-    :compdef (latex-mode org-mode)
-    :company (company-reftex-labels company-reftex-citations))
-
-  (use-package company-math
-    :ensure t
-    :compdef (latex-mode org-mode)
-    :company (company-math-symbols-unicode))
-#+end_src
-** Compilation
-#+begin_src emacs-lisp
-  ;; Escape mode
-  (defun TeX-toggle-escape nil
-    (interactive)
-    "Toggle Shell Escape"
-    (setq LaTeX-command
-          (if (string= LaTeX-command "latex")
-              "latex -shell-escape"
-            "latex"))
-    (message (concat "shell escape "
-                     (if (string= LaTeX-command "latex -shell-escape")
-                         "enabled"
-                       "disabled"))
-             )
-    )
-
-  (use-package auctex-latexmk
-    :ensure t
-    :after (tex latex)
-    :config
-    (setq auctex-latexmk-inherit-TeX-PDF-mode t)
-    (auctex-latexmk-setup))
-
-  (setq TeX-show-compilation nil)
-
-  ;; Redine TeX-output-mode to get the color !
-  (define-derived-mode TeX-output-mode TeX-special-mode "LaTeX Output"
-    "Major mode for viewing TeX output.
-    \\{TeX-output-mode-map} "
-    :syntax-table nil
-    (set (make-local-variable 'revert-buffer-function)
-         #'TeX-output-revert-buffer)
-
-    (set (make-local-variable 'font-lock-defaults)
-         '((("^!.*" . font-lock-warning-face) ; LaTeX error
-            ("^-+$" . font-lock-builtin-face) ; latexmk divider
-            ("^\\(?:Overfull\\|Underfull\\|Tight\\|Loose\\).*" . font-lock-builtin-face)
-            ;; .....
-            )))
-
-    ;; special-mode makes it read-only which prevents input from TeX.
-    (setq buffer-read-only nil))
-#+end_src
-** Reftex
-#+begin_src emacs-lisp
-  (use-package reftex
-    :init
-    (add-hook 'LaTeX-mode-hook 'turn-on-reftex)   ; with AUCTeX LaTeX mode
-    :config
-    (setq reftex-save-parse-info t
-          reftex-enable-partial-scans t
-          reftex-use-multiple-selection-buffers t
-          reftex-plug-into-AUCTeX t
-          reftex-vref-is-default t
-          reftex-cite-format
-          '((?\C-m . "\\cite[]{%l}")
-            (?t . "\\textcite{%l}")
-            (?a . "\\autocite[]{%l}")
-            (?p . "\\parencite{%l}")
-            (?f . "\\footcite[][]{%l}")
-            (?F . "\\fullcite[]{%l}")
-            (?x . "[]{%l}")
-            (?X . "{%l}"))
-
-          font-latex-match-reference-keywords
-          '(("cite" "[{")
-            ("cites" "[{}]")
-            ("footcite" "[{")
-            ("footcites" "[{")
-            ("parencite" "[{")
-            ("textcite" "[{")
-            ("fullcite" "[{")
-            ("citetitle" "[{")
-            ("citetitles" "[{")
-            ("headlessfullcite" "[{"))
-
-          reftex-cite-prompt-optional-args nil
-          reftex-cite-cleanup-optional-args t))
-#+end_src
-** Preview
-#+begin_src emacs-lisp
-  (use-package latex-math-preview
-    :ensure t
-    :config
-    (autoload 'LaTeX-preview-setup "preview")
-    (setq preview-scale-function 1.2)
-    (add-hook 'LaTeX-mode-hook 'LaTeX-preview-setup))
-#+end_src
-* Language rust
-#+BEGIN_SRC emacs-lisp
-(use-package rust-mode
-  :defer t)
-
-;; rust completion library
-(use-package racer
-  :after (rust-mode)
-  :init
-  (add-hook 'racer-mode-hook #'eldoc-mode)
-  (add-hook 'rust-mode-hook #'racer-mode))
-
-(use-package flycheck-rust
-  :after (rust-mode)
-  :init
-  (add-hook 'rust-mode-hook #'flycheck-mode))
-(add-hook 'flycheck-mode-hook #'flycheck-rust-setup)
-
-;; rust package managment
-(use-package cargo
-  :after (rust-mode)
-  :bind (:map rust-mode-map ("C-c C-c" . cargo-process-clippy)))
-
-(add-hook 'rust-mode-hook #'yas-minor-mode)
-  #+END_SRC
-
-* Language clojure
-#+BEGIN_SRC emacs-lisp
-(use-package cider
-  :defer t
-  :hook (clojure-mode . enable-paredit-mode))
-#+END_SRC
 
 * Language python
 #+begin_src shell :tangle no
@@ -3402,44 +2397,6 @@ C-c C-c g
 ;;  (elpy-enable))
 #+END_SRC
 
-* Language Java
-#+begin_src shell :tangle no
-sudo pacman -S maven
-#+end_src
-
-*** Global (lsp-java)
-#+begin_src emacs-lisp :tangle no
-(use-package lsp-java
-  :ensure t
-  :hook
-  (java-mode . lsp)
-
-  :config
-  (setq lsp-java-save-action-organize-imports nil))
-
-(use-package dap-java :disabled t)
-(use-package lsp-java-treemacs :disabled t)
-#+end_src
-*** Snippets
-#+begin_src emacs-lisp :tangle no
-(use-package java-snippets
-  :ensure t)
-#+end_src
-*** Javadoc
-#+begin_src emacs-lisp :tangle no
-(use-package javadoc-lookup
-  :ensure t
-  :config
-  (when (file-exists-p "/usr/share/doc/java8-openjdk/api")
-    (javadoc-add-roots "/usr/share/doc/java8-openjdk/api"))
-
-  (javadoc-add-artifacts [org.lwjgl.lwjgl lwjgl "2.8.2"]
-                         [com.nullprogram native-guide "0.2"]
-                         [org.apache.commons commons-math3 "3.0"]
-                         ;; [de.dfki.lt.jtok jtok-core "1.9.3"]
-                         ))
-#+end_src
-
 * Language go
 Go code helpers. [[https://tleyden.github.io/blog/2014/05/22/configure-emacs-as-a-go-editor-from-scratch/][see also]]
 
@@ -3522,6 +2479,15 @@ Packages that you need for a nice Go setup
 #+end_src
 * Configuration and log files
 This part is dedicated to unix and more general configuration files as well as logs.
+** editor configs
+#+begin_src emacs-lisp
+  ;; Respect editor configs
+  (use-package editorconfig
+    :ensure t
+    :diminish editorconfig-mode
+    :config
+    (editorconfig-mode 1))
+#+end_src
 ** Default unix configuration
 Config-general-mode is applied for all unix configuration files.
 #+begin_src emacs-lisp
