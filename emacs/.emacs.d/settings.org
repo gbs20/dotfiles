@@ -21,9 +21,9 @@ specificity here is that the TLS algorithm is specific for 26.2.1.
 
   (setq package-enable-at-startup nil
         package-check-signature nil
-        package-archives '(("gnu" . "http://mirrors.ustc.edu.cn/elpa/gnu/")
-                           ("melpa" . "http://mirrors.ustc.edu.cn/elpa/melpa/")
-                           ("org" . "http://mirrors.ustc.edu.cn/elpa/org/"))
+        package-archives '(("gnu" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                           ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+                           ("org" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/org/"))
 
         package-archive-priorities  '(("org"      . 15)
                                       ("melpa"        . 10)
@@ -36,31 +36,45 @@ specificity here is that the TLS algorithm is specific for 26.2.1.
 ** Load use-package
 Here, we are initializing =use-package= in the classic way.
 #+BEGIN_SRC emacs-lisp
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
+    (unless (package-installed-p 'use-package)
+      (package-refresh-contents)
+      (package-install 'use-package))
 
-  (eval-when-compile
-    (require 'use-package))
-
-  (eval-and-compile
-      ;;(setq use-package-always-ensure t)
-      ;;(setq use-package-always-defer t)
-      (setq use-package-always-demand nil)
-      (setq use-package-expand-minimally t)
-      (setq use-package-verbose t))
-
+    (eval-when-compile
+      (require 'use-package))
+  
+    (require 'use-package-ensure)
+    (setq use-package-always-ensure t)
 #+END_SRC
-** Quelpa
-Quelpa is super useful for developer package management. Adding the adaptation for the use-package
-makes it configuration file proof.
+As a reference, these are the common use-package keywords:
 
- #+begin_src emacs-lisp
-   (use-package quelpa-use-package
-     :ensure t
-     :init
-     (setq quelpa-update-melpa-p nil))
- #+end_src
+:ensure
+Install package
+:after
+Load after another package
+:init
+Run code before package loads
+:config
+Run code after package loads
+:custom
+Set custom variables with concise syntax
+:defer
+Defer loading until some later point
+:demand
+Ensure loading at startup
+:bind
+Bind keys for modes
+:hook
+Set hooks that will cause package to load
+:commands
+Set autoloaded commands that will cause package to load
+:mode
+Activate mode when particular file types are opened
+** diminish
+Diminished modes are minor modes with no modeline display
+#+begin_src emacs-lisp
+  (use-package diminish)
+#+end_src
 ** Hydra
 I use hydra a lot so it is easier to add its support directly in the use-package configuration part.
 
@@ -75,14 +89,6 @@ I use hydra a lot so it is easier to add its support directly in the use-package
      hydra-show-hint
      hydra-set-transient-map))
 #+END_SRC
-** General
-I introduce general to configure the key management. It is not really used yet, but it will be more and and more.
-
-#+BEGIN_SRC emacs-lisp
-  (use-package general
-    :ensure t)
-#+END_SRC
-
 ** Paradox to enhance package list management
 Finally, I use paradox to enhance the package listing experience.
 #+BEGIN_SRC emacs-lisp
@@ -102,36 +108,37 @@ user/password management.
 
 ** Define some important variables
 #+BEGIN_SRC emacs-lisp
-  ;; Define root directory and add the plugins
-  (defvar default-plugin-dir (format "%s/plugins" user-emacs-directory)
-    "The plugins directory")
-  (add-to-list 'load-path default-plugin-dir)
-  (add-to-list 'load-path "~/.emacs.d/site-lisp/")
+    ;; Define root directory and add the plugins
+    (defvar default-plugin-dir (format "%s/plugins" user-emacs-directory)
+      "The plugins directory")
+    (add-to-list 'load-path default-plugin-dir)
+    (add-to-list 'load-path "~/.emacs.d/site-lisp/")
 
-  ;; Don't screw up my files with custom
-  (setq custom-file (format "%s/custom.el" user-emacs-directory))
-  (load custom-file 'noerror)
+    ;; Don't screw up my files with custom
+    (setq custom-file (format "%s/custom.el" user-emacs-directory))
+    (load custom-file 'noerror)
 
-  ;; Give focus to new help windows
-  (setq help-window-select t)
-  ;; Put apropos in current buffer so it can be read and exited with minimum effort
-  (add-to-list 'display-buffer-alist
-              '("*Apropos*" display-buffer-same-window)
-              '("*Info*" display-buffer-same-window))
+    ;; Give focus to new help windows
+    (setq help-window-select t)
+    ;; Put apropos in current buffer so it can be read and exited with minimum effort
+    (add-to-list 'display-buffer-alist
+                '("*Apropos*" display-buffer-same-window)
+                '("*Info*" display-buffer-same-window))
 
-  ;; Add /usr/local/bin to the path
-  (setq exec-path (append exec-path '("/usr/local/bin")))
+    ;; Add /usr/local/bin to the path
+    (setq exec-path (append exec-path '("/usr/local/bin")))
 
-  ;; Y or n is enough for me
-  (fset 'yes-or-no-p 'y-or-n-p)
+    ;; Y or n is enough for me
+    (fset 'yes-or-no-p 'y-or-n-p)
 
-  ;; Silence!!!!!!
-  (setq save-abbrevs 'silently
-    ad-redefinition-action 'accept
-    ;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
-    gc-cons-threshold 50000000
-    large-file-warning-threshold 100000000)
-
+    ;; Silence!!!!!!
+    (setq save-abbrevs 'silently
+      ad-redefinition-action 'accept
+      ;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
+      gc-cons-threshold 50000000
+      large-file-warning-threshold 100000000)
+  
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
 #+END_SRC
 ** Identification helper
 Easy use wrapper around auth-* authentification emacs utils.
@@ -206,37 +213,39 @@ Defining a simple helper to edit file as root using tramp
   (prefer-coding-system 'gb2312)
   (prefer-coding-system 'utf-8)
 #+end_src
-** theme and mode line
+** theme
 #+begin_src emacs-lisp
   (use-package srcery-theme
-    :ensure t
-    :config
-    (load-theme 'srcery t))
+    :ensure t)
 
-  ;; Modeline
-  (use-package doom-modeline
-    :ensure t
-    :custom
-    (doom-modeline-buffer-file-name-style 'truncate-with-project)
-    (doom-modeline-buffer-name t)
-    (doom-modeline-icon t)
-    (doom-modeline-major-mode-icon t)
-    (doom-modeline-minor-modes nil)
-    (doom-modeline-height 15)
-    ; use unicode as a fallback (instead of ASCII) when not using icons
-    (setq doom-modeline-unicode-fallback t)
-    ; don't display the buffer encoding
-    (setq doom-modeline-buffer-encoding nil)
-    :config
-    (set-cursor-color "cyan")
-    (line-number-mode 0)
-    (column-number-mode 0)
-    :init (doom-modeline-mode 1))
+  (use-package modus-themes
+  :init
+  ;; Add all your customizations prior to loading the themes
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs nil
+        modus-themes-region '(bg-only no-extend))
 
-  (use-package hide-mode-line
-    :ensure t
-    :hook
-    ((neotree-mode imenu-list-minor-mode minimap-mode) . hide-mode-line-mode))
+  ;; Load the theme files before enabling a theme
+  (modus-themes-load-themes)
+  :config
+  ;; Load the theme of your choice:
+  (modus-themes-load-operandi) ;; OR (modus-themes-load-vivendi)
+  :bind ("<f5>" . modus-themes-toggle))
+#+end_src
+
+** mode line
+The standard (default) components of a mode-line: https://www.emacswiki.org/emacs/ModeLine
+| cs:ch-fr  buf      pos line   (major minor) |
+
+#+begin_src emacs-lisp
+    (display-time-mode 1)
+    (setq display-time-format "%H:%M")
+    (setq display-time-interval 60)
+    (setq display-time-default-load-average nil)
+
+    (use-package hide-mode-line
+      :hook
+      ((neotree-mode imenu-list-minor-mode minimap-mode) . hide-mode-line-mode))  
 #+end_src
 ** Icons
 #+begin_src emacs-lisp
@@ -342,49 +351,105 @@ sudo pacman -S nerd-fonts-fira-code
 ** window
 *** Split Buffers Side-by-Side
 #+begin_src emacs-lisp
-;;emacs会根据你的电脑屏幕长宽比自动调整时上下分屏还是左右分，如果想强制左右分可以这样设置：
-(setq split-height-threshold nil)
-(setq split-width-threshold 0)
+  ;;emacs会根据你的电脑屏幕长宽比自动调整时上下分屏还是左右分，如果想强制左右分可以这样设置：
+  ;;(setq split-height-threshold nil)
+  ;;(setq split-width-threshold 0)
+#+end_src
+*** Winner Mode
+Winner Mode is a global minor mode. When activated,
+it allows you to “undo” (and “redo”) changes in the window configuration with
+the key commands C-c left and C-c right.
+#+begin_src emacs-lisp
+  (use-package winner
+    :ensure nil
+    :init
+    (winner-mode +1))
+#+end_src
+*** windmove
+#+begin_src emacs-lisp
+  (use-package windmove
+    :ensure nil
+    :init (windmove-default-keybindings)
+    :config)
+
+  (use-package ace-window
+    :ensure t
+    :init
+    (progn
+      (global-set-key [remap other-window] 'ace-window)
+      (custom-set-faces
+       '(aw-leading-char-face
+         ((t (:inherit ace-jump-face-foreguound :height 3.0 :foreground "red"))))))
+    :custom
+    (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+    (aw-scope 'frame))
+  
+  (defun my/toggle-current-window-dedication ()
+    (interactive)
+    (let* ((window (selected-window))
+           (dedicated (window-dedicated-p window)))
+      (set-window-dedicated-p window (not dedicated))
+      (message "Window %sdedicated to %s"
+               (if dedicated "no longer " "")
+               (buffer-name))))
+#+end_src
+*** Focus to new Window after Split
+#+begin_src emacs-lisp
+  ;; https://stackoverflow.com/a/6465415
+(global-set-key "\C-x2" (lambda () (interactive)(split-window-vertically) (other-window 1)))
+(global-set-key "\C-x3" (lambda () (interactive)(split-window-horizontally) (other-window 1)))
 #+end_src
 ** minibuffer
-#+begin_src emacs-lisp :tangle no
-  (use-package minibuffer
-    ;; :hook
-    ;; (eval-expression-minibuffer-setup .  #'eldoc-mode)
-    :ensure t
-    :config
-    (setq read-file-name-completion-ignore-case t
-          completion-ignore-case t
-          resize-mini-windows t)
-
-    (file-name-shadow-mode 1))
+** Faces/Colors
+*** Rainbow
+#+begin_src emacs-lisp
+(use-package rainbow-mode
+  :ensure t
+  :commands (rainbow-mode))
 #+end_src
-
-*** Maple minibuffer
-#+begin_src emacs-lisp :tangle no
-  (use-package maple-minibuffer
-    :disabled t
-    :ensure quelpa
-    :quelpa (maple-minibuffer :fetcher github :repo "honmaple/emacs-maple-minibuffer")
-    :hook
-    (after-init . maple-minibuffer-mode)
-
-    :custom
-    (maple-minibuffer:position-type 'frame-center)
-    (maple-minibuffer:width 0.7)
-    (maple-minibuffer:action '(read-from-minibuffer read-string))
-    (maple-minibuffer:ignore-action '(evil-ex eval-expression org-schedule))
-    (maple-minibuffer:ignore-regexp '("^helm-"))
-
+*** Rainbow delimiter
+#+begin_src emacs-lisp
+(use-package rainbow-delimiters
+  :ensure t
+  :hook
+  (prog-mode . rainbow-delimiters-mode))
+#+end_src
+*** Show current function
+#+begin_src emacs-lisp
+  ;;(which-function-mode 1)
+#+end_src
+*** Paging
+#+begin_src emacs-lisp
+  ;;	Display ^L page breaks as tidy horizontal lines
+  (use-package page-break-lines
+    :ensure t
+    :diminish page-break-lines-mode
     :config
-    ;; more custom parameters for frame
-    (defun maple-minibuffer:parameters ()
-      "Maple minibuffer parameters."
-      `((height . ,(or maple-minibuffer:height 10))
-        (width . ,(or maple-minibuffer:width (window-pixel-width)))
-        (left-fringe . 5)
-        (right-fringe . 5))))
+    (global-page-break-lines-mode t))
+#+end_src
+*** Emoji
+Display emojis in Emacs
+#+begin_src emacs-lisp
+    (use-package emojify
+      :ensure t
+      :functions (emojify-set-emoji-data)
+      :hook (after-init . global-emojify-mode)
+      :config
 
+      (setq emojify-user-emojis
+            '(("(heart)" . (("name" . "Heart")
+                            ("image" . "~/.emacs.d/emojis/emojione-v2.2.6-22/2665.png")
+                            ("style" . "github")))))
+
+      ;; If emojify is already loaded refresh emoji data
+      (when (featurep 'emojify)
+        (emojify-set-emoji-data)))
+
+    (use-package company-emoji
+      :ensure t)
+
+    (use-package flycheck-status-emoji
+      :ensure t)
 #+end_src
 ** line numbers and whitespace indicators
 
@@ -440,9 +505,7 @@ As for /delete-trailing-whitespace/, I prefer to call it manually because someti
   ;; 保存时自动清除行尾空格及文件结尾空行 trailing-whitespace: 拖尾空格，结尾空格
   ;;(add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+end_src
-
-** Buffer
-*** Column/line
+** Column/line
 The column count is set to 72. The standard line length is 80 characters,
 so having it at something less allows for such things as quoting plain text, indenting, etc.
 git commit messages also make good use of this method.
@@ -482,114 +545,38 @@ The column count is used by auto-fill-mode and similar tools
   (column-number-mode t)
   (size-indication-mode t)
 #+end_src
-*** Paging
-#+begin_src emacs-lisp
-  (use-package page-break-lines
-    :ensure t
-    :diminish page-break-lines-mode
-    :config
-    (global-page-break-lines-mode t))
-#+end_src
-*** Parenthesis
-**** Smart parents
-#+begin_src emacs-lisp
-  (use-package smartparens
-    :ensure t
-    :config
-    (require 'smartparens-config)
-    ;; Activate smartparens globally
-    (smartparens-global-mode t)
-    (show-smartparens-global-mode t))
-#+end_src
-#+begin_src emacs-lisp :tangle no
-  (use-package smartparens
-    :ensure t
-    :config
-    ;; Activate smartparens globally
-    (smartparens-global-mode t)
-    (show-smartparens-global-mode t)
-
-    ;; Activate smartparens in minibuffer
-    (add-hook 'eval-expression-minibuffer-setup-hook #'smartparens-mode)
-
-    ;; Do not pair simple quotes
-    (sp-pair "'" nil :actions :rem))
-
-  ;;[[Newline and indent on appropriate pairs][https://github.com/Fuco1/smartparens/issues/80]]
-  (sp-local-pair '(c-mode) "{" nil :post-handlers '((my-create-newline-and-enter-sexp "RET")))
-  (sp-local-pair 'c++-mode "{" nil :post-handlers '((my-create-newline-and-enter-sexp "RET")))
-
-  (defun my-create-newline-and-enter-sexp (&rest _ignored)
-    "Open a new brace or bracket expression, with relevant newlines and indent. "
-    (newline)
-    (indent-according-to-mode)
-    (forward-line -1)
-    (indent-according-to-mode))
-#+end_src
-
-**** Rainbow delimiter
-#+begin_src emacs-lisp
-(use-package rainbow-delimiters
-  :ensure t
-  :hook
-  (prog-mode . rainbow-delimiters-mode))
-#+end_src
-
-*** Show current function
-#+begin_src emacs-lisp
-  (which-function-mode 1)
-#+end_src
-
-*** Diff
-#+begin_src emacs-lisp
-(use-package diff-hl
-  :ensure t
-  :hook
-  (dired-mode . diff-hl-dired-mode-unless-remote)
-
-  :config
-  (global-diff-hl-mode)
-  (fringe-mode 10))
-#+end_src
+** Buffer
 *** buffer move
 #+begin_src emacs-lisp
-;;(define-prefix-command 'leader-key)
-;;(global-set-key (kbd "M-SPC") 'leader-key)
-(use-package buffer-move
-  :ensure t
-  :config)
-  ;;(global-set-key (kbd "<C-S-up>")     'buf-move-up)
-  ;;(global-set-key (kbd "<C-S-down>")   'buf-move-down)
-  ;;(global-set-key (kbd "<C-S-left>")   'buf-move-left)
-  ;;(global-set-key (kbd "<C-S-right>")  'buf-move-right))
-(use-package windmove
-  :ensure t
-  :init (windmove-default-keybindings)
-  :config
-  :bind       ("C-x w f" . #'buf-move-right)
-  :bind       ("C-x w b" . #'buf-move-left)
-  :bind       ("C-x w p" . #'buf-move-up)
-  :bind       ("C-x w n" . #'buf-move-down))
-#+end_src
-*** Faces/Colors
-**** Rainbow
-#+begin_src emacs-lisp
-(use-package rainbow-mode
-  :ensure t
-  :commands (rainbow-mode))
+  (use-package buffer-move
+    :ensure t
+    :config
+    :bind       ("C-x w f" . #'buf-move-right)
+    :bind       ("C-x w b" . #'buf-move-left)
+    :bind       ("C-x w p" . #'buf-move-up)
+    :bind       ("C-x w n" . #'buf-move-down))
 #+end_src
 
-**** COMMENT Terminal
+*** uniquify
 #+begin_src emacs-lisp
-  (set-face-foreground 'term-color-black "#4d4d4d")
-  (set-face-foreground 'term-color-red "#cc9393")
-  (set-face-foreground 'term-color-green "#7f9f7f")
-  (set-face-foreground 'term-color-yellow "#f0dfaf")
-  (set-face-foreground 'term-color-blue "#4169e1")
-  (set-face-foreground 'term-color-magenta "#dc8cc3")
-  (set-face-foreground 'term-color-cyan "#93e0e3")
-  (set-face-foreground 'term-color-white "#dcdccc")
+  ;; Unify the buffer name style
+  (use-package uniquify
+    :ensure nil
+    :config
+    (setq uniquify-buffer-name-style 'post-forward-angle-brackets)
+    (setq uniquify-strip-common-suffix t)
+    (setq uniquify-after-kill-buffer-p t))
 #+end_src
+
+*** auto revert
+#+begin_src emacs-lisp
+  ;; Automatically reload files was modified by external program
+  (use-package autorevert
+    :ensure nil
+    :diminish
+    :hook (after-init . global-auto-revert-mode))
+#+end_src
+*** Ibuffer
 **** Dired (using dired-rainbow)
 #+begin_src emacs-lisp
   (use-package dired-rainbow
@@ -629,58 +616,7 @@ The column count is used by auto-fill-mode and similar tools
     )
 #+end_src
 
-*** Emoji
-#+begin_src emacs-lisp
-    (use-package emojify
-      :ensure t
-      :functions (emojify-set-emoji-data)
-      :hook (circe-chat-mode . emojify-mode)
-      :config
-
-      (setq emojify-user-emojis
-            '(("(heart)" . (("name" . "Heart")
-                            ("image" . "~/.emacs.d/emojis/emojione-v2.2.6-22/2665.png")
-                            ("style" . "github")))))
-
-      ;; If emojify is already loaded refresh emoji data
-      (when (featurep 'emojify)
-        (emojify-set-emoji-data)))
-
-    (use-package company-emoji
-      :ensure t)
-
-    (use-package flycheck-status-emoji
-      :ensure t)
-#+end_src
-Some buffer specificities configuration like how to deal with trailing whitespaces or the
-fill-column for example.
-*** uniquify
-#+begin_src emacs-lisp
-;; Unify the buffer name style
-(use-package uniquify
-  :config
-  (setq uniquify-buffer-name-style 'post-forward-angle-brackets)
-  (setq uniquify-strip-common-suffix t)
-  (setq uniquify-after-kill-buffer-p t))
-#+end_src
-*** vlf
-#+begin_src emacs-lisp
-;; Open Large file
-(use-package vlf
-  :ensure t
-  :config
-  (require 'vlf-setup))
-#+end_src
-*** auto revert
-#+begin_src emacs-lisp
-  ;; Automatically reload files was modified by external program
-  (use-package autorevert
-    :ensure nil
-    :diminish
-    :hook (after-init . global-auto-revert-mode))
-#+end_src
-** Ibuffer
-*** Helpers
+**** Helpers
 #+begin_src emacs-lisp
   (defun ibuffer-clean ()
     "Clean automatically created buffers"
@@ -707,39 +643,41 @@ fill-column for example.
 #+begin_src emacs-lisp
 ;;(setq tab-bar-close-button-show nil)
 #+end_src
-** cursor and mouse
+** cursor, mark and regoin
+*** cursor
 #+begin_src emacs-lisp
-;; 设置光标颜色
-;;(set-cursor-color "green2")
-;; 设置光标样式
-;;(setq-default cursor-type 'box)
+  ;; 设置光标颜色
+  ;;(set-cursor-color "green2")
+  ;; 设置光标样式
+  ;;(setq-default cursor-type 'box)
 
-(use-package frame
-  :commands my/cursor-type-mode
-  :config
-  (setq-default cursor-type 'box)
-  (setq-default cursor-in-non-selected-windows '(bar . 2))
-  (setq-default blink-cursor-blinks 50)
-  (setq-default blink-cursor-interval nil) ; 0.75 would be my choice
-  (setq-default blink-cursor-delay 0.2)
+  (use-package frame
+    :ensure nil
+    :commands my/cursor-type-mode
+    :config
+    (setq-default cursor-type 'box)
+    (setq-default cursor-in-non-selected-windows '(bar . 2))
+    (setq-default blink-cursor-blinks 50)
+    (setq-default blink-cursor-interval nil) ; 0.75 would be my choice
+    (setq-default blink-cursor-delay 0.2)
 
-  (blink-cursor-mode -1)
+    (blink-cursor-mode -1)
 
-  (define-minor-mode my/cursor-type-mode
-    "Toggle between static block and pulsing bar cursor."
-    :init-value nil
-    :global t
-    (if my/cursor-type-mode
-        (progn
-          (setq-local blink-cursor-interval 0.75
-                      cursor-type '(bar . 2)
-                      cursor-in-non-selected-windows 'hollow)
-          (blink-cursor-mode 1))
-      (dolist (local '(blink-cursor-interval
-                       cursor-type
-                       cursor-in-non-selected-windows))
-        (kill-local-variable `,local))
-      (blink-cursor-mode -1))))
+    (define-minor-mode my/cursor-type-mode
+      "Toggle between static block and pulsing bar cursor."
+      :init-value nil
+      :global t
+      (if my/cursor-type-mode
+          (progn
+            (setq-local blink-cursor-interval 0.75
+                        cursor-type '(bar . 2)
+                        cursor-in-non-selected-windows 'hollow)
+            (blink-cursor-mode 1))
+        (dolist (local '(blink-cursor-interval
+                         cursor-type
+                         cursor-in-non-selected-windows))
+          (kill-local-variable `,local))
+        (blink-cursor-mode -1))))
 #+end_src
 
 Never lose your cursor again
@@ -749,7 +687,20 @@ Never lose your cursor again
   :ensure t
   :hook (after-init . beacon-mode))
 #+end_src
-
+*** mark
+The mark ring
+每次你跳转了光标(文本搜索或者按下了 M-<或 M->)，
+Emacs使用mark标记下你的前一个位置.
+C-x C-x exchange-point-and-mark
+*** expand region
+#+begin_src emacs-lisp
+  ;; Expand selected region by semantic units
+  (use-package expand-region
+    :ensure t
+    :config
+    (pending-delete-mode t)
+     :bind ("C-=" . er/expand-region))
+#+end_src
 ** Highlight
 #+begin_src emacs-lisp
   ;; Parenthesis
@@ -765,10 +716,10 @@ Never lose your cursor again
     :init
     (add-hook 'prog-mode-hook 'highlight-numbers-mode))
 
-  (use-package auto-highlight-symbol
-    :ensure t
-    :config
-    (global-auto-highlight-symbol-mode t))
+  ;;(use-package auto-highlight-symbol
+  ;;  :ensure t
+  ;;  :config
+  ;;  (global-auto-highlight-symbol-mode t))
 
   ;; Always hightlight current line
   ;;(global-hl-line-mode t)
@@ -781,11 +732,6 @@ activations.
 (use-package auto-minor-mode
   :ensure t)
 #+end_src
-** mark and region
-The mark ring
-每次你跳转了光标(文本搜索或者按下了 M-<或 M->)，
-Emacs使用mark标记下你的前一个位置.
-C-x C-x exchange-point-and-mark
 ** bookmark
 ** register
 ** mode
@@ -828,7 +774,7 @@ leads to this configuration
   (add-hook 'delete-terminal-functions (lambda (terminal) (recentf-save-list))))
 
 #+END_SRC
-** backups file
+** backupps file
   When Emacs makes a backup file, its name is normally constructed by
   appending ‘~’ to the file name being edited; thus, the backup file for
   ‘eval.c’ would be ‘eval.c~’.
@@ -851,20 +797,136 @@ front and rear of the visited file name.  Thus, a buffer visiting file
     (when (not (file-exists-p auto-save-directory))
       (make-directory auto-save-directory t))
   #+end_src
-** Editing
-*** Navigation
+
+** recursive-edit
+** fringe mode
+The fringes are areas to the right and left side of an Emacs frame. They can be used to show status-related or contextual feedback
+such as line truncation indicators, continuation lines, code linting markers, etc.
+
+The default fringe width (*nil*) is 8 pixels on either side, which I approve of. It is possible to set the value of the *fringe-mode* to
+something like *'(10 . 5)* which applies the varied width to the left and right side respectively.
+Otherwise, we can use a single integer that controls both sides.
+
+The use of *setq-default* is necessary, otherwise these values become buffer-local.
+#+begin_src emacs-lisp
+  (use-package fringe
+    :ensure nil
+    :config
+    (fringe-mode nil)
+    (setq-default fringes-outside-margins nil)
+    (setq-default indicate-buffer-boundaries nil)
+    (setq-default indicate-empty-lines nil)
+    (setq-default overflow-newline-into-fringe t))
+#+end_src
+
+** which-key
+#+BEGIN_SRC emacs-lisp
+  ;; Display available keybindings in a popup
+  (use-package which-key
+    :ensure t
+    :diminish
+    :config
+;;    ;;Manual Activation
+;;    (setq which-key-show-early-on-C-h nil)
+;;    (setq which-key-idle-delay most-positive-fixnum)
+;;    (setq which-key-idle-secondary-delay 0.05)
+    (setq which-key-idle-delay 0.5)
+    (setq which-key-popup-type 'side-window)
+    (setq which-key-show-prefix 'echo)
+    (setq which-key-max-display-columns 4)
+    (setq which-key-separator " → " )
+    (setq which-key-special-keys nil)
+    (which-key-mode 1))
+#+END_SRC
+
+
+* org
+| command                       | keyboard | help                             |
+|-------------------------------+----------+----------------------------------|
+| org-agenda-list               | C-c a    | 打开一周的 agenda 计划表         |
+| org-metaup                    | M-up     | 将当前标题（或列表）及子项上移   |
+| org-metadown                  | M-down   | 将当前标题（或列表）及子项下移   |
+| org-metaleft                  | M-left   | 增加当前标题层级，或改变列表前缀 |
+| org-metaright                 | M-right  | 减小当前标题层级，或改变列表前缀 |
+| org-insert-structure-template | C-c C-,  | Insert a block structure         |
+| org-edit-src-code             |          | edit source block               |
+
+** Global
+#+begin_src emacs-lisp
+  (use-package org
+    :ensure org-plus-contrib
+    :config
+    (setq
+         org-startup-indented t
+         org-startup-folded t
+         org-show-following-heading t
+         org-show-hierarchy-above t
+         org-show-siblings '((default))
+         org-src-fontify-natively t
+         org-src-tab-acts-natively t
+         org-hide-emphasis-markers t))
+#+end_src
+** Faces
+#+begin_src emacs-lisp
+
+#+end_src
+** Org-bullets
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :ensure t
+    :hook
+    (org-mode . (lambda () (org-bullets-mode 1))))
+#+end_src
+** Fancy priority
+#+begin_src emacs-lisp
+  (use-package org-fancy-priorities
+    :ensure t
+    :diminish org-fancy-priorities-mode
+    :hook
+    (org-agenda-mode . org-fancy-priorities-mode)
+    (org-mode . org-fancy-priorities-mode)
+    :config
+    (setq org-fancy-priorities-list
+          '((?A . "❗") (?B . "⬆") (?C . "⬇") (?D . "☕")
+            (?1 . "⚡") (?2 . "⮬") (?3 . "⮮") (?4 . "☕")
+            (?I . "Important"))))
+#+end_src
+
+* Editing
+** vlf
+#+begin_src emacs-lisp
+;; Open Large file
+(use-package vlf
+  :ensure t
+  :config
+  (require 'vlf-setup))
+#+end_src
+** Diff
+#+begin_src emacs-lisp
+(use-package diff-hl
+  :ensure t
+  :hook
+  (dired-mode . diff-hl-dired-mode-unless-remote)
+
+  :config
+  (global-diff-hl-mode)
+  (fringe-mode 10))
+#+end_src
+** Navigation
+*** scroll
+C-v scroll-up-command
+M-v scroll-down-command
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
     :config
-    ;;(setq-default scroll-preserve-screen-position t)
-    (setq-default scroll-conservatively 101) ; affects `scroll-step'
+    (setq-default scroll-preserve-screen-position t);;keep point at the same screen position
+    (setq-default scroll-conservatively 101) ;; affects `scroll-step'
     (setq-default scroll-margin 0))
 #+end_src
 
-**** Preview
-First, instead of jumping we simply can preview the jump.
-
+*** goto-line-preview
+Preview line when executing goto-line command.
 #+BEGIN_SRC emacs-lisp
   (use-package goto-line-preview
     :ensure t
@@ -872,27 +934,16 @@ First, instead of jumping we simply can preview the jump.
     :bind
     (("M-g g" . goto-line-preview)))
 #+END_SRC
-**** Ace jump
+*** Ace jump
 #+BEGIN_SRC emacs-lisp
-  ;; Windows management: Quickly switch windows in Emacs
-  (use-package ace-window
-    :ensure t
-    :init
-    (progn
-      (global-set-key [remap other-window] 'ace-window)
-      (custom-set-faces
-       '(aw-leading-char-face
-         ((t (:inherit ace-jump-face-foreguound :height 3.0 :foreground "red")))))
-      ))
+
   (use-package ace-jump-mode
     :ensure t
     :config
     (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
 #+END_SRC
-**** Remember last jump
-Also, I tend to jump a lot for quick modification. So remembering the jump is absolute crucial in my
-workflow.
-
+*** Remember last jump
+An Emacs package to move point through buffer-undo-list positions.
 #+BEGIN_SRC emacs-lisp
   (use-package goto-last-point
     :ensure t
@@ -900,7 +951,7 @@ workflow.
     ;;:bind ("C-<" . goto-last-point)
     :config (goto-last-point-mode))
 #+END_SRC
-*** Searching
+** Searching
 Double-saber is really helpful to reduce the result of a search after the search itself.
 
 #+BEGIN_SRC emacs-lisp
@@ -934,7 +985,8 @@ Double-saber is really helpful to reduce the result of a search after the search
                 (double-saber-mode)
                 (setq-local double-saber-start-line 5))))
 #+END_SRC
-*** Copy/Pasted/Delete
+
+** Copy/Pasted/Delete
 Baseline configuration for copy/pasting, nothing fancy.
 
 #+begin_src emacs-lisp
@@ -955,7 +1007,7 @@ Hungry deletion
     :config (setq-default hungry-delete-chars-to-skip " \t\f\v"))
 #+end_src
 
-*** Evil Nerd Commenter
+** Evil Nerd Commenter
 Evil Nerd Commenter, a tool that helps you comment code efficiently.
 #+BEGIN_SRC emacs-lisp
   (use-package evil-nerd-commenter
@@ -963,99 +1015,6 @@ Evil Nerd Commenter, a tool that helps you comment code efficiently.
     :bind
     (("C-c M-;" . c-toggle-comment-style)
      ("M-;" . evilnc-comment-or-uncomment-lines)))
-#+END_SRC
-*** expand region
-#+begin_src emacs-lisp
-  ;; Expand selected region by semantic units
-  (use-package expand-region
-    :ensure t
-    :config
-    (pending-delete-mode t)
-     :bind ("C-=" . er/expand-region))
-#+end_src
-
-** recursive-edit
-** fringe mode
-The fringes are areas to the right and left side of an Emacs frame. They can be used to show status-related or contextual feedback
-such as line truncation indicators, continuation lines, code linting markers, etc.
-
-The default fringe width (*nil*) is 8 pixels on either side, which I approve of. It is possible to set the value of the *fringe-mode* to
-something like *'(10 . 5)* which applies the varied width to the left and right side respectively.
-Otherwise, we can use a single integer that controls both sides.
-
-The use of *setq-default* is necessary, otherwise these values become buffer-local.
-#+begin_src emacs-lisp
-(use-package fringe
-  :config
-  (fringe-mode nil)
-  (setq-default fringes-outside-margins nil)
-  (setq-default indicate-buffer-boundaries nil)
-  (setq-default indicate-empty-lines nil)
-  (setq-default overflow-newline-into-fringe t))
-#+end_src
-
-* emacs capacity
-** org
-C-c C-, s : insert source block
-M-x org-edit-src-code : edit source block
-*** Global
-#+begin_src emacs-lisp
-  (use-package org
-    :ensure org-plus-contrib
-    :config
-    (setq
-         org-startup-indented t
-         org-startup-folded t
-         org-show-following-heading t
-         org-show-hierarchy-above t
-         org-show-siblings '((default))
-         org-src-fontify-natively t
-         org-src-tab-acts-natively t
-         org-hide-emphasis-markers t))
-#+end_src
-*** Faces
-#+begin_src emacs-lisp
-
-#+end_src
-*** Org-bullets
-#+begin_src emacs-lisp
-  (use-package org-bullets
-    :ensure t
-    :hook
-    (org-mode . (lambda () (org-bullets-mode 1))))
-#+end_src
-*** Fancy priority
-#+begin_src emacs-lisp
-  (use-package org-fancy-priorities
-    :ensure t
-    :hook
-    (org-agenda-mode . org-fancy-priorities-mode)
-    (org-mode . org-fancy-priorities-mode)
-    :config
-    (setq org-fancy-priorities-list
-          '((?A . "❗") (?B . "⬆") (?C . "⬇") (?D . "☕")
-            (?1 . "⚡") (?2 . "⮬") (?3 . "⮮") (?4 . "☕")
-            (?I . "Important"))))
-#+end_src
-
-** which-key
-#+BEGIN_SRC emacs-lisp
-  ;; Display available keybindings in a popup
-  (use-package which-key
-    :ensure t
-    :diminish
-    :config
-;;    ;;Manual Activation
-;;    (setq which-key-show-early-on-C-h nil)
-;;    (setq which-key-idle-delay most-positive-fixnum)
-;;    (setq which-key-idle-secondary-delay 0.05)
-    (setq which-key-idle-delay 0.5)
-    (setq which-key-popup-type 'side-window)
-    (setq which-key-show-prefix 'echo)
-    (setq which-key-max-display-columns 4)
-    (setq which-key-separator " → " )
-    (setq which-key-special-keys nil)
-    (which-key-mode 1))
 #+END_SRC
 ** multiple cursors
 #+begin_src emacs-lisp
@@ -1084,57 +1043,117 @@ M-x org-edit-src-code : edit source block
 ;;  :config
 ;;  (delete-selection-mode t))
 #+end_src
-
-** Writing
-*** Inspiration helpers
-As I write papers, it is useful to have some helper to start to have the inspiration.
+** Smart parents
+#+begin_src emacs-lisp :tangle no
+  (use-package smartparens
+    :ensure t
+    :config
+    (require 'smartparens-config)
+    ;; Activate smartparens globally
+    (smartparens-global-mode t)
+    (show-smartparens-global-mode t))
+#+end_src
 #+begin_src emacs-lisp
+  (use-package smartparens
+    :ensure t
+    :config
+    ;; Activate smartparens globally
+    (smartparens-global-mode t)
+    (show-smartparens-global-mode t)
+
+    ;; Activate smartparens in minibuffer
+    (add-hook 'eval-expression-minibuffer-setup-hook #'smartparens-mode)
+
+    ;; Do not pair simple quotes
+    (sp-pair "'" nil :actions :rem))
+
+  ;;[[Newline and indent on appropriate pairs][https://github.com/Fuco1/smartparens/issues/80]]
+  (sp-local-pair '(c-mode) "{" nil :post-handlers '((my-create-newline-and-enter-sexp "RET")))
+  (sp-local-pair 'c++-mode "{" nil :post-handlers '((my-create-newline-and-enter-sexp "RET")))
+
+  (defun my-create-newline-and-enter-sexp (&rest _ignored)
+    "Open a new brace or bracket expression, with relevant newlines and indent. "
+    (newline)
+    (indent-according-to-mode)
+    (forward-line -1)
+    (indent-according-to-mode))
+#+end_src
+
+* Writing
+** Inspiration helpers
+As I write papers, it is useful to have some helper to start to have the inspiration.
+*** academic-phrases
+#+begin_src emacs-lisp
+  ;; Bypass that mental block when writing your papers.
+  ;; This work was based on the freely available PDF titled “English for Writing Research - Papers Useful Phrases” .
   (use-package academic-phrases
     :ensure t)
-
-  (use-package mw-thesaurus
-    :disabled t
-    :quelpa
-    (mw-thesaurus :fetcher github :repo "agzam/mw-thesaurus.el")
-    :commands (mw-thesaurus-lookup-at-point))
 #+end_src
-*** Grammar checking
-**** For english
+*** Synonyms
+*emacs-powerthesaurus* is a simple plugin to integrate Emacs with amazing [[https://www.powerthesaurus.org/][powerthesaurus.org]].
 #+begin_src emacs-lisp
-  (use-package grammarly
-    :ensure t)
+  (use-package powerthesaurus
+    :ensure t
+    :bind
+    ("M-`" . powerthesaurus-lookup-word-dwim))
 #+end_src
-*** Translation
+** Translation
 **** WordReference
 #+begin_src emacs-lisp
-(use-package wordreference
-  :load-path default-plugin-dir
-  :commands (wordreference wordreference-at-point))
+  (use-package wordreference
+    :ensure nil
+    :config
+    :load-path default-plugin-dir
+    :commands (wordreference wordreference-at-point))
+  
+  ;; Merriam-Webster Thesaurus
+  (use-package mw-thesaurus
+    :ensure t
+    :config
+    :commands (mw-thesaurus-lookup-dwim))
 #+end_src
 **** English Teacher
 #+begin_src emacs-lisp
-(use-package english-teacher
-  :load-path "~/.emacs.d/third_parties/english-teacher.el"
-  ;;:bind (("C-' C-l" . english-teacher-smart-translation))
-  :config (setq english-teacher-backend 'baidu
-                              english-teacher-show-result-function 'english-teacher-eldoc-show-result-function)
-  :hook ((Info-mode-hook eww-mode-hook help-mode-hook) . english-teacher-follow-mode))
+  (use-package english-teacher
+    :ensure nil
+    :load-path "~/.emacs.d/third_parties/english-teacher.el"
+    ;;:bind (("C-' C-l" . english-teacher-smart-translation))
+    :config (setq english-teacher-backend 'baidu
+                                english-teacher-show-result-function 'english-teacher-eldoc-show-result-function)
+    :hook ((Info-mode-hook eww-mode-hook help-mode-hook) . english-teacher-follow-mode))
 #+end_src
 **** google translate
 #+begin_src emacs-lisp
-(add-to-list 'load-path "~/.emacs.d/third_parties/go-translate")
-(require 'go-translate)
-  (setq go-translate-base-url "https://translate.google.cn")
-  (setq go-translate-local-language "zh-CN")
+  :ensure nil
+  :config
+  (add-to-list 'load-path "~/.emacs.d/third_parties/go-translate")
+  (require 'go-translate)
+    (setq go-translate-base-url "https://translate.google.cn")
+    (setq go-translate-local-language "zh-CN")
 
-  (setq go-translate-buffer-follow-p t)       ; 翻译完成后，总是将光标切换到翻译结果窗口
-  (setq go-translate-buffer-source-fold-p t)  ; 在结果页面，折叠源文本。可以通过回车或鼠标点击展开
-;;  (setq go-translate-buffer-window-config ..) ; 更改翻译窗口的位置和样式
+    (setq go-translate-buffer-follow-p t)       ; 翻译完成后，总是将光标切换到翻译结果窗口
+    (setq go-translate-buffer-source-fold-p t)  ; 在结果页面，折叠源文本。可以通过回车或鼠标点击展开
+  ;;  (setq go-translate-buffer-window-config ..) ; 更改翻译窗口的位置和样式
 
-  ;; 设置输入风格。默认情况下，是通过 Minibuffer 方式补全用户输入
-  ;; 可以修改为 `go-translate-inputs-noprompt` 或 `go-translate-inputs-current-or-prompt`
-  ;; 前者表示直接翻译选中内容或光标下单词；后者表示若光标下没内容则打开 Minibuffer 读取内容
-  (setq go-translate-inputs-function #'go-translate-inputs-current-or-prompt)
+    ;; 设置输入风格。默认情况下，是通过 Minibuffer 方式补全用户输入
+    ;; 可以修改为 `go-translate-inputs-noprompt` 或 `go-translate-inputs-current-or-prompt`
+    ;; 前者表示直接翻译选中内容或光标下单词；后者表示若光标下没内容则打开 Minibuffer 读取内容
+    (setq go-translate-inputs-function #'go-translate-inputs-current-or-prompt)
+#+end_src
+**** youdao
+#+begin_src emacs-lisp
+    ;; https://github.com/xuchunyang/youdao-dictionary.el
+  (use-package youdao-dictionary
+    :ensure t
+    :config
+    (setq url-automatic-caching t) ; enable cache
+    :bind
+    ("C-c y" . youdao-dictionary-search-at-point))
+
+  (defun my/browse-dictionary-at-point ()
+    (interactive)
+    (browse-url (concat "https://dictionary.cambridge.org/zht/詞典/英語-漢語-繁體/" (thing-at-point 'word))))
+  (global-set-key (kbd "M-q") 'my/browse-dictionary-at-point)
 #+end_src
 ** Language checking
 *** Spelling
@@ -1145,32 +1164,34 @@ sudo pacman -S aspell
 #+end_src
 
 #+begin_src emacs-lisp
-    ;; Flyspell
-    (use-package flyspell
-      :ensure t
-      :bind (:map flyspell-mode-map
-      ;;          ("C-," . nil)
-                ("C-;" . nil))
-      :config
-      ;; Some skipping
-      (add-to-list 'ispell-skip-region-alist '("^#+begin_src" . "^#+end_src"))
+  (use-package flyspell
+    :ensure nil
+    :bind (:map flyspell-mode-map
+    ;;          ("C-," . nil)
+               ("C-;" . nil))
+    :config
+    ;; Some skipping
+    (add-to-list 'ispell-skip-region-alist '("^#+begin_src" . "^#+end_src"))
+    (add-hook 'text-mode-hook 'flyspell-mode)
 
-      (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
+    (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
       (add-hook 'prog-mode-hook 'flyspell-prog-mode)
       :diminish 'flyspell-mode)
 
-    ;; Correct the misspelled word in a popup menu
-    (use-package flyspell-popup
-      :ensure t
-      :config
-      (define-key flyspell-mode-map (kbd "C-,") #'flyspell-popup-correct)
-      (define-key popup-menu-keymap (kbd "C-j") 'popup-next)
-      (define-key popup-menu-keymap (kbd "C-k") 'popup-previous)
-      (define-key popup-menu-keymap (kbd "C-l") 'popup-select))
+  (use-package flyspell-correct
+   :ensure t
+   :after flyspell
+   :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
+
+  ;; Replace with flyspell-correct-helm if you are a helm person.
+  (use-package flyspell-correct-ivy
+    :ensure t
+    :after flyspell-correct)
 #+end_src
 *** English checking
 lang-tool is actually supported by emacs through a dedicated mode which allows to have syntax and
 typography checking.
+something likes: grammarly
 
 #+begin_src shell :tangle no
 sudo pacman -S languagetool
@@ -1181,15 +1202,14 @@ M-x langtool-check
 To finish checking. All langtool marker is removed.
 M-x langtool-check-done
 
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package langtool
-  :disabled t
-  :ensure quelpa
-  :quelpa (langtool :fetcher github :repo "mhayashi1120/Emacs-langtool")
-  :init
-  (setq langtool-java-classpath
-        "/usr/share/languagetool:/usr/share/java/languagetool/*"))
-  ;;(setq langtool-language-tool-server-jar "~/work/tools/src/languagetool/languagetool/languagetool-server.jar"))
+#+BEGIN_SRC emacs-lisp
+  (use-package langtool
+    :ensure t
+    :init
+    (setq langtool-java-classpath
+          "/usr/share/languagetool:/usr/share/java/languagetool/*"))
+    ;;(setq langtool-language-tool-server-jar "~/work/tools/src/languagetool/languagetool/languagetool-server.jar"))
+    (setq langtool-default-language "en-US")
 #+END_SRC
 ** Chinese input
 #+BEGIN_SRC emacs-lisp
@@ -1218,6 +1238,39 @@ M-x langtool-check-done
 #+END_SRC
 
 
+* Terminal
+#+begin_src emacs-lisp
+    (use-package vterm
+    :config
+    (define-key vterm-mode-map (kbd "<f1>") nil)
+    (define-key vterm-mode-map (kbd "<f2>") nil)
+    (define-key vterm-mode-map (kbd "<f3>") nil)
+    (define-key vterm-mode-map (kbd "<f4>") nil)
+    (define-key vterm-mode-map (kbd "<f5>") nil)
+    (define-key vterm-mode-map (kbd "<f6>") nil)
+    (define-key vterm-mode-map (kbd "<f7>") nil)
+    (define-key vterm-mode-map (kbd "<f8>") nil)
+    (define-key vterm-mode-map (kbd "<f9>") nil)
+    (define-key vterm-mode-map (kbd "<f10>") nil)
+    (define-key vterm-mode-map (kbd "<f11>") nil)
+    (define-key vterm-mode-map (kbd "<f12>") nil)
+    :custom
+    ;;(vterm-shell "bash" "Set to bash instead of the default $SHELL so that vterm from TRAMP uses bash.")
+    (vterm-kill-buffer-on-exit t)
+    :hook
+    (vterm-mode . goto-address-mode))
+  (use-package vterm-toggle
+    :config
+    ;; show vterm buffer in side window
+    (add-to-list 'display-buffer-alist
+                 '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+                   (display-buffer-reuse-window display-buffer-in-side-window)
+                   (side . bottom)
+                   (dedicated . t)
+                   ;; (reusable-frames . visible) ;; depends on how I use Emacs / Emacs Client
+                   (window-height . 0.3)))
+    :commands (vterm-toggle))
+#+end_src
 * format
 ** format-all
 We can globally reformat the buffer relying on external tool. =format-all= is here for this.
@@ -1233,6 +1286,7 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
 #+begin_src emacs-lisp
   (use-package highlight-indent-guides
     :ensure t
+    :diminish highlight-indent-guides-mode
     :commands (highlight-indent-guides-mode)
     :hook
     (prog-mode . highlight-indent-guides-mode)
@@ -1361,7 +1415,7 @@ compdef sets backends as a local variable for that specific mode.
 ;;(use-package compdef :ensure t)
 #+end_src
 ** embark
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package marginalia
   :ensure t
   :config
@@ -1506,30 +1560,30 @@ In order to have inline completion, really important for coding, I use company. 
 some facing attributes. Each language is also adding its backend when needed. Therefore, only global
 configuration here.
 
-#+begin_src emacs-lisp
-;; Company mode
-;;  (use-package company
-;;    :diminish 'company-mode
-;;    :config
-;;    (setq company-tooltip-align-annotations t)
-;;    (add-hook 'after-init-hook 'global-company-mode))
+All of the Company frontends can be categorized by the type of the output into the three groups: tooltip-, preview-, and echo- frontends.
 
+Quick Access a Candidate: By default, quick-access key bindings utilize a modifier META and one of the digits,
+
+The name of the currently active backend is shown in the mode line and in the output of the command M-x company-diag.
+
+#+begin_src emacs-lisp
 (use-package company
   :ensure t
+  :diminish company-mode
   :hook
   (emacs-lisp-mode . (lambda () (add-to-list (make-local-variable 'company-backends) '(company-elisp))))
   :config
 
   ;; Global
-  (setq company-idle-delay 1
+  (setq company-idle-delay (lambda () (if (company-in-string-or-comment) nil 0.3))
         company-minimum-prefix-length 1
-        company-idle-delay 0.0 ;;dafault is 0.2
         company-show-numbers t
         company-tooltip-limit 20)
 
   ;; using child frame
   (use-package company-posframe
     :ensure t
+    :diminish company-posframe-mode
     :hook (company-mode . company-posframe-mode))
 
   ;; Facing
@@ -1556,7 +1610,8 @@ configuration here.
 ;; A company front-end with icons
 (use-package company-box
   :ensure t
-  :hook (company-mode . company-box-mode))
+  :hook (company-mode . company-box-mode)
+  :diminish company-box-mode)
 #+end_src
 
 ** Prescient
@@ -1566,9 +1621,8 @@ Prescient helps to sort candidates by last used first and then sorting by length
   (use-package prescient
     :ensure t
     :config (prescient-persist-mode))
-  ;;Disabled for now because it seems to be [[broken and unmaintained][https://github.com/raxod502/prescient.el/issues/65]] (as of [2020-09-06 Sun]).
+
   (use-package ivy-prescient
-    :disabled
     :ensure t
     :config (ivy-prescient-mode))
 
@@ -1909,6 +1963,14 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
   (capitalize-word (- arg)))
 #+end_src
 * Custom Keybinding
+emacs'key binding system 
+** general
+Convenience wrappers for keybindings.
+#+BEGIN_SRC emacs-lisp
+  (use-package general
+    :ensure t)
+#+END_SRC
+
 ** personal
 #+BEGIN_SRC emacs-lisp
 ;; Unbind unneeded keys
@@ -2028,6 +2090,12 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 
 * Language Server
 ** lsp
+To use clangd, you need:
+- clangd installed
+- a plugin for your editor
+- to tell clangd how your project is built
+  - compile_commands.json
+  
 #+begin_src emacs-lisp
 (use-package lsp-mode
   :ensure t
@@ -2036,7 +2104,7 @@ The C-z binding is disabled elsewhere in this document.  It minimises
   (setq lsp-keymap-prefix "C-c l")
   :custom
   ;; clangd is fast
-  (lsp-idle-delay 0.1)
+  (lsp-idle-delay 0.5)
   ;; be more ide-ish
   (lsp-modeline-code-actions-mode t)
   ;;面包屑导航
@@ -2047,8 +2115,7 @@ The C-z binding is disabled elsewhere in this document.  It minimises
   (lsp-enable-snippet nil)
   ;; turn off for better performance
   (lsp-enable-symbol-highlighting t)
-  ;; use `company-ctags' only.
-  ;; Please note `company-lsp' is automatically enabled if installed
+  ;; might use `company-ctags'
   (lsp-enable-completion-at-point t)
   ;; auto restart lsp
   (lsp-restart 'auto-restart)
@@ -2119,6 +2186,19 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 
 (use-package posframe :ensure t)
 #+end_src
+** debugger
+#+begin_src emacs-lisp
+    ;; DAP
+  (use-package dap-mode
+    :config
+    (dap-mode 1)
+    (require 'dap-hydra)
+    (require 'dap-gdb-lldb)	; download and expand lldb-vscode to the =~/.extensions/webfreak.debug=
+    (use-package dap-ui
+      :ensure nil
+      :config
+      (dap-ui-mode 1)))
+#+end_src
 ** citre
 #+begin_src emacs-lisp :tangle no
   (use-package citre
@@ -2177,14 +2257,12 @@ sudo pacman -S global
 ;;usage: find . -name "*.[ch]" | ctags -e -L -
 (use-package company-ctags  ;; LSP server: (lsp-enable-completion-at-point t)
   :disabled t
-  :ensure t
   :after company
   :config
   (company-ctags-auto-setup))
 
 ;; Emacs frontend to GNU GLobal source code tagging system
 (use-package ggtags
-  :ensure t
   :init
   (ggtags-mode 1)
   (add-hook 'c-mode-common-hook

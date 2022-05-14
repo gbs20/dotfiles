@@ -39,10 +39,10 @@
 (defconst wordreference-roots "http://www.wordreference.com/"
   "Wordreference root URL")
 
-(defvar wordreference-source-language "fr"
+(defvar wordreference-source-language "en"
   "Source language for the translation")
 
-(defvar wordreference-target-language "en"
+(defvar wordreference-target-language "zh"
   "Target language for the translation")
 
 
