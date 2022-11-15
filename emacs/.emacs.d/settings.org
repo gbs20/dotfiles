@@ -2,6 +2,8 @@
 #+KEYWORDS: emacs configure, org-mode
 
   This is my version of an configuration file for GNU Emacs.
+  1. read/write
+  2. programming
 
 * Package management
 The first part of the configuration is to prepare the package management. I am using =use-package= as
@@ -103,9 +105,6 @@ Finally, I use paradox to enhance the package listing experience.
 
 
 * Helpers
-I need to define some helpers to be able to facilitate the configuration. This mainly introduce
-user/password management.
-
 ** Define some important variables
 #+BEGIN_SRC emacs-lisp
     ;; Define root directory and add the plugins
@@ -113,6 +112,9 @@ user/password management.
       "The plugins directory")
     (add-to-list 'load-path default-plugin-dir)
     (add-to-list 'load-path "~/.emacs.d/site-lisp/")
+  
+    (when (eq system-type 'windows-nt)
+      (setq default-directory "d:/notes/"))
 
     ;; Don't screw up my files with custom
     (setq custom-file (format "%s/custom.el" user-emacs-directory))
@@ -126,7 +128,8 @@ user/password management.
                 '("*Info*" display-buffer-same-window))
 
     ;; Add /usr/local/bin to the path
-    (setq exec-path (append exec-path '("/usr/local/bin")))
+    (when (eq system-type 'gnu/linux)
+      (setq exec-path (append exec-path '("/usr/local/bin"))))
 
     ;; Y or n is enough for me
     (fset 'yes-or-no-p 'y-or-n-p)
@@ -137,7 +140,7 @@ user/password management.
       ;; Garbage collection (see https://github.com/jethrokuan/.emacs.d/blob/master/config.org)
       gc-cons-threshold 50000000
       large-file-warning-threshold 100000000)
-  
+
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
 #+END_SRC
 ** Identification helper
@@ -207,30 +210,21 @@ Defining a simple helper to edit file as root using tramp
 
   (global-set-key (kbd "<f1>") 'hydra-main/body)
 #+end_src
-* emacs concept
+* emacs
 ** coding system
 #+begin_src emacs-lisp
+  (set-language-environment 'Chinese-GB)
   (prefer-coding-system 'gb2312)
   (prefer-coding-system 'utf-8)
 #+end_src
 ** theme
 #+begin_src emacs-lisp
-  (use-package srcery-theme
-    :ensure t)
-
-  (use-package modus-themes
-  :init
-  ;; Add all your customizations prior to loading the themes
-  (setq modus-themes-italic-constructs t
-        modus-themes-bold-constructs nil
-        modus-themes-region '(bg-only no-extend))
-
-  ;; Load the theme files before enabling a theme
-  (modus-themes-load-themes)
-  :config
-  ;; Load the theme of your choice:
-  (modus-themes-load-operandi) ;; OR (modus-themes-load-vivendi)
-  :bind ("<f5>" . modus-themes-toggle))
+  (use-package srcery-theme)
+  
+  (use-package leuven-theme
+    :init
+    :config
+    (load-theme 'leuven t))
 #+end_src
 
 ** mode line
@@ -248,6 +242,7 @@ The standard (default) components of a mode-line: https://www.emacswiki.org/emac
       ((neotree-mode imenu-list-minor-mode minimap-mode) . hide-mode-line-mode))  
 #+end_src
 ** Icons
+;; NOTE: Must run `M-x all-the-icons-install-fonts', and install fonts manually on Windows
 #+begin_src emacs-lisp
 (use-package all-the-icons
   :ensure t)
@@ -261,71 +256,76 @@ The standard (default) components of a mode-line: https://www.emacswiki.org/emac
   :init (add-hook 'after-init-hook 'all-the-icons-ivy-setup))
 #+end_src
 ** Fonts
+M-x describe-font
 #+begin_src shell :tangle no
-sudo pacman -S ttf-fira-code
-sudo pacman -S nerd-fonts-fira-code
+  sudo pacman -S ttf-fira-code
+  sudo pacman -S nerd-fonts-fira-code
+  sudo pacman -S noto-fonts noto-fonts-cjk
+  yay -S  noto-fonts-sc
 #+end_src
+
 #+begin_src emacs-lisp
-(require 'dash)
-  (defun set-icon-fonts (CODE-FONT-ALIST)
-    "Utility to associate many unicode points with specified fonts."
-    (--each CODE-FONT-ALIST
-      (-let (((font . codes) it))
-        (--each codes
-          (set-fontset-font t `(,it . ,it) font)))))
+  (set-face-attribute 'default nil :font "Droid Sans Mono")
 
-  (defun load-default-fonts ()
+  ;; Latin
+  (set-fontset-font t 'latin "Noto Sans")
 
-    ;;(set-fontset-font "fontset-default" 'unicode "Dejavu Sans Mono")
-    (set-fontset-font "fontset-default" 'unicode "Fira Code Nerd Font")
+  ;; East Asia: 你好, 早晨, こんにちは, 안녕하세요
+  ;;
+  ;; Make sure you use the right font. See
+  ;; https://www.google.com/get/noto/help/cjk/.
+  ;;
+  ;; This font requires "Regular". Other Noto fonts dont.
+  ;; ¯\_(ツ)_/¯
+  (set-fontset-font t 'han "Noto Sans CJK SC Regular")
+  (set-fontset-font t 'kana "Noto Sans CJK JP Regular")
+  (set-fontset-font t 'hangul "Noto Sans CJK KR Regular")
+  (set-fontset-font t 'cjk-misc "Noto Sans CJK KR Regular")
 
-    ;; The icons you see are not the correct icons until this is evaluated!
-    (set-icon-fonts
-     '(("fontawesome"
-        ;;                         
-        #xf07c #xf0c9 #xf0c4 #xf0cb #xf017 #xf101)
+  ;;(setq default-font-family "Fira Code Nerd Font")
+  ;;(set-face-attribute 'default nil :family default-font-family)
 
-       ("all-the-icons"
-        ;;    
-        #xe907 #xe928)
+  (when (eq system-type 'darwin)
+    (setq fonts '("SF Mono" "冬青黑体简体中文"))
+    (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend)
+    (set-face-attribute 'default nil :font
+                        (format "%s:pixelsize=%d" (car fonts) 16)))
 
-       ("github-octicons"
-        ;;                        
-        #xf091 #xf059 #xf076 #xf075 #xf016 #xf00a)
+  (when (eq system-type 'windows-nt)
+    (setq fonts '("Consolas" "微软雅黑"))
+    (set-fontset-font t 'unicode "Segoe UI Emoji" nil 'prepend)
+    (set-face-attribute 'default nil :font
+                        (format "%s:pixelsize=%d" (car fonts) 16)))
 
-       ("Symbola"
-        ;; 𝕊    ⨂      ∅      ⟻    ⟼     ⊙      𝕋       𝔽
-        #x1d54a #x2a02 #x2205 #x27fb #x27fc #x2299 #x1d54b #x1d53d
-        ;; 𝔹    𝔇       𝔗
-        #x1d539 #x1d507 #x1d517))))
+  ;;(when (eq system-type 'gnu/linux)
+  ;;  (setq fonts '("SF Mono" "Noto Sans Mono CJK SC"))
+  ;;  (set-fontset-font t 'unicode "Noto Color Emoji" nil 'prepend)
+  ;;  (set-face-attribute 'default nil :font
+  ;;                      (format "%s:pixelsize=%d" (car fonts) 24)))
 
-
-  (defun load-fonts (frame)
-    (select-frame frame)
-    (load-default-fonts))
-
-  (if (daemonp)
-      (add-hook 'after-make-frame-functions #'load-fonts)
-    (load-default-fonts))
+  ;;(if (display-graphic-p)
+  ;;    (dolist (charset '(kana han symbol cjk-misc bopomofo))
+  ;;      (set-fontset-font (frame-parameter nil 'font) charset
+  ;;                        (font-spec :family (car (cdr fonts))))))
 #+end_src
+
 ** frame
 *** Title
 #+begin_src emacs-lisp
-(defun frame-title-format ()
-  "Return frame title with current project name, where applicable."
-  (let ((file buffer-file-name))
-    (if file
-        (if (and (bound-and-true-p projectile-mode)
-                 (projectile-project-p))
-            (concat
-             (format "[%s] " (projectile-project-name))
-             (replace-regexp-in-string (format "^%s" (projectile-project-p)) "" (file-truename file)))
-          (abbreviate-file-name file))
-      "%b")))
+  (defun frame-title-format ()
+    "Return frame title with current project name, where applicable."
+    (let ((file buffer-file-name))
+      (if file
+          (if (and (bound-and-true-p projectile-mode)
+                   (projectile-project-p))
+              (concat
+               (format "[%s] " (projectile-project-name))
+               (replace-regexp-in-string (format "^%s" (projectile-project-p)) "" (file-truename file)))
+            (abbreviate-file-name file))
+        "%b")))
 
-(when (display-graphic-p)
-  (setq frame-title-format '("" " Happy Hacking ☺ "(:eval (frame-title-format)))))
-
+  (when (display-graphic-p)
+    (setq frame-title-format '("" " Happy Hacking :) "(:eval (frame-title-format)))))  
 #+end_src
 *** Remove unused part
 #+begin_src emacs-lisp
@@ -452,7 +452,6 @@ Display emojis in Emacs
       :ensure t)
 #+end_src
 ** line numbers and whitespace indicators
-
 *Display line numbers (buffer-local)*
   I seldom use line numbers, but here it is.  This toggles the setting for the local buffer and also activates /hl-line-mode/.
 *Display invisible characters (whitespace)*
@@ -460,13 +459,13 @@ Display emojis in Emacs
 
 As for /delete-trailing-whitespace/, I prefer to call it manually because sometimes it causes problems, such as with diffs.
 #+begin_src emacs-lisp
-   ;; Turn on line numbers
-   ;; (global-display-line-numbers-mode)
-   ;; (menu-bar-display-line-numbers-mode 'relative)
-  (if (version< emacs-version "26")
-      (global-linum-mode)
-    (add-hook 'text-mode-hook #'display-line-numbers-mode)
-    (add-hook 'prog-mode-hook #'display-line-numbers-mode))
+  ;; Turn on line numbers
+  ;; (global-display-line-numbers-mode)
+  ;; (menu-bar-display-line-numbers-mode 'relative)
+  ;; (if (version< emacs-version "26")
+  ;;    (global-linum-mode)
+  ;;  (add-hook 'text-mode-hook #'display-line-numbers-mode)
+  ;;  (add-hook 'prog-mode-hook #'display-line-numbers-mode))
 
   (use-package display-line-numbers
     :config
@@ -491,7 +490,8 @@ As for /delete-trailing-whitespace/, I prefer to call it manually because someti
         (hl-line-mode -1)
         (setq-local truncate-lines nil)))
     :bind ("<f11>" . my/display-line-numbers-mode))
-
+  
+  ;; trailing-whitespace: 拖尾空格，结尾空格
   (use-package whitespace
     :config
     (defun my/toggle-invisibles ()
@@ -502,48 +502,17 @@ As for /delete-trailing-whitespace/, I prefer to call it manually because someti
         (whitespace-mode)))
     :bind (("<f6>" . my/toggle-invisibles)
            ("C-c z" . delete-trailing-whitespace)))
-  ;; 保存时自动清除行尾空格及文件结尾空行 trailing-whitespace: 拖尾空格，结尾空格
+  ;; 保存时自动清除行尾空格及文件结尾空行
   ;;(add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+end_src
-** Column/line
-The column count is set to 72. The standard line length is 80 characters,
-so having it at something less allows for such things as quoting plain text, indenting, etc.
-git commit messages also make good use of this method.
-The column count is used by auto-fill-mode and similar tools
-(or when manually invoking text formatting with fill-paragraph or equivalent—normally bound to M-q).
+** Column
 #+begin_src emacs-lisp
-  ;; Redefine fill-column as my screen is not 80 chars :D
-  ;;(setq-default fill-column 100)
   (use-package emacs
     :ensure nil
-    :config
-    (setq-default fill-column 72)
-    :hook (after-init-hook . column-number-mode))
-
-
-  (use-package emacs
-    :ensure nil
-    :diminish auto-fill-function
-    :config
-    (setq adaptive-fill-mode t)
-    :hook (text-mode-hook . turn-on-auto-fill)
-    (org-mode-hook . turn-on-auto-fill))
-
-  (use-package fill-column-indicator
-    :ensure t
-    :config
-    ;; Define a global mode but not sure I am going to use it
-      (define-globalized-minor-mode
-         global-fci-mode fci-mode
-          (lambda ()
-            (fci-mode 1))))
-
-  (use-package visual-fill-column
-    :ensure t)
-
-  ;; See column-number
-  (column-number-mode t)
-  (size-indication-mode t)
+    :diminish display-fill-column-indicator-mode auto-fill-mode
+    :hook
+      ;;((text-mode org-mode) . display-fill-column-indicator-mode)
+      ((text-mode org-mode) . auto-fill-mode))
 #+end_src
 ** Buffer
 *** buffer move
@@ -799,6 +768,15 @@ front and rear of the visited file name.  Thus, a buffer visiting file
   #+end_src
 
 ** recursive-edit
+** Keyboard Macro
+<F3>     (‘kmacro-start-macro-or-insert-counter’).
+<F4>     (‘kmacro-end-or-call-macro’).
+There is only one keyboard macro ring, shared by all buffers.
+All commands which operate on the keyboard macro ring use the same
+‘C-x C-k’ prefix.
+Note that Emacs treats the head of the macro ring as the last defined
+keyboard macro.  For instance, <F4> will execute that macro, and ‘C-x
+C-k n’ will give it a name.
 ** fringe mode
 The fringes are areas to the right and left side of an Emacs frame. They can be used to show status-related or contextual feedback
 such as line truncation indicators, continuation lines, code linting markers, etc.
@@ -854,44 +832,64 @@ The use of *setq-default* is necessary, otherwise these values become buffer-loc
 ** Global
 #+begin_src emacs-lisp
   (use-package org
-    :ensure org-plus-contrib
-    :config
-    (setq
-         org-startup-indented t
-         org-startup-folded t
-         org-show-following-heading t
-         org-show-hierarchy-above t
-         org-show-siblings '((default))
-         org-src-fontify-natively t
-         org-src-tab-acts-natively t
-         org-hide-emphasis-markers t))
-#+end_src
-** Faces
-#+begin_src emacs-lisp
-
-#+end_src
-** Org-bullets
-#+begin_src emacs-lisp
+      :ensure org-plus-contrib
+      :config
+      (setq
+           org-startup-indented t
+           org-startup-folded t
+           org-show-following-heading t
+           org-show-hierarchy-above t
+           org-show-siblings '((default))
+           org-src-fontify-natively t
+           org-src-tab-acts-natively t
+           org-hide-emphasis-markers t))
+  (global-set-key (kbd "C-c l") #'org-store-link)
+  (global-set-key (kbd "C-c a") #'org-agenda)
+  (global-set-key (kbd "C-c c") #'org-capture)
+  
+  ;; add bullets to prettify the org mode stars
   (use-package org-bullets
-    :ensure t
+    :after org
     :hook
-    (org-mode . (lambda () (org-bullets-mode 1))))
+    (org-mode . org-bullets-mode))
 #+end_src
-** Fancy priority
-#+begin_src emacs-lisp
-  (use-package org-fancy-priorities
-    :ensure t
-    :diminish org-fancy-priorities-mode
-    :hook
-    (org-agenda-mode . org-fancy-priorities-mode)
-    (org-mode . org-fancy-priorities-mode)
-    :config
-    (setq org-fancy-priorities-list
-          '((?A . "❗") (?B . "⬆") (?C . "⬇") (?D . "☕")
-            (?1 . "⚡") (?2 . "⮬") (?3 . "⮮") (?4 . "☕")
-            (?I . "Important"))))
-#+end_src
+** Taking Note with Org Roam
+#+begin_src emacs-lisp :tangle no
+;; User Manual: https://www.orgroam.com/manual.html
+(use-package org-roam
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory (file-truename "~/org/roam/"))
+  (org-roam-completion-everywhere t)
+  :bind
+  ("C-c n l" . org-roam-buffer-toggle)
+  ("C-c n f" . org-roam-node-find)
+  ("C-c n g" . org-roam-graph)
+  ("C-c n i" . org-roam-node-insert)
+  ("C-c n c" . org-roam-capture)
+  ("C-c n r" . org-roam-node-random)
+  :bind-keymap
+  ("C-c n d" . org-roam-dailies-map)
+  :config
+  (org-roam-db-autosync-mode)
+  (require 'org-roam-dailies)  ; Ensure the keymap is available
+  (add-to-list 'display-buffer-alist
+             '("\\*org-roam\\*"
+               (display-buffer-in-direction)
+               (direction . right)
+               (window-width . 0.33)
+               (window-height . fit-window-to-buffer))))
 
+(use-package org-roam-ui
+  :after org-roam
+  :hook (after-init . org-roam-ui-mode)
+  :config
+  (setq org-roam-ui-sync-theme t
+        org-roam-ui-follow t
+        org-roam-ui-update-on-save t
+        org-roam-ui-open-on-start t))
+#+end_src
 * Editing
 ** vlf
 #+begin_src emacs-lisp
@@ -1016,9 +1014,11 @@ Evil Nerd Commenter, a tool that helps you comment code efficiently.
     (("C-c M-;" . c-toggle-comment-style)
      ("M-;" . evilnc-comment-or-uncomment-lines)))
 #+END_SRC
+** region-rectangle
+C-x <SPC> rectangle-mark-mode
+C-x r t string-rectangle
 ** multiple cursors
 #+begin_src emacs-lisp
-;; C-x r t string-rectangle
 (use-package multiple-cursors
   :ensure t
   :bind (("C-S-c C-S-c"   . mc/edit-lines)
@@ -1081,24 +1081,24 @@ Evil Nerd Commenter, a tool that helps you comment code efficiently.
 
 * Writing
 ** Inspiration helpers
-As I write papers, it is useful to have some helper to start to have the inspiration.
+  As I write papers, it is useful to have some helper to start to have the inspiration.
 *** academic-phrases
-#+begin_src emacs-lisp
-  ;; Bypass that mental block when writing your papers.
-  ;; This work was based on the freely available PDF titled “English for Writing Research - Papers Useful Phrases” .
-  (use-package academic-phrases
-    :ensure t)
-#+end_src
+  #+begin_src emacs-lisp
+    ;; Bypass that mental block when writing your papers.
+    ;; This work was based on the freely available PDF titled “English for Writing Research - Papers Useful Phrases” .
+    (use-package academic-phrases
+      :ensure t)
+  #+end_src
 *** Synonyms
-*emacs-powerthesaurus* is a simple plugin to integrate Emacs with amazing [[https://www.powerthesaurus.org/][powerthesaurus.org]].
-#+begin_src emacs-lisp
+  *emacs-powerthesaurus* is a simple plugin to integrate Emacs with amazing [[https://www.powerthesaurus.org/][powerthesaurus.org]].
+  #+begin_src emacs-lisp
   (use-package powerthesaurus
     :ensure t
     :bind
     ("M-`" . powerthesaurus-lookup-word-dwim))
-#+end_src
+  #+end_src
 ** Translation
-**** WordReference
+*** WordReference
 #+begin_src emacs-lisp
   (use-package wordreference
     :ensure nil
@@ -1112,7 +1112,7 @@ As I write papers, it is useful to have some helper to start to have the inspira
     :config
     :commands (mw-thesaurus-lookup-dwim))
 #+end_src
-**** English Teacher
+*** English Teacher
 #+begin_src emacs-lisp
   (use-package english-teacher
     :ensure nil
@@ -1122,7 +1122,7 @@ As I write papers, it is useful to have some helper to start to have the inspira
                                 english-teacher-show-result-function 'english-teacher-eldoc-show-result-function)
     :hook ((Info-mode-hook eww-mode-hook help-mode-hook) . english-teacher-follow-mode))
 #+end_src
-**** google translate
+*** google translate
 #+begin_src emacs-lisp
   :ensure nil
   :config
@@ -1140,7 +1140,7 @@ As I write papers, it is useful to have some helper to start to have the inspira
     ;; 前者表示直接翻译选中内容或光标下单词；后者表示若光标下没内容则打开 Minibuffer 读取内容
     (setq go-translate-inputs-function #'go-translate-inputs-current-or-prompt)
 #+end_src
-**** youdao
+*** youdao
 #+begin_src emacs-lisp
     ;; https://github.com/xuchunyang/youdao-dictionary.el
   (use-package youdao-dictionary
@@ -1212,6 +1212,7 @@ M-x langtool-check-done
     (setq langtool-default-language "en-US")
 #+END_SRC
 ** Chinese input
+*** pyim
 #+BEGIN_SRC emacs-lisp
 (use-package pyim
   :init
@@ -1236,7 +1237,14 @@ M-x langtool-check-done
   :after pyim
   :config (pyim-basedict-enable))
 #+END_SRC
-
+** olivetti
+#+begin_src emacs-lisp
+  (use-package olivetti
+    :config
+    (setq olivetti-body-width 0.7)
+    (setq olivetti-minimum-body-width 80)
+    (setq olivetti-recall-visual-line-mode-entry-state t))
+#+end_src
 
 * Terminal
 #+begin_src emacs-lisp
@@ -1283,7 +1291,7 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
 #+end_src
 
 ** Indentation
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package highlight-indent-guides
     :ensure t
     :diminish highlight-indent-guides-mode
@@ -1294,6 +1302,16 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
     (setq highlight-indent-guides-method 'character));;fill, column, character, bitmap
 #+end_src
 * Manual
+** Info
+- Access
+  C-h i (Info)
+  C-h i d (Directory)
+  C-h i d m (Menu)
+  C-h R manual-name (Pick manual. Use completion to see all choices)
+- Navigation
+  g goto a node. Use completion to see all nodes in manual.
+  t goto top node of manual
+  f goto a cross reference
 ** manpage
 #+begin_src emacs-lisp
   (use-package man
@@ -1304,7 +1322,7 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
 
 ** Helm dash
 Offline documentation browser for +150 APIs using Dash docsets.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package helm-dash
   :ensure t)
 #+END_SRC
@@ -1342,8 +1360,6 @@ Offline documentation browser for +150 APIs using Dash docsets.
     )
 #+end_src
 * Templating
-I use templates for 2 use cases: the buffer edition and the file specific templates. Both are relying on *yasnippet*.
-
 ** Edition templates
 The default configuration of yasnippet consists of activating it and plugging it with company.
 Ivy-yasnippet is used for snippet discovery.
@@ -1406,21 +1422,149 @@ M-x *auto-insert*
 #+end_src
 
 
-* Completion
-This part focuses on completion configuration. Language specific configurations are not done here
-but in the dedicate language configuration part. This section is just for global configuration.
-** Compdef
-compdef sets backends as a local variable for that specific mode.
+* Completion Configuration
+** cape
 #+begin_src emacs-lisp
-;;(use-package compdef :ensure t)
+  ;; Add extensions
+(use-package cape
+   :init
+  ;; Add `completion-at-point-functions', used by `completion-at-point'.
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  ;;(add-to-list 'completion-at-point-functions #'cape-history)
+  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;;(add-to-list 'completion-at-point-functions #'cape-tex)
+  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+  ;;(add-to-list 'completion-at-point-functions #'cape-ispell)
+  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
+  ;;(add-to-list 'completion-at-point-functions #'cape-line)
+)
 #+end_src
+** consult
+#+begin_src emacs-lisp 
+;; Consulting completing-read
+(use-package consult
+  ;; Replace bindings. Lazily loaded due by `use-package'.
+  :bind (;; C-c bindings (mode-specific-map)
+         ("C-c h" . consult-history)
+         ("C-c m" . consult-mode-command)
+         ("C-c k" . consult-kmacro)
+         ;; C-x bindings (ctl-x-map)
+         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+         ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+         ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+         ;; Custom M-# bindings for fast register access
+         ;; ("M-#" . consult-register-load)
+         ;; ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ;; ("C-M-#" . consult-register)
+         ;; Other custom bindings
+         ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+         ("<help> a" . consult-apropos)            ;; orig. apropos-command
+         ;; M-g bindings (goto-map)
+         ("M-g e" . consult-compile-error)
+         ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+         ("M-g g" . consult-goto-line)             ;; orig. goto-line
+         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+         ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+         ("M-g m" . consult-mark)
+         ("M-g k" . consult-global-mark)
+         ("M-g i" . consult-imenu)
+         ("M-g I" . consult-imenu-multi)
+         ;; M-s bindings (search-map)
+         ("M-s d" . consult-find)
+         ("M-s D" . consult-locate)
+         ("M-s g" . consult-grep)
+         ("M-s G" . consult-git-grep)
+         ("M-s r" . consult-ripgrep)
+         ("M-s l" . consult-line)
+         ("M-s L" . consult-line-multi)
+         ("M-s m" . consult-multi-occur)
+         ("M-s k" . consult-keep-lines)
+         ("M-s u" . consult-focus-lines)
+         ;; Isearch integration
+         ("M-s e" . consult-isearch-history)
+         :map isearch-mode-map
+         ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+         ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+         ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+         ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+         ;; Minibuffer history
+         :map minibuffer-local-map
+         ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+         ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+
+  ;; Enable automatic preview at point in the *Completions* buffer. This is
+  ;; relevant when you use the default completion UI.
+  :hook (completion-list-mode . consult-preview-at-point-mode)
+
+  ;; The :init configuration is always executed (Not lazy)
+  :init
+
+  ;; Optionally configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
+  ;; `consult-register-store' and the Emacs built-ins.
+  (setq register-preview-delay 0.5
+        register-preview-function #'consult-register-format)
+
+  ;; Optionally tweak the register preview window.
+  ;; This adds thin lines, sorting and hides the mode line of the window.
+  (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
+
+  ;; Configure other variables and modes in the :config section,
+  ;; after lazily loading the package.
+  :config
+
+  ;; Optionally configure preview. The default value
+  ;; is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key 'any)
+  ;; (setq consult-preview-key (kbd "M-."))
+  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+  ;; For some commands and buffer sources it is useful to configure the
+  ;; :preview-key on a per-command basis using the `consult-customize' macro.
+  (consult-customize
+   consult-theme :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   ;; :preview-key (kbd "M-.")
+   :preview-key '(:debounce 0.4 any))
+
+  ;; Optionally configure the narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (setq consult-narrow-key "<") ;; (kbd "C-+")
+
+  ;; Optionally make narrowing help available in the minibuffer.
+  ;; You may want to use `embark-prefix-help-command' or which-key instead.
+  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+  ;; By default `consult-project-function' uses `project-root' from project.el.
+  ;; Optionally configure a different project root function.
+  ;; There are multiple reasonable alternatives to chose from.
+  ;;;; 1. project.el (the default)
+  ;; (setq consult-project-function #'consult--default-project--function)
+  ;;;; 2. projectile.el (projectile-project-root)
+  ;; (autoload 'projectile-project-root "projectile")
+  ;; (setq consult-project-function (lambda (_) (projectile-project-root)))
+  ;;;; 3. vc.el (vc-root-dir)
+  ;; (setq consult-project-function (lambda (_) (vc-root-dir)))
+  ;;;; 4. locate-dominating-file
+  ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
+) 
+#+end_src
+** corfu-doc
 ** embark
 #+begin_src emacs-lisp :tangle no
-(use-package marginalia
-  :ensure t
-  :config
-  (marginalia-mode))
-
 (use-package embark
   :ensure t
   :bind
@@ -1438,7 +1582,9 @@ compdef sets backends as a local variable for that specific mode.
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
                  nil
                  (window-parameters (mode-line-format . none)))))
-
+#+end_src
+** embark-consult
+#+begin_src emacs-lisp
 ;; Consult users will also want the embark-consult package.
 (use-package embark-consult
   :ensure t
@@ -1448,6 +1594,114 @@ compdef sets backends as a local variable for that specific mode.
   ;; auto-updating embark collect buffer
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
+#+end_src
+
+** marginalia
+#+begin_src emacs-lisp
+  (use-package marginalia
+  :ensure t
+  :config
+  (marginalia-mode))
+#+end_src
+** vertico
+#+begin_src emacs-lisp
+  ;; Enable vertico
+  (use-package vertico
+    :init
+    (vertico-mode)
+
+    ;; Different scroll margin
+    (setq vertico-scroll-margin 0)
+
+    ;; Show more candidates
+    (setq vertico-count 20)
+
+    ;; Grow and shrink the Vertico minibuffer
+    (setq vertico-resize t)
+
+    ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+    (setq vertico-cycle t)
+    )
+
+  ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (use-package savehist
+    :init
+    (savehist-mode))
+  
+    ;; A few more useful configurations...
+  (use-package emacs
+    :init
+    ;; Add prompt indicator to `completing-read-multiple'.
+    ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
+    (defun crm-indicator (args)
+      (cons (format "[CRM%s] %s"
+                    (replace-regexp-in-string
+                     "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                     crm-separator)
+                    (car args))
+            (cdr args)))
+    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+    ;; Do not allow the cursor in the minibuffer prompt
+    (setq minibuffer-prompt-properties
+          '(read-only t cursor-intangible t face minibuffer-prompt))
+    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+    ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+    ;; Vertico commands are hidden in normal buffers.
+    ;; (setq read-extended-command-predicate
+    ;;       #'command-completion-default-include-p)
+
+    ;; Enable recursive minibuffers
+    (setq enable-recursive-minibuffers t))
+#+end_src
+** orderless
+#+begin_src emacs-lisp
+  ;; Optionally use the `orderless' completion style.
+(use-package orderless
+  :init
+  ;; Configure a custom style dispatcher (see the Consult wiki)
+  ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
+  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+** corfu
+#+begin_src emacs-lisp
+  (use-package corfu
+
+  ;; Optional customizations
+  :custom
+  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+  (corfu-auto t)                 ;; Enable auto completion
+  (corfu-separator ?\s)          ;; Orderless field separator
+  (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+  (corfu-quit-no-match t)        ;; nil: Never quit, even if there is no match
+  (corfu-preview-current nil)    ;; Disable current candidate preview
+  (corfu-preselect-first nil)    ;; Disable candidate preselection
+  (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+  (corfu-echo-documentation nil) ;; Disable documentation in the echo area
+  (corfu-scroll-margin 5)        ;; Use scroll margin
+
+  ;; Enable Corfu only for certain modes.
+  :hook ((prog-mode . corfu-mode)
+          (shell-mode . corfu-mode)
+          (eshell-mode . corfu-mode))
+
+  ;; Recommended: Enable Corfu globally.
+  ;; This is recommended since Dabbrev can be used globally (M-/).
+  ;; See also `corfu-excluded-modes'.
+  :init
+  (global-corfu-mode))
+#+end_src
+* Completion
+This part focuses on completion configuration. Language specific configurations are not done here
+but in the dedicate language configuration part. This section is just for global configuration.
+** Compdef
+compdef sets backends as a local variable for that specific mode.
+#+begin_src emacs-lisp
+;;(use-package compdef :ensure t)
 #+end_src
 ** Ivy/swipper/counsel
 I do prefer vertical completion, which is why I use extensively Ivy and extensions.
@@ -1475,7 +1729,7 @@ I do prefer vertical completion, which is why I use extensively Ivy and extensio
 (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
 (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
 #+end_src
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   ;; Generic completion frontend
   (use-package counsel
     :ensure t
@@ -1538,7 +1792,7 @@ I do prefer vertical completion, which is why I use extensively Ivy and extensio
 ** Helm
 I use Helm for some specific cases which requires an important visibility space completion.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package helm
     :ensure t
     :functions helm-show-completion-default-display-function
@@ -1566,7 +1820,7 @@ Quick Access a Candidate: By default, quick-access key bindings utilize a modifi
 
 The name of the currently active backend is shown in the mode line and in the output of the command M-x company-diag.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package company
   :ensure t
   :diminish company-mode
@@ -1617,7 +1871,7 @@ The name of the currently active backend is shown in the mode line and in the ou
 ** Prescient
 Prescient helps to sort candidates by last used first and then sorting by length.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package prescient
     :ensure t
     :config (prescient-persist-mode))
@@ -1631,7 +1885,7 @@ Prescient helps to sort candidates by last used first and then sorting by length
     :config (company-prescient-mode))
 #+end_src
 ** eldoc
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   ;; Show the argument list of a function in the echo area
 (use-package eldoc
   :diminish eldoc-mode
@@ -1784,28 +2038,6 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
   (global-diff-hl-mode t)
   (diff-hl-flydiff-mode t))
 #+END_SRC
-** Keybinding
-#+begin_src emacs-lisp
-  (defhydra hydra-project (:color teal :hint nil)
-    "
-         Project/Source management
-
-     Projects              Version control        On-the-fly
-    ------------------------------------------------------------------------------------------
-    _d_: dash projects     _m_: magit             _f_: fixme listing
-    _p_: projectile        _t_: travis status     _F_: flycheck
-
-    "
-    ("<ESC>" nil "quit")
-    ("d"   org-dashboard-display)
-    ("p"   hydra-projectile/body)
-    ("f"   fic-view-listing)
-    ("F"   hydra-flycheck/body)
-    ("m"   hydra-magit/body)
-    ("t"   show-my-travis-projects)
-    ("q"   nil "cancel" :color blue))
-  (global-set-key (kbd "<f4>") 'hydra-project/body)
-#+end_src
 * File/Dir management
 ** Diff
 *** Global
@@ -1963,7 +2195,8 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
   (capitalize-word (- arg)))
 #+end_src
 * Custom Keybinding
-emacs'key binding system 
+  emacs'key binding system
+  C-u C-x =: what-cursor-position
 ** general
 Convenience wrappers for keybindings.
 #+BEGIN_SRC emacs-lisp
@@ -2091,11 +2324,19 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 * Language Server
 ** lsp
 To use clangd, you need:
-- clangd installed
-- a plugin for your editor
-- to tell clangd how your project is built
-  - compile_commands.json
-  
+  - clangd installed
+  - a plugin for your editor
+  - to tell clangd how your project is built
+    - compile_commands.json
+    
+1. Completion at point#
+If LSP server supports completion, lsp-mode use symbols returned by
+the server to present the user when completion is triggered via
+completion-at-point.
+2. Code navigation
+lsp-find-definition
+lsp-find-references
+
 #+begin_src emacs-lisp
 (use-package lsp-mode
   :ensure t
@@ -2105,7 +2346,7 @@ To use clangd, you need:
   :custom
   ;; clangd is fast
   (lsp-idle-delay 0.5)
-  ;; be more ide-ish
+  ;; code action
   (lsp-modeline-code-actions-mode t)
   ;;面包屑导航
   (lsp-headerline-breadcrumb-enable nil)
@@ -2128,6 +2369,26 @@ To use clangd, you need:
   :commands lsp)
 #+end_src
 ** lsp-ui
+1. Code navigation - using builtin xref, lsp-treemacs tree views or
+   lsp-ui peek functions.
+2. What is peek?
+   We think there's nothing worse than a big context switch when all you
+   want is to quickly check something. That's why we support peeked
+   editors.When you execute a Go to References search (lsp-ui-peek-find-reference),
+   or a Peek Definition (lsp-ui-peek-find-definition), we embed the result
+   inline.
+3. Code Actions = Quick Fixes and refactorings
+   Warnings and Errors can provide Code Actions (also known as Quick
+   Fixes) to help fix issues. These will be displayed in the editor in
+   the left margin as a lightbulb "". Clicking on the lightbulb will
+   either display the Code Action options or perform the action.
+4. Code completion\IntelliSense
+   IntelliSense is a general term for various code editing features
+   including: code completion, parameter info, quick info, and member
+   lists.
+   IntelliSense features are sometimes called by other names
+   such as "code completion", "content assist", and "code hinting."      
+   
 #+begin_src emacs-lisp
 ;; optionally
 ;; LSP UI tools
@@ -2171,7 +2432,7 @@ To use clangd, you need:
       (lsp-ui-doc-mode 1)))
   :bind
   (:map lsp-mode-map
-        ("C-c C-r" . lsp-ui-peek-find-references)
+        ("C-c C-r" . lsp-ui-peek-find-references) ;; peek style
         ("C-c C-j" . lsp-ui-peek-find-definitions)
         ("C-c i"   . lsp-ui-peek-find-implementation)
         ("C-c m"   . lsp-ui-imenu)
@@ -2236,13 +2497,11 @@ sudo pacman -S global
                            (setq c-basic-offset 4))))
 
 (use-package modern-cpp-font-lock
-  :ensure t
   :diminish
   :init (modern-c++-font-lock-global-mode t))
 
 ;; counsel-etags for code navigation
 (use-package counsel-etags
-  :ensure t
   :bind (("C-]" . counsel-etags-find-tag-at-point))
   :init
   (add-hook 'prog-mode-hook
@@ -2262,6 +2521,8 @@ sudo pacman -S global
   (company-ctags-auto-setup))
 
 ;; Emacs frontend to GNU GLobal source code tagging system
+;; 1. Code navigation : ggtags-find-tag-dwim
+
 (use-package ggtags
   :init
   (ggtags-mode 1)
@@ -2349,20 +2610,25 @@ sudo pop install grip
 
 ** Global
 #+begin_src emacs-lisp
-;; Major mode for editing Markdown formatted text
-(use-package markdown-mode
-  :ensure t
-  :defer t
-  :commands (markdown-mode gfm-mode)
-  :mode (("README\\.md\\'" . gfm-mode)
-         ("\\.md\\'" . markdown-mode)
-         ("\\.markdown\\'" . markdown-mode))
-  :init (setq markdown-command "/usr/bin/pandoc"))
+  ;; Major mode for editing Markdown formatted text
+  (use-package markdown-mode
+    :ensure t
+    :defer t
+    :commands (markdown-mode gfm-mode)
+    :mode (("README\\.md\\'" . gfm-mode)
+           ("\\.md\\'" . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode))
+    :init
+        (when (eq system-type 'gnu/linux)
+          (setq markdown-command "/usr/bin/pandoc"))
+        (when (eq system-type 'windows-nt)
+          (setq markdown-command "~/.emacs.d/pandoc.exe"))
+  )
 
-(use-package markdown-mode+
-  :disabled t
-  :ensure t
-  :after markdown-mode)
+  (use-package markdown-mode+
+    :disabled t
+    :ensure t
+    :after markdown-mode)
 #+end_src
 ** Syntax highlight in block
 #+begin_src emacs-lisp
@@ -2492,7 +2758,7 @@ zshrc: GOPATH,GOPROXY
 #+end_src
 
 Format
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 ;; Set up before-save hooks to format buffer and add/delete imports.
 ;; Make sure you don't have other gofmt/goimports hooks enabled.
 (defun lsp-go-install-save-hooks ()
@@ -2509,7 +2775,7 @@ Go uses tabs, so lets set the indent to a sane mode
 
 Packages that you need for a nice Go setup
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
 (use-package go-mode
   :ensure t
   :bind (("C-c t t" . go-test-current-test)
