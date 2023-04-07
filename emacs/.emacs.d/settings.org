@@ -93,7 +93,7 @@ I use hydra a lot so it is easier to add its support directly in the use-package
 #+END_SRC
 ** Paradox to enhance package list management
 Finally, I use paradox to enhance the package listing experience.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   ;; A modern Packages Menu
   (use-package paradox
     :ensure t
@@ -103,8 +103,7 @@ Finally, I use paradox to enhance the package listing experience.
     (setq paradox-display-star-count nil))
 #+END_SRC
 
-
-* Helpers
+* emacs
 ** Define some important variables
 #+BEGIN_SRC emacs-lisp
     ;; Define root directory and add the plugins
@@ -143,74 +142,6 @@ Finally, I use paradox to enhance the package listing experience.
 
   (setq read-process-output-max (* 1024 1024)) ;; 1mb
 #+END_SRC
-** Identification helper
-Easy use wrapper around auth-* authentification emacs utils.
-
-#+begin_src emacs-lisp
-(cl-defun my:auth-source-get-user (&rest spec &allow-other-keys)
-  "Helper to get the user given the SPEC from authsource."
-  (let ((founds (apply 'auth-source-search spec)))
-    (when founds
-      (plist-get (nth 0 founds) :user))))
-
-(cl-defun my:auth-source-get-passwd (&rest spec &allow-other-keys)
-  "Helper to get the password given the SPEC from authsource."
-  (let ((founds (apply 'auth-source-search spec)))
-    (when founds
-      (funcall (plist-get (nth 0 founds) :secret)))))
-#+end_src
-
-** Helpers
-I define here some global helpers used either in the rest of the file, either available to use at runtime
-
-*** Editing as root
-Defining a simple helper to edit file as root using tramp
-
-#+begin_src emacs-lisp
-  (defun edit-current-file-as-root ()
-    "Edit the file that is associated with the current buffer as root"
-    (interactive)
-    (if (buffer-file-name)
-        (find-file (concat "/sudo:localhost:" (buffer-file-name)))
-      (message "Current buffer does not have an associated file.")))
-#+end_src
-** Helper Keybinding
-#+begin_src emacs-lisp
-  (defhydra hydra-main (:color teal :hint nil)
-    "
-    Main helper
-
-    Org. related          Help                Zooming        bookmarks          other helpers     completion
-    ------------------------------------------------------------------------------------------------------------------
-    _c_: org-capture        _f_: function doc.    _+_: zoom in     _b_: list bookmarks  _p_: prodigy        _y_: ivy-yasnippet
-    _g_: org-web-get-url    _v_: variable doc.    _-_: zoom out    _B_: bookmark file   _m_: new mail
-
-    Backups                       Feed
-    ------------------------------------------------------------------------------------------------------------------
-    _s_: list backups             _e_: elfeed
-    _S_: snapshot timemachine
-
-    "
-    ("B" bookmark-set)
-    ("b" list-bookmarks)
-    ("c" counsel-org-capture)
-    ("f" describe-function)
-    ("e" elfeed)
-    ("g" org-web-tools-read-url-as-org)
-    ("m" mu4e-compose-new)
-    ("p" prodigy)
-    ("s" snapshot-timeline)
-    ("S" snapshot-timemachine)
-    ("v" describe-variable)
-    ("y" ivy-yasnippet)
-    ("+" text-scale-increase :color pink)
-    ("-" text-scale-decrease :color pink)
-    ("<ESC>" nil "quit" :color blue)
-    ("q"   nil "cancel" :color blue))
-
-  (global-set-key (kbd "<f1>") 'hydra-main/body)
-#+end_src
-* emacs
 ** coding system
 #+begin_src emacs-lisp
   (set-language-environment 'Chinese-GB)
@@ -240,6 +171,12 @@ The standard (default) components of a mode-line: https://www.emacswiki.org/emac
     (use-package hide-mode-line
       :hook
       ((neotree-mode imenu-list-minor-mode minimap-mode) . hide-mode-line-mode))  
+#+end_src
+** transparency
+#+begin_src emacs-lisp :tangle no
+  (setq default-frame-alist '((width . 90)
+                              (height . 50)
+                              (alpha-background . 80)))
 #+end_src
 ** Icons
 ;; NOTE: Must run `M-x all-the-icons-install-fonts', and install fonts manually on Windows
@@ -445,11 +382,9 @@ Display emojis in Emacs
       (when (featurep 'emojify)
         (emojify-set-emoji-data)))
 
-    (use-package company-emoji
-      :ensure t)
+    (use-package company-emoji)
 
-    (use-package flycheck-status-emoji
-      :ensure t)
+    (use-package flycheck-status-emoji)
 #+end_src
 ** line numbers and whitespace indicators
 *Display line numbers (buffer-local)*
@@ -506,7 +441,7 @@ As for /delete-trailing-whitespace/, I prefer to call it manually because someti
   ;;(add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+end_src
 ** Column
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
   (use-package emacs
     :ensure nil
     :diminish display-fill-column-indicator-mode auto-fill-mode
@@ -704,6 +639,9 @@ activations.
 ** bookmark
 ** register
 ** mode
+#+begin_src emacs-lisp
+  (global-auto-revert-mode 1)
+#+end_src
 ** Undo
 #+BEGIN_SRC emacs-lisp
 ;; Undo-tree
@@ -816,6 +754,129 @@ The use of *setq-default* is necessary, otherwise these values become buffer-loc
     (setq which-key-special-keys nil)
     (which-key-mode 1))
 #+END_SRC
+** Custom Keybinding
+  emacs'key binding system
+  C-u C-x =: what-cursor-position
+*** personal
+#+BEGIN_SRC emacs-lisp
+;; Unbind unneeded keys
+(global-set-key (kbd "C-z") nil)
+(global-set-key (kbd "M-z") nil)
+(global-set-key (kbd "C-x C-z") nil)
+(global-set-key (kbd "M-/") nil)
+(global-set-key (kbd "C-x C-b") #'ibuffer)
+(global-set-key (kbd "C-x C-e") #'pp-eval-last-sexp)
+
+(global-set-key (kbd "M-i") #'imenu)
+
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
+
+(use-package helm-descbinds
+  :ensure t
+  :commands (helm-descbinds)
+  :bind
+  ("C-h b" . helm-descbinds))
+
+;;opening new lines can be finichy
+(defun open-line-below()
+    "open line below."
+    (interactive)
+    (end-of-line)
+    (newline)
+    (indent-for-tab-command))
+(defun open-line-above()
+    "open line above."
+    (interactive)
+    (beginning-of-line)
+    (newline)
+    (forword-line -1)
+    (indent-for-tab-command))
+(global-set-key (kbd "<C-return>") 'open-line-below)
+(global-set-key (kbd "<C-S-return>") 'open-line-above)
+
+(defun scroll-half-page-down ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun scroll-half-page-up ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
+(global-set-key "\M-n" 'scroll-half-page-up)
+(global-set-key "\M-p" 'scroll-half-page-down)
+
+(global-set-key (kbd "C-S-n")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (next-line 5))))
+(global-set-key (kbd "C-S-p")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (previous-line 5))))
+(global-set-key (kbd "C-S-f")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (forword-char 5))))
+(global-set-key (kbd "C-S-b")
+                (lambda()
+                  (interactive)
+                  (ignore-errors (backward-char 5))))
+;;
+;; Copy or Cut one line if no content selected
+;;
+;; copy region or whole line
+(global-set-key "\M-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-ring-save (region-beginning)
+      (region-end))
+    (progn
+     (kill-ring-save (line-beginning-position)
+     (line-end-position))
+     (message "copied line")))))
+
+;; kill region or whole line
+(global-set-key "\C-w"
+(lambda ()
+  (interactive)
+  (if mark-active
+      (kill-region (region-beginning)
+   (region-end))
+    (progn
+     (kill-region (line-beginning-position)
+  (line-end-position))
+     (message "killed line")))))
+
+#+END_SRC
+*** go to last change
+I could not find any built-in method of reliably moving back to the
+  last change.  Using the mark ring is always an option, but does not fill
+  the exact same niche.
+The C-z binding is disabled elsewhere in this document.  It minimises
+  the Emacs GUI by default.  A complete waste of an extremely valuable key
+  binding!
+#+begin_src emacs-lisp
+(use-package goto-last-change
+  :ensure
+  :bind ("C-z" . goto-last-change))
+#+end_src
+*** Change letter case
+#+begin_src emacs-lisp
+(defun upcase-backward-word (arg)
+  (interactive "p")
+  (upcase-word (- arg)))
+
+(defun downcase-backward-word (arg)
+  (interactive "p")
+  (downcase-word (- arg)))
+
+(defun capitalize-backward-word (arg)
+  (interactive "p")
+  (capitalize-word (- arg)))
+#+end_src
 
 
 * org
@@ -832,7 +893,6 @@ The use of *setq-default* is necessary, otherwise these values become buffer-loc
 ** Global
 #+begin_src emacs-lisp
   (use-package org
-      :ensure org-plus-contrib
       :config
       (setq
            org-startup-indented t
@@ -891,6 +951,17 @@ The use of *setq-default* is necessary, otherwise these values become buffer-loc
         org-roam-ui-open-on-start t))
 #+end_src
 * Editing
+** Editing as root
+Defining a simple helper to edit file as root using tramp
+
+#+begin_src emacs-lisp
+  (defun edit-current-file-as-root ()
+    "Edit the file that is associated with the current buffer as root"
+    (interactive)
+    (if (buffer-file-name)
+        (find-file (concat "/sudo:localhost:" (buffer-file-name)))
+      (message "Current buffer does not have an associated file.")))
+#+end_src
 ** vlf
 #+begin_src emacs-lisp
 ;; Open Large file
@@ -934,12 +1005,16 @@ Preview line when executing goto-line command.
 #+END_SRC
 *** Ace jump
 #+BEGIN_SRC emacs-lisp
-
   (use-package ace-jump-mode
-    :ensure t
     :config
     (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
 #+END_SRC
+*** Avy
+#+begin_src emacs-lisp
+  (use-package avy
+    :config
+    (global-set-key (kbd "M-g w") 'avy-goto-word-1))
+#+end_src
 *** Remember last jump
 An Emacs package to move point through buffer-undo-list positions.
 #+BEGIN_SRC emacs-lisp
@@ -1079,6 +1154,28 @@ C-x r t string-rectangle
     (indent-according-to-mode))
 #+end_src
 
+** format
+*** format-all
+We can globally reformat the buffer relying on external tool. =format-all= is here for this.
+
+#+begin_src emacs-lisp :tangle no
+  (use-package format-all
+    :commands (format-all-buffer format-all-mode))
+  (setq clang-format-style-option "google")
+#+end_src
+
+*** Indentation
+#+begin_src emacs-lisp :tangle no
+  (use-package highlight-indent-guides
+    :ensure t
+    :diminish highlight-indent-guides-mode
+    :commands (highlight-indent-guides-mode)
+    :hook
+    (prog-mode . highlight-indent-guides-mode)
+    :config
+    (setq highlight-indent-guides-method 'character));;fill, column, character, bitmap
+#+end_src
+
 * Writing
 ** Inspiration helpers
   As I write papers, it is useful to have some helper to start to have the inspiration.
@@ -1112,50 +1209,62 @@ C-x r t string-rectangle
     :config
     :commands (mw-thesaurus-lookup-dwim))
 #+end_src
-*** English Teacher
+
+** Chinese input
+*** pyim
+#+BEGIN_SRC emacs-lisp
+(use-package pyim
+  :init
+  (use-package posframe :defer t)
+  :custom
+  (default-input-method "pyim")
+  (pyim-default-scheme 'quanpin)
+  (pyim-page-tooltip 'posframe)
+  (pyim-page-length 9)
+  :config
+  (pyim-isearch-mode 1)
+  (setq-default pyim-english-input-switch-functions
+                '(pyim-probe-isearch-mode
+                  pyim-probe-org-structure-template))
+  (setq-default pyim-punctuation-half-width-functions
+                '(pyim-probe-punctuation-line-beginning
+                  pyim-probe-punctuation-after-punctuation))
+  :bind
+  ("M-j" . pyim-convert-string-at-point)) ; M-j 强制将光标前的拼音字符串转换为中文。
+
+(use-package pyim-basedict
+  :after pyim
+  :config (pyim-basedict-enable))
+#+END_SRC
+
+* reading
+** Info
+- Access
+  C-h i (Info)
+  C-h i d (Directory)
+  C-h i d m (Menu)
+  C-h R manual-name (Pick manual. Use completion to see all choices)
+- Navigation
+  g goto a node. Use completion to see all nodes in manual.
+  t goto top node of manual
+  f goto a cross reference
+** manpage
 #+begin_src emacs-lisp
-  (use-package english-teacher
-    :ensure nil
-    :load-path "~/.emacs.d/third_parties/english-teacher.el"
-    ;;:bind (("C-' C-l" . english-teacher-smart-translation))
-    :config (setq english-teacher-backend 'baidu
-                                english-teacher-show-result-function 'english-teacher-eldoc-show-result-function)
-    :hook ((Info-mode-hook eww-mode-hook help-mode-hook) . english-teacher-follow-mode))
-#+end_src
-*** google translate
-#+begin_src emacs-lisp
+  (use-package man
   :ensure nil
   :config
-  (add-to-list 'load-path "~/.emacs.d/third_parties/go-translate")
-  (require 'go-translate)
-    (setq go-translate-base-url "https://translate.google.cn")
-    (setq go-translate-local-language "zh-CN")
-
-    (setq go-translate-buffer-follow-p t)       ; 翻译完成后，总是将光标切换到翻译结果窗口
-    (setq go-translate-buffer-source-fold-p t)  ; 在结果页面，折叠源文本。可以通过回车或鼠标点击展开
-  ;;  (setq go-translate-buffer-window-config ..) ; 更改翻译窗口的位置和样式
-
-    ;; 设置输入风格。默认情况下，是通过 Minibuffer 方式补全用户输入
-    ;; 可以修改为 `go-translate-inputs-noprompt` 或 `go-translate-inputs-current-or-prompt`
-    ;; 前者表示直接翻译选中内容或光标下单词；后者表示若光标下没内容则打开 Minibuffer 读取内容
-    (setq go-translate-inputs-function #'go-translate-inputs-current-or-prompt)
+  (setq Man-notify-method 'aggressive))
 #+end_src
-*** youdao
+** olivetti
 #+begin_src emacs-lisp
-    ;; https://github.com/xuchunyang/youdao-dictionary.el
-  (use-package youdao-dictionary
-    :ensure t
+  (use-package olivetti
     :config
-    (setq url-automatic-caching t) ; enable cache
-    :bind
-    ("C-c y" . youdao-dictionary-search-at-point))
-
-  (defun my/browse-dictionary-at-point ()
-    (interactive)
-    (browse-url (concat "https://dictionary.cambridge.org/zht/詞典/英語-漢語-繁體/" (thing-at-point 'word))))
-  (global-set-key (kbd "M-q") 'my/browse-dictionary-at-point)
+    (setq olivetti-body-width 0.7)
+    (setq olivetti-minimum-body-width 80)
+    (setq olivetti-recall-visual-line-mode-entry-state t))
 #+end_src
-** Language checking
+
+* Language checking
 *** Spelling
 Configuration of the (fly) spelling for emacs. For spelling, I am using aspell.
 
@@ -1202,7 +1311,7 @@ M-x langtool-check
 To finish checking. All langtool marker is removed.
 M-x langtool-check-done
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package langtool
     :ensure t
     :init
@@ -1211,154 +1320,6 @@ M-x langtool-check-done
     ;;(setq langtool-language-tool-server-jar "~/work/tools/src/languagetool/languagetool/languagetool-server.jar"))
     (setq langtool-default-language "en-US")
 #+END_SRC
-** Chinese input
-*** pyim
-#+BEGIN_SRC emacs-lisp
-(use-package pyim
-  :init
-  (use-package posframe :defer t)
-  :custom
-  (default-input-method "pyim")
-  (pyim-default-scheme 'quanpin)
-  (pyim-page-tooltip 'posframe)
-  (pyim-page-length 9)
-  :config
-  (pyim-isearch-mode 1)
-  (setq-default pyim-english-input-switch-functions
-                '(pyim-probe-isearch-mode
-                  pyim-probe-org-structure-template))
-  (setq-default pyim-punctuation-half-width-functions
-                '(pyim-probe-punctuation-line-beginning
-                  pyim-probe-punctuation-after-punctuation))
-  :bind
-  ("M-j" . pyim-convert-string-at-point)) ; M-j 强制将光标前的拼音字符串转换为中文。
-
-(use-package pyim-basedict
-  :after pyim
-  :config (pyim-basedict-enable))
-#+END_SRC
-** olivetti
-#+begin_src emacs-lisp
-  (use-package olivetti
-    :config
-    (setq olivetti-body-width 0.7)
-    (setq olivetti-minimum-body-width 80)
-    (setq olivetti-recall-visual-line-mode-entry-state t))
-#+end_src
-
-* Terminal
-#+begin_src emacs-lisp
-    (use-package vterm
-    :config
-    (define-key vterm-mode-map (kbd "<f1>") nil)
-    (define-key vterm-mode-map (kbd "<f2>") nil)
-    (define-key vterm-mode-map (kbd "<f3>") nil)
-    (define-key vterm-mode-map (kbd "<f4>") nil)
-    (define-key vterm-mode-map (kbd "<f5>") nil)
-    (define-key vterm-mode-map (kbd "<f6>") nil)
-    (define-key vterm-mode-map (kbd "<f7>") nil)
-    (define-key vterm-mode-map (kbd "<f8>") nil)
-    (define-key vterm-mode-map (kbd "<f9>") nil)
-    (define-key vterm-mode-map (kbd "<f10>") nil)
-    (define-key vterm-mode-map (kbd "<f11>") nil)
-    (define-key vterm-mode-map (kbd "<f12>") nil)
-    :custom
-    ;;(vterm-shell "bash" "Set to bash instead of the default $SHELL so that vterm from TRAMP uses bash.")
-    (vterm-kill-buffer-on-exit t)
-    :hook
-    (vterm-mode . goto-address-mode))
-  (use-package vterm-toggle
-    :config
-    ;; show vterm buffer in side window
-    (add-to-list 'display-buffer-alist
-                 '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
-                   (display-buffer-reuse-window display-buffer-in-side-window)
-                   (side . bottom)
-                   (dedicated . t)
-                   ;; (reusable-frames . visible) ;; depends on how I use Emacs / Emacs Client
-                   (window-height . 0.3)))
-    :commands (vterm-toggle))
-#+end_src
-* format
-** format-all
-We can globally reformat the buffer relying on external tool. =format-all= is here for this.
-
-#+begin_src emacs-lisp
-  (use-package format-all
-    :ensure t
-    :commands (format-all-buffer format-all-mode))
-  (setq clang-format-style-option "google")
-#+end_src
-
-** Indentation
-#+begin_src emacs-lisp :tangle no
-  (use-package highlight-indent-guides
-    :ensure t
-    :diminish highlight-indent-guides-mode
-    :commands (highlight-indent-guides-mode)
-    :hook
-    (prog-mode . highlight-indent-guides-mode)
-    :config
-    (setq highlight-indent-guides-method 'character));;fill, column, character, bitmap
-#+end_src
-* Manual
-** Info
-- Access
-  C-h i (Info)
-  C-h i d (Directory)
-  C-h i d m (Menu)
-  C-h R manual-name (Pick manual. Use completion to see all choices)
-- Navigation
-  g goto a node. Use completion to see all nodes in manual.
-  t goto top node of manual
-  f goto a cross reference
-** manpage
-#+begin_src emacs-lisp
-  (use-package man
-  :ensure nil
-  :config
-  (setq Man-notify-method 'aggressive))
-#+end_src
-
-** Helm dash
-Offline documentation browser for +150 APIs using Dash docsets.
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package helm-dash
-  :ensure t)
-#+END_SRC
-
-* Syntax checking
-#+begin_src emacs-lisp
-  ;; Disable checking doc
-  (use-package flycheck
-    :ensure t
-    :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
-    :hydra
-    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
-                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
-                     :color teal :hint nil)
-                    "Errors"
-                    ("f"  flycheck-error-list-set-filter                            "Filter")
-                    ("j"  flycheck-next-error                                       "Next")
-                    ("k"  flycheck-previous-error                                   "Previous")
-                    ("gg" flycheck-first-error                                      "First")
-                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
-                    ("<" hydra-project/body "back")
-                    ("q"   nil "cancel" :color blue))
-
-    :config
-    (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
-
-    (flycheck-define-checker proselint
-      "A linter for prose."
-      :command ("proselint" source-inplace)
-      :error-patterns
-      ((warning line-start (file-name) ":" line ":" column ": "
-                (id (one-or-more (not (any " "))))
-                (message) line-end))
-      :modes (text-mode markdown-mode gfm-mode org-mode))
-    )
-#+end_src
 * Templating
 ** Edition templates
 The default configuration of yasnippet consists of activating it and plugging it with company.
@@ -1422,29 +1383,9 @@ M-x *auto-insert*
 #+end_src
 
 
-* Completion Configuration
-** cape
-#+begin_src emacs-lisp
-  ;; Add extensions
-(use-package cape
-   :init
-  ;; Add `completion-at-point-functions', used by `completion-at-point'.
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  (add-to-list 'completion-at-point-functions #'cape-file)
-  ;;(add-to-list 'completion-at-point-functions #'cape-history)
-  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
-  ;;(add-to-list 'completion-at-point-functions #'cape-tex)
-  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
-  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-ispell)
-  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
-  ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
-  ;;(add-to-list 'completion-at-point-functions #'cape-line)
-)
-#+end_src
+* Completion
 ** consult
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 ;; Consulting completing-read
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
@@ -1562,47 +1503,7 @@ M-x *auto-insert*
   ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
 ) 
 #+end_src
-** corfu-doc
-** embark
-#+begin_src emacs-lisp :tangle no
-(use-package embark
-  :ensure t
-  :bind
-  (("C-." . embark-act)         ;; pick some comfortable binding
-   ("C-;" . embark-dwim)        ;; good alternative: M-.
-   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
 
-  :init
-  ;; Optionally replace the key help with a completing-read interface
-  (setq prefix-help-command #'embark-prefix-help-command)
-
-  :config
-  ;; Hide the mode line of the Embark live/completions buffers
-  (add-to-list 'display-buffer-alist
-               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                 nil
-                 (window-parameters (mode-line-format . none)))))
-#+end_src
-** embark-consult
-#+begin_src emacs-lisp
-;; Consult users will also want the embark-consult package.
-(use-package embark-consult
-  :ensure t
-  :after (embark consult)
-  :demand t ; only necessary if you have the hook below
-  ;; if you want to have consult previews as you move around an
-  ;; auto-updating embark collect buffer
-  :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
-#+end_src
-
-** marginalia
-#+begin_src emacs-lisp
-  (use-package marginalia
-  :ensure t
-  :config
-  (marginalia-mode))
-#+end_src
 ** vertico
 #+begin_src emacs-lisp
   ;; Enable vertico
@@ -1611,203 +1512,41 @@ M-x *auto-insert*
     (vertico-mode)
 
     ;; Different scroll margin
-    (setq vertico-scroll-margin 0)
+    ;; (setq vertico-scroll-margin 0)
 
     ;; Show more candidates
-    (setq vertico-count 20)
+    ;; (setq vertico-count 20)
 
     ;; Grow and shrink the Vertico minibuffer
-    (setq vertico-resize t)
+    ;; (setq vertico-resize t)
 
     ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-    (setq vertico-cycle t)
+    ;; (setq vertico-cycle t)
     )
-
-  ;; Persist history over Emacs restarts. Vertico sorts by history position.
-  (use-package savehist
-    :init
-    (savehist-mode))
-  
-    ;; A few more useful configurations...
-  (use-package emacs
-    :init
-    ;; Add prompt indicator to `completing-read-multiple'.
-    ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
-    (defun crm-indicator (args)
-      (cons (format "[CRM%s] %s"
-                    (replace-regexp-in-string
-                     "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                     crm-separator)
-                    (car args))
-            (cdr args)))
-    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
-    ;; Do not allow the cursor in the minibuffer prompt
-    (setq minibuffer-prompt-properties
-          '(read-only t cursor-intangible t face minibuffer-prompt))
-    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-    ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
-    ;; Vertico commands are hidden in normal buffers.
-    ;; (setq read-extended-command-predicate
-    ;;       #'command-completion-default-include-p)
-
-    ;; Enable recursive minibuffers
-    (setq enable-recursive-minibuffers t))
 #+end_src
 ** orderless
 #+begin_src emacs-lisp
-  ;; Optionally use the `orderless' completion style.
-(use-package orderless
-  :init
-  ;; Configure a custom style dispatcher (see the Consult wiki)
-  ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
-  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-  (setq completion-styles '(orderless basic)
-        completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion)))))
-#+end_src
-** corfu
-#+begin_src emacs-lisp
-  (use-package corfu
-
-  ;; Optional customizations
+  (use-package orderless
+  :ensure t
   :custom
-  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-  (corfu-auto t)                 ;; Enable auto completion
-  (corfu-separator ?\s)          ;; Orderless field separator
-  (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-  (corfu-quit-no-match t)        ;; nil: Never quit, even if there is no match
-  (corfu-preview-current nil)    ;; Disable current candidate preview
-  (corfu-preselect-first nil)    ;; Disable candidate preselection
-  (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-  (corfu-echo-documentation nil) ;; Disable documentation in the echo area
-  (corfu-scroll-margin 5)        ;; Use scroll margin
-
-  ;; Enable Corfu only for certain modes.
-  :hook ((prog-mode . corfu-mode)
-          (shell-mode . corfu-mode)
-          (eshell-mode . corfu-mode))
-
-  ;; Recommended: Enable Corfu globally.
-  ;; This is recommended since Dabbrev can be used globally (M-/).
-  ;; See also `corfu-excluded-modes'.
-  :init
-  (global-corfu-mode))
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
 #+end_src
-* Completion
-This part focuses on completion configuration. Language specific configurations are not done here
-but in the dedicate language configuration part. This section is just for global configuration.
-** Compdef
-compdef sets backends as a local variable for that specific mode.
+** marginalia
 #+begin_src emacs-lisp
-;;(use-package compdef :ensure t)
-#+end_src
-** Ivy/swipper/counsel
-I do prefer vertical completion, which is why I use extensively Ivy and extensions.
-#+begin_src emacs-lisp :tangle no
-(ivy-mode)
-(setq ivy-use-virtual-buffers t)
-(setq enable-recursive-minibuffers t)
-;; enable this if you want `swiper' to use it
-;; (setq search-default-mode #'char-fold-to-regexp)
-(global-set-key "\C-s" 'swiper)
-(global-set-key (kbd "C-c C-r") 'ivy-resume)
-(global-set-key (kbd "<f6>") 'ivy-resume)
-(global-set-key (kbd "M-x") 'counsel-M-x)
-(global-set-key (kbd "C-x C-f") 'counsel-find-file)
-(global-set-key (kbd "C-h f") 'counsel-describe-function)
-(global-set-key (kbd "C-h v") 'counsel-describe-variable)
-(global-set-key (kbd "C-h o") 'counsel-describe-symbol)
-(global-set-key (kbd "<f1> l") 'counsel-find-library)
-(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-(global-set-key (kbd "C-c g") 'counsel-git)
-(global-set-key (kbd "C-c j") 'counsel-git-grep)
-(global-set-key (kbd "C-c k") 'counsel-ag)
-(global-set-key (kbd "C-x l") 'counsel-locate)
-(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
-(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-#+end_src
-#+begin_src emacs-lisp :tangle no
-  ;; Generic completion frontend
-  (use-package counsel
-    :ensure t
-    :bind
-    (("M-x" . counsel-M-x)
-     ("M-y" . counsel-yank-pop)
-     :map ivy-minibuffer-map
-     ("M-y" . ivy-next-line)))
-  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-  ;; Enhance M-x
-  (use-package amx
-    :ensure t
-    :init (setq amx-history-length 20))
+;; Enable rich annotations using the Marginalia package
+(use-package marginalia
+  ;; Either bind `marginalia-cycle' globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
 
-  (global-set-key (kbd "C-x C-f") #'counsel-find-file)
-  (global-set-key (kbd "C-c r") #'counsel-recentf)
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
 
-  (use-package flx :ensure t)
-  (use-package ivy-hydra :ensure t)
-  (use-package ivy
-    :ensure t
-    :diminish 'ivy-mode
-    :config
-    (ivy-mode t)
-    (setq ivy-display-style 'fancy
-          ivy-use-virtual-buffers t
-          enable-recursive-minibuffers t
-          ivy-use-selectable-prompt t)
-    ;; make everything fuzzy except swiper
-    (setq ivy-re-builders-alist
-          '((swiper . ivy--regex-plus)
-            (t . ivy--regex-fuzzy))))
-
-  (global-set-key (kbd "C-r") #'swiper)
-  (global-set-key (kbd "C-s") #'swiper)
-
-  (use-package ivy-rich
-    :ensure t
-    :config
-    (ivy-rich-mode 1)
-    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
-
-  ;; Show ivy frame using posframe
-  (use-package ivy-posframe
-    :ensure t
-    :custom
-    (ivy-display-function #'ivy-posframe-display-at-frame-center)
-    ;; (ivy-posframe-width 130)
-    ;; (ivy-posframe-height 11)
-    (ivy-posframe-parameters
-      '((left-fringe . 5)
-        (right-fringe . 5)))
-    :custom-face
-    (ivy-posframe ((t (:background "#282a36"))))
-    (ivy-posframe-border ((t (:background "#6272a4"))))
-    (ivy-posframe-cursor ((t (:background "#61bfff"))))
-    :hook
-    (ivy-mode . ivy-posframe-enable))
-#+end_src
-** Helm
-I use Helm for some specific cases which requires an important visibility space completion.
-
-#+begin_src emacs-lisp :tangle no
-  (use-package helm
-    :ensure t
-    :functions helm-show-completion-default-display-function
-    :config
-    (setq helm-scroll-amount 4 ; scroll 4 lines other window using M-<next>/M-<prior>
-          helm-quick-update t ; do not display invisible candidates
-          helm-idle-delay 0.01 ; be idle for this many seconds, before updating in delayed sources.
-          helm-input-idle-delay 0.01 ; be idle for this many seconds, before updating candidate buffer
-          helm-show-completion-display-function #'helm-show-completion-default-display-function
-          helm-split-window-default-side 'below ;; open helm buffer in another window
-          helm-split-window-inside-p t ;; open helm buffer inside current window, not occupy whole other window
-          helm-candidate-number-limit 200 ; limit the number of displayed canidates
-          helm-move-to-line-cycle-in-source nil ; move to end or beginning of source when reaching top or bottom of source.
-          )
-    )
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
 #+end_src
 ** Company
 In order to have inline completion, really important for coding, I use company. However I adapted
@@ -1820,7 +1559,7 @@ Quick Access a Candidate: By default, quick-access key bindings utilize a modifi
 
 The name of the currently active backend is shown in the mode line and in the output of the command M-x company-diag.
 
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
 (use-package company
   :ensure t
   :diminish company-mode
@@ -1867,157 +1606,70 @@ The name of the currently active backend is shown in the mode line and in the ou
   :hook (company-mode . company-box-mode)
   :diminish company-box-mode)
 #+end_src
-
-** Prescient
-Prescient helps to sort candidates by last used first and then sorting by length.
-
-#+begin_src emacs-lisp :tangle no
-  (use-package prescient
-    :ensure t
-    :config (prescient-persist-mode))
-
-  (use-package ivy-prescient
-    :ensure t
-    :config (ivy-prescient-mode))
-
-  (use-package company-prescient
-    :ensure t
-    :config (company-prescient-mode))
-#+end_src
-** eldoc
-#+begin_src emacs-lisp :tangle no
-  ;; Show the argument list of a function in the echo area
-(use-package eldoc
-  :diminish eldoc-mode
-  :commands turn-on-eldoc-mode
-  :defer t)
-#+end_src
-
-* Compilation
-** compilation
+* Syntax checking
 #+begin_src emacs-lisp
-  (use-package compile
-    :defer
-    :diminish compilation-in-progress
-    :init
-    (setq compilation-scroll-output t)
+  ;; Disable checking doc
+  (use-package flycheck
+    :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
+    :hydra
+    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
+                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
+                     :color teal :hint nil)
+                    "Errors"
+                    ("f"  flycheck-error-list-set-filter                            "Filter")
+                    ("j"  flycheck-next-error                                       "Next")
+                    ("k"  flycheck-previous-error                                   "Previous")
+                    ("gg" flycheck-first-error                                      "First")
+                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
+                    ("<" hydra-project/body "back")
+                    ("q"   nil "cancel" :color blue))
+
     :config
-    (setq compilation-always-kill t)
-    (setq compilation-ask-about-save nil)
-    (setq compilation-scroll-output 'first-error)
+    (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+
+    (flycheck-define-checker proselint
+      "A linter for prose."
+      :command ("proselint" source-inplace)
+      :error-patterns
+      ((warning line-start (file-name) ":" line ":" column ": "
+                (id (one-or-more (not (any " "))))
+                (message) line-end))
+      :modes (text-mode markdown-mode gfm-mode org-mode))
     )
 #+end_src
-
-** Keybinding
+* Terminal
 #+begin_src emacs-lisp
-  (defhydra hydra-next-error (global-map "C-x")
-      "
-  Compilation errors:
-  _j_: next error        _h_: first error    _q_uit
-  _k_: previous error    _l_: last error
-  "
-      ("`" next-error     nil)
-      ("j" next-error     nil :bind nil)
-      ("k" previous-error nil :bind nil)
-      ("h" first-error    nil :bind nil)
-      ("l" (condition-case err
-               (while t
-                 (next-error))
-             (user-error nil))
-       nil :bind nil)
-      ("q" nil            nil :color blue))
+    (use-package vterm
+    :config
+    (define-key vterm-mode-map (kbd "<f1>") nil)
+    (define-key vterm-mode-map (kbd "<f2>") nil)
+    (define-key vterm-mode-map (kbd "<f3>") nil)
+    (define-key vterm-mode-map (kbd "<f4>") nil)
+    (define-key vterm-mode-map (kbd "<f5>") nil)
+    (define-key vterm-mode-map (kbd "<f6>") nil)
+    (define-key vterm-mode-map (kbd "<f7>") nil)
+    (define-key vterm-mode-map (kbd "<f8>") nil)
+    (define-key vterm-mode-map (kbd "<f9>") nil)
+    (define-key vterm-mode-map (kbd "<f10>") nil)
+    (define-key vterm-mode-map (kbd "<f11>") nil)
+    (define-key vterm-mode-map (kbd "<f12>") nil)
+    :custom
+    ;;(vterm-shell "bash" "Set to bash instead of the default $SHELL so that vterm from TRAMP uses bash.")
+    (vterm-kill-buffer-on-exit t)
+    :hook
+    (vterm-mode . goto-address-mode))
+  (use-package vterm-toggle
+    :config
+    ;; show vterm buffer in side window
+    (add-to-list 'display-buffer-alist
+                 '((lambda(bufname _) (with-current-buffer bufname (equal major-mode 'vterm-mode)))
+                   (display-buffer-reuse-window display-buffer-in-side-window)
+                   (side . bottom)
+                   (dedicated . t)
+                   ;; (reusable-frames . visible) ;; depends on how I use Emacs / Emacs Client
+                   (window-height . 0.3)))
+    :commands (vterm-toggle))
 #+end_src
-
-* Project management
-** Configuration projectile
-The commands are based on http://endlessparentheses.com/improving-projectile-with-extra-commands.html?source=rss
-#+BEGIN_SRC emacs-lisp
-;; ripgrep
-(use-package rg
-  :ensure t)
-
-;; A project interaction library
-(use-package projectile
-  :ensure t
-  :after (rg)
-  :config
-  (setq projectile-project-search-path '("~/dev"))
-  (add-to-list 'projectile-globally-ignored-directories "node_modules")
-  (projectile-global-mode)
-  :init
-  (setq projectile-cache-file (concat user-emacs-directory ".cache/projectile.cache")
-        projectile-known-projects-file (concat user-emacs-directory
-                                               ".cache/projectile-bookmarks.eld"))
-  (add-hook 'find-file-hook (lambda ()
-                              (unless recentf-mode (recentf-mode)
-                                      (recentf-track-opened-file))))
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
-  :bind
-  (:map projectile-mode-map ("C-c p s p" . rg-project))
-  :diminish 'projectile-mode)
-#+END_SRC
-** Completion
-#+BEGIN_SRC emacs-lisp
-    (use-package counsel-projectile
-      :ensure t
-      :after projectile
-      :functions
-      (counsel-projectile-find-file-in-directory
-       counsel-projectile-ibuffer
-       counsel-projectile-kill-buffers
-       counsel-projectile-multi-occur
-       counsel-projectile-recentf
-       counsel-projectile-remove-known-project
-       counsel-projectile-cleanup-known-projects
-       counsel-projectile-cache-current-file
-       counsel-projectile-invalidate-cache
-       ggtags-update-tags ;; FIXME: a require should be put somewhere maybe
-       )
-
-      :hydra
-      (hydra-projectile (:color teal :hint nil)
-                        "
-           PROJECTILE: %(projectile-project-root)
-
-           Find File            Search/Tags          Buffers                Cache
-      ------------------------------------------------------------------------------------------
-      _s-f_: file            _a_: ag                _i_: Ibuffer           _c_: cache clear
-       _ff_: file dwim       _g_: update gtags      _b_: switch to buffer  _x_: remove known project
-       _fd_: file curr dir   _o_: multi-occur     _s-k_: Kill all buffers  _X_: cleanup non-existing
-        _r_: recent file                                               ^^^^_z_: cache current
-        _d_: dir
-
-      "
-                        ("<ESC>" nil "quit")
-                        ("<" hydra-project/body "back")
-                        ("a"   counsel-projectile-ag)
-                        ("b"   counsel-projectile-switch-to-buffer)
-                        ("c"   counsel-projectile-invalidate-cache)
-                        ("d"   counsel-projectile-find-dir)
-                        ("s-f" counsel-projectile-find-file)
-                        ("ff"  counsel-projectile-find-file-dwim)
-                        ("fd"  counsel-projectile-find-file-in-directory)
-                        ("g"   ggtags-update-tags)
-                        ("s-g" ggtags-update-tags)
-                        ("i"   counsel-projectile-ibuffer)
-                        ("K"   counsel-projectile-kill-buffers)
-                        ("s-k" counsel-projectile-kill-buffers)
-                        ("m"   counsel-projectile-multi-occur)
-                        ("o"   counsel-projectile-multi-occur)
-                        ("s-p" counsel-projectile-switch-project "switch project")
-                        ("p"   counsel-projectile-switch-project)
-                        ("s"   counsel-projectile-switch-project)
-                        ("r"   counsel-projectile-recentf)
-                        ("x"   counsel-projectile-remove-known-project)
-                        ("X"   counsel-projectile-cleanup-known-projects)
-                        ("z"   counsel-projectile-cache-current-file)
-                        ("q"   nil "cancel" :color blue)))
-  ;;(use-package counsel-projectile
-  ;;  :config
-  ;;  (counsel-projectile-mode t)
-  ;;  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
-#+END_SRC
 * Version management
 ** magit
 #+BEGIN_SRC emacs-lisp
@@ -2098,226 +1750,6 @@ The commands are based on http://endlessparentheses.com/improving-projectile-wit
     "Command to open the trash dir"
     (interactive)
     (find-file "~/.local/share/Trash/files"))
-#+end_src
-** Treemacs
-*** Global
-#+begin_src emacs-lisp
-  (use-package treemacs
-    :ensure t
-    :bind (:map global-map
-                ([f8]        . treemacs))
-    :functions (treemacs-follow-mode treemacs-filewatch-mode)
-
-    :config
-    (setq treemacs-collapse-dirs                 (if treemacs-python-executable 3 0)
-          treemacs-deferred-git-apply-delay      0.5
-          treemacs-display-in-side-window        t
-          treemacs-eldoc-display                 t
-          treemacs-file-event-delay              5000
-          treemacs-file-follow-delay             0.2
-          treemacs-follow-after-init             t
-          treemacs-git-integration               t
-          treemacs-git-command-pipe              ""
-          treemacs-goto-tag-strategy             'refetch-index
-;;          treemacs-indentation                   2
-          treemacs-indentation-string            " "
-          treemacs-is-never-other-window         nil
-          treemacs-max-git-entries               5000
-          treemacs-missing-project-action        'ask
-          treemacs-no-png-images                 nil
-          treemacs-no-delete-other-windows       t
-          treemacs-project-follow-cleanup        nil
-          treemacs-persist-file                  (expand-file-name ".cache/treemacs-persist" user-emacs-directory)
-          treemacs-position                      'left
-          treemacs-recenter-distance             0.1
-          treemacs-recenter-after-file-follow    nil
-          treemacs-recenter-after-tag-follow     nil
-          treemacs-recenter-after-project-jump   'always
-          treemacs-recenter-after-project-expand 'on-distance
-          treemacs-show-cursor                   nil
-          treemacs-show-hidden-files             t
-          treemacs-silent-filewatch              nil
-          treemacs-silent-refresh                nil
-          treemacs-sorting                       'alphabetic-desc
-          treemacs-space-between-root-nodes      t
-          treemacs-tag-follow-cleanup            t
-          treemacs-tag-follow-delay              1.5
-          treemacs-width                         35)
-
-    (treemacs-follow-mode t)
-    (treemacs-filewatch-mode t))
-#+end_src
-*** Projectile
-#+begin_src emacs-lisp
-  (use-package treemacs-projectile
-    :ensure t
-    :functions treemacs-projectile-create-header
-    :after treemacs projectile
-    :config
-    (setq treemacs-header-function #'treemacs-projectile-create-header))
-#+end_src
-*** Magit
-#+begin_src emacs-lisp
-  (use-package treemacs-magit
-    :after treemacs magit
-    :ensure t)
-#+end_src
-*** Icons
-#+begin_src emacs-lisp
-(use-package treemacs-icons-dired
-  :after treemacs dired
-  :ensure t
-  :config (treemacs-icons-dired-mode))
-(use-package treemacs-icons-dired
-  :ensure t
-  :disabled t
-  :commands (treemacs-icons-dired-mode)
-  :hook
-  (dired-mode . treemacs-icons-dired--enable-highlight-correction)
-  (dired-mode . treemacs--select-icon-set )
-  (dired-mode . treemacs-icons-dired-mode))
-#+end_src
-
-
-* Custom Functions
-** Change letter case
-#+begin_src emacs-lisp
-(defun upcase-backward-word (arg)
-  (interactive "p")
-  (upcase-word (- arg)))
-
-(defun downcase-backward-word (arg)
-  (interactive "p")
-  (downcase-word (- arg)))
-
-(defun capitalize-backward-word (arg)
-  (interactive "p")
-  (capitalize-word (- arg)))
-#+end_src
-* Custom Keybinding
-  emacs'key binding system
-  C-u C-x =: what-cursor-position
-** general
-Convenience wrappers for keybindings.
-#+BEGIN_SRC emacs-lisp
-  (use-package general
-    :ensure t)
-#+END_SRC
-
-** personal
-#+BEGIN_SRC emacs-lisp
-;; Unbind unneeded keys
-(global-set-key (kbd "C-z") nil)
-(global-set-key (kbd "M-z") nil)
-(global-set-key (kbd "C-x C-z") nil)
-(global-set-key (kbd "M-/") nil)
-(global-set-key (kbd "C-x C-b") #'ibuffer)
-(global-set-key (kbd "C-x C-e") #'pp-eval-last-sexp)
-
-(global-set-key (kbd "M-i") #'imenu)
-
-(global-set-key (kbd "C-x k") 'kill-this-buffer)
-
-(use-package helm-descbinds
-  :ensure t
-  :commands (helm-descbinds)
-  :bind
-  ("C-h b" . helm-descbinds))
-
-;;opening new lines can be finichy
-(defun open-line-below()
-    "open line below."
-    (interactive)
-    (end-of-line)
-    (newline)
-    (indent-for-tab-command))
-(defun open-line-above()
-    "open line above."
-    (interactive)
-    (beginning-of-line)
-    (newline)
-    (forword-line -1)
-    (indent-for-tab-command))
-(global-set-key (kbd "<C-return>") 'open-line-below)
-(global-set-key (kbd "<C-S-return>") 'open-line-above)
-
-(defun scroll-half-page-down ()
-  "scroll down half the page"
-  (interactive)
-  (scroll-down (/ (window-body-height) 2)))
-
-(defun scroll-half-page-up ()
-  "scroll up half the page"
-  (interactive)
-  (scroll-up (/ (window-body-height) 2)))
-
-(global-set-key "\M-n" 'scroll-half-page-up)
-(global-set-key "\M-p" 'scroll-half-page-down)
-
-(global-set-key (kbd "C-S-n")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (next-line 5))))
-(global-set-key (kbd "C-S-p")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (previous-line 5))))
-(global-set-key (kbd "C-S-f")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (forword-char 5))))
-(global-set-key (kbd "C-S-b")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (backward-char 5))))
-;;
-;; Copy or Cut one line if no content selected
-;;
-;; copy region or whole line
-(global-set-key "\M-w"
-(lambda ()
-  (interactive)
-  (if mark-active
-      (kill-ring-save (region-beginning)
-      (region-end))
-    (progn
-     (kill-ring-save (line-beginning-position)
-     (line-end-position))
-     (message "copied line")))))
-
-;; kill region or whole line
-(global-set-key "\C-w"
-(lambda ()
-  (interactive)
-  (if mark-active
-      (kill-region (region-beginning)
-   (region-end))
-    (progn
-     (kill-region (line-beginning-position)
-  (line-end-position))
-     (message "killed line")))))
-
-#+END_SRC
-** go to last change
-I could not find any built-in method of reliably moving back to the
-  last change.  Using the mark ring is always an option, but does not fill
-  the exact same niche.
-The C-z binding is disabled elsewhere in this document.  It minimises
-  the Emacs GUI by default.  A complete waste of an extremely valuable key
-  binding!
-#+begin_src emacs-lisp
-(use-package goto-last-change
-  :ensure
-  :bind ("C-z" . goto-last-change))
-#+end_src
-** Reminder for bindings
-#+begin_src emacs-lisp
-(use-package remind-bindings
-  :ensure t
-  :init  (setq remind-bindings-initfile (format "%s/settings.el" user-emacs-directory))
-  :hook (after-init . remind-bindings-initialise)
-  :bind (("<f10>" . 'remind-bindings-togglebuffer)   ;; toggle buffer
-         ("C-<f10>" . 'remind-bindings-specific-mode))) ;; buffer-specific only
 #+end_src
 
 
@@ -2448,7 +1880,7 @@ lsp-find-references
 (use-package posframe :ensure t)
 #+end_src
 ** debugger
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no
     ;; DAP
   (use-package dap-mode
     :config
@@ -2460,26 +1892,7 @@ lsp-find-references
       :config
       (dap-ui-mode 1)))
 #+end_src
-** citre
-#+begin_src emacs-lisp :tangle no
-  (use-package citre
-    :ensure t
-    :defer t
-    :init
-    ;; This is needed in `:init' block for lazy load to work.
-    (require 'citre-config)
-    ;; Bind your frequently used commands.
-    (global-set-key (kbd "M-.") 'citre-jump)
-    (global-set-key (kbd "M-,") 'citre-jump-back)
-    (global-set-key (kbd "C-x c p") 'citre-ace-peek)
-    :config
-    (setq
-     ;; Set this if readtags is not in your path.
-     ;;citre-readtags-program "/path/to/readtags"
-     ;; Set this if you use project management plugin like projectile.  It's
-     ;; only used to display paths relatively, and doesn't affect actual use.
-     citre-project-root-function #'projectile-project-root))
-#+end_src
+
 * Language cpp
 #+begin_src shell :tangle no
 sudo pacman -S global
@@ -2543,20 +1956,6 @@ sudo pacman -S global
     (define-key map (kbd "M-,") 'pop-tag-mark)
     (define-key map (kbd "C-c <") 'ggtags-prev-mark)
     (define-key map (kbd "C-c >") 'ggtags-next-mark)))
-
-;; sudo pacman -S ccls
-;; C/C++/Objective-C support
-;;   (use-package ccls
-;;     :defines projectile-project-root-files-top-down-recurring
-;;     :hook ((c-mode c++-mode objc-mode cuda-mode) . (lambda ()
-;;                                                      (require 'ccls)
-;;                                                      (lsp-deferred)))
-;;     :config
-;;     (with-eval-after-load 'projectile
-;;       (setq projectile-project-root-files-top-down-recurring
-;;             (append '("compile_commands.json"
-;;                       ".ccls")
-;;                     projectile-project-root-files-top-down-recurring))))
 #+END_SRC
 
 * Language elisp
@@ -2598,6 +1997,40 @@ sudo pacman -S global
     (setq geiser-active-implementations '(mit guile)))
 #+END_SRC
 
+* Language python
+#+begin_src shell :tangle no
+  sudo pip install 'python-language-server[all]'
+#+end_src
+** Global configuration
+#+begin_src emacs-lisp
+(use-package python
+  :mode
+  ("\\.py\\'" . python-mode)
+  ("\\.wsgi$" . python-mode)
+
+  :init
+  (setq-default indent-tabs-mode nil)
+
+  :config
+  (setq python-indent-offset 4))
+#+end_src
+
+* Language go
+Go code helpers. [[https://tleyden.github.io/blog/2014/05/22/configure-emacs-as-a-go-editor-from-scratch/][see also]]
+
+#+begin_src shell :tangle no
+sudo pacman -S go
+# plugin
+go get -u github.com/nsf/gocode
+go get -u github.com/rogpeppe/godef
+go get -u golang.org/x/tools/cmd/guru
+go get -u golang.org/x/tools/cmd/goimports
+# language server
+go get golang.org/x/tools/gopls@latest
+# config
+zshrc: GOPATH,GOPROXY
+#+end_src
+
 * Language markdown
 #+begin_src shell :tangle no
 sudo pacman -S pandoc
@@ -2625,10 +2058,6 @@ sudo pop install grip
           (setq markdown-command "~/.emacs.d/pandoc.exe"))
   )
 
-  (use-package markdown-mode+
-    :disabled t
-    :ensure t
-    :after markdown-mode)
 #+end_src
 ** Syntax highlight in block
 #+begin_src emacs-lisp
@@ -2646,181 +2075,6 @@ C-c C-c g
          ("g" . grip-mode)))
 #+end_src
 
-* Language python
-#+begin_src shell :tangle no
-  sudo pip install 'python-language-server[all]'
-#+end_src
-** Global configuration
-#+begin_src emacs-lisp
-(use-package python
-  :mode
-  ("\\.py\\'" . python-mode)
-  ("\\.wsgi$" . python-mode)
-
-  :init
-  (setq-default indent-tabs-mode nil)
-
-  :config
-  (setq python-indent-offset 4))
-#+end_src
-** Lsp (with microsoft language server)
-#+BEGIN_SRC emacs-lisp :tangle no
-(use-package lsp-python-ms
-  :ensure t
-  :demand
-  :hook (python-mode . lsp-deferred)  ; or lsp-deferred
-  :init
-  (setq lsp-python-ms-dir "/usr/lib"
-        lsp-python-ms-executable "/usr/bin/pyls")) ; mspyls ?
-;;(use-package lsp-pyright
-;;  :ensure t
-;;  :after lsp-mode
-;;  :hook (python-mode . (lambda ()
-;;                         (require 'lsp-pyright)
-;;                         (lsp)))
-;;  :init
-;;  (when (executable-find "python3")
-;;    (setq lsp-pyright-python-executable-cmd "python3")))  ; or lsp-deferred
-#+END_SRC
-** Pipenv
-#+begin_src emacs-lisp :tangle no
-(use-package pipenv
-  :ensure t
-  :hook
-  ((python-mode . pipenv-mode))
-
-  :init
-  (setq pipenv-projectile-after-switch-function
-        #'pipenv-projectile-after-switch-extended))
-#+end_src
-** Conda
-#+begin_src emacs-lisp :tangle no
-(use-package conda
-  :ensure t
-  :init
-  (setq conda-anaconda-home (expand-file-name "~/environment/local/miniconda3"))
-
-  (defun conda-hook ()
-    "Conda activation hook for python mode."
-    (setq conda-message-on-environment-switch nil)
-    (conda-env-autoactivate-mode t))
-
-  :hook
-  (python-mode . conda-hook)
-
-  :config
-  ;; If you want interactive shell support, include:
-  (conda-env-initialize-interactive-shells)
-
-  ;; If you want eshell support, include:
-  (conda-env-initialize-eshell))
-#+end_src
-** Interpreter configuration
-#+begin_src emacs-lisp :tangle no
-(use-package ein
-  :ensure t
-  :config
-
-  (cond
-   ((eq system-type 'darwin) (setq ein:console-args '("--gui=osx" "--matplotlib=osx" "--colors=Linux")))
-   ((eq system-type 'gnu/linux) (setq ein:console-args '("--gui=gtk3" "--matplotlib=gtk3" "--colors=Linux"))))
-
-  (setq ein:query-timeout 1000))
-#+end_src
-** Sphinx documentation
-#+begin_src emacs-lisp
-(use-package sphinx-doc
-  :ensure t
-  :hook
-  (python-mode . (lambda () (sphinx-doc-mode t))))
-#+end_src
-** Elpy
-#+BEGIN_SRC emacs-lisp
-;;(use-package elpy
-;;  :init
-;;  (elpy-enable))
-#+END_SRC
-
-* Language go
-Go code helpers. [[https://tleyden.github.io/blog/2014/05/22/configure-emacs-as-a-go-editor-from-scratch/][see also]]
-
-#+begin_src shell :tangle no
-sudo pacman -S go
-# plugin
-go get -u github.com/nsf/gocode
-go get -u github.com/rogpeppe/godef
-go get -u golang.org/x/tools/cmd/guru
-go get -u golang.org/x/tools/cmd/goimports
-# language server
-go get golang.org/x/tools/gopls@latest
-# config
-zshrc: GOPATH,GOPROXY
-#+end_src
-
-Format
-#+begin_src emacs-lisp :tangle no
-;; Set up before-save hooks to format buffer and add/delete imports.
-;; Make sure you don't have other gofmt/goimports hooks enabled.
-(defun lsp-go-install-save-hooks ()
-  (add-hook 'before-save-hook #'lsp-format-buffer t t)
-  (add-hook 'before-save-hook #'lsp-organize-imports t t))
-(add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
-#+end_src
-
-Go uses tabs, so lets set the indent to a sane mode
-
-#+begin_src emacs-lisp
-(setq-default tab-width 4)
-#+end_src
-
-Packages that you need for a nice Go setup
-
-#+begin_src emacs-lisp :tangle no
-(use-package go-mode
-  :ensure t
-  :bind (("C-c t t" . go-test-current-test)
-         ("C-c t p" . go-test-current-project)
-         ("C-c t c" . go-test-current-coverage)
-         ("C-c t f" . go-test-current-file))
-  :config
-  (setq gofmt-command "goimports")
-  (add-hook 'before-save-hook 'gofmt-before-save))
-
-(use-package exec-path-from-shell
-  :ensure t
-  :config
-  (exec-path-from-shell-copy-env "GOPATH")
-  (exec-path-from-shell-copy-env "GOPROXY")
-  (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize)))
-
-(use-package go-guru
-  :ensure t)
-
-(use-package go-errcheck
-  :ensure t)
-
-;; Yasnippets
-(use-package go-snippets
-  :ensure t)
-
-;; eldoc integration
-(use-package go-eldoc
-  :ensure t)
-
-;; (use-package gocode
-;;   :ensure t)
-
-;; (use-package godef
-;;   :ensure t)
-
-(use-package gotest
-  :ensure t)
-
-(use-package flycheck-golangci-lint
-  :ensure t
-  :hook (go-mode . flycheck-golangci-lint-setup))
-#+end_src
 * Configuration and log files
 This part is dedicated to unix and more general configuration files as well as logs.
 ** editor configs
