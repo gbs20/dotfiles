@@ -1,9 +1,9 @@
 #+TITLE: My emacs configure
 #+KEYWORDS: emacs configure, org-mode
+#+OPTIONS: num:nil \n:t
+#+STARTUP: hideblocks
 
-  This is my version of an configuration file for GNU Emacs.
-  1. read/write
-  2. programming
+This is my version of an configuration file for GNU Emacs.
 
 * Package management
 The first part of the configuration is to prepare the package management. I am using =use-package= as
@@ -77,33 +77,9 @@ Diminished modes are minor modes with no modeline display
 #+begin_src emacs-lisp
   (use-package diminish)
 #+end_src
-** Hydra
-I use hydra a lot so it is easier to add its support directly in the use-package configuration part.
 
-#+BEGIN_SRC emacs-lisp
-  (use-package hydra :ensure t)
-  (use-package use-package-hydra
-    :ensure t
-    :functions
-    (hydra-default-pre
-     hydra-keyboard-quit
-     hydra--call-interactively-remap-maybe
-     hydra-show-hint
-     hydra-set-transient-map))
-#+END_SRC
-** Paradox to enhance package list management
-Finally, I use paradox to enhance the package listing experience.
-#+BEGIN_SRC emacs-lisp :tangle no
-  ;; A modern Packages Menu
-  (use-package paradox
-    :ensure t
-    :init
-    (setq paradox-execute-asynchronously t)
-    (setq paradox-github-token t)
-    (setq paradox-display-star-count nil))
-#+END_SRC
 
-* emacs
+* The Emacs Editor
 ** Define some important variables
 #+BEGIN_SRC emacs-lisp
     ;; Define root directory and add the plugins
@@ -148,14 +124,44 @@ Finally, I use paradox to enhance the package listing experience.
   (prefer-coding-system 'gb2312)
   (prefer-coding-system 'utf-8)
 #+end_src
+** Fonts
+M-x describe-font
+#+begin_src shell :tangle no
+  sudo pacman -S nerd-fonts-fira-code
+  https://github.com/laishulu/Sarasa-Term-SC-Nerd
+  https://levien.com/type/myfonts/inconsolata.html
+#+end_src
+#+BEGIN_SRC emacs-lisp
+  (when (display-graphic-p)
+    (when (eq system-type 'darwin)
+      (setq fonts '("Monaco" "STKaiti"))
+      (set-face-attribute 'default nil :font
+                          (format "%s:pixelsize=%d" (car fonts) 15))
+      (setq face-font-rescale-alist '(("STKaiti". 1.2))))
+
+    (when (eq system-type 'windows-nt)
+      (setq fonts '("Inconsolata" "华文楷体"))
+      (set-face-attribute 'default nil :font
+                          (format "%s:pixelsize=%d" (car fonts) 20))
+      (setq face-font-rescale-alist '(("华文楷体". 1.0))))
+
+    (when (eq system-type 'gnu/linux)
+      (setq fonts '("Sarasa Term SC Nerd" "STKaiti"))
+      (set-face-attribute 'default nil :font
+                          (format "%s:pixelsize=%d" (car fonts) 18))
+      (setq face-font-rescale-alist '(("STKaiti". 1.0))))
+
+    (dolist (charset '(kana han symbol cjk-misc bopomofo))
+      (set-fontset-font (frame-parameter nil 'font) charset
+                        (font-spec :family (car (cdr fonts)))))
+    )
+#+END_SRC
 ** theme
 #+begin_src emacs-lisp
-  (use-package srcery-theme)
-  
-  (use-package leuven-theme
+  (use-package kaolin-themes
     :init
     :config
-    (load-theme 'leuven t))
+    (load-theme 'kaolin-light t))
 #+end_src
 
 ** mode line
@@ -192,60 +198,6 @@ The standard (default) components of a mode-line: https://www.emacswiki.org/emac
   :ensure t
   :init (add-hook 'after-init-hook 'all-the-icons-ivy-setup))
 #+end_src
-** Fonts
-M-x describe-font
-#+begin_src shell :tangle no
-  sudo pacman -S ttf-fira-code
-  sudo pacman -S nerd-fonts-fira-code
-  sudo pacman -S noto-fonts noto-fonts-cjk
-  yay -S  noto-fonts-sc
-#+end_src
-
-#+begin_src emacs-lisp
-  (set-face-attribute 'default nil :font "Droid Sans Mono")
-
-  ;; Latin
-  (set-fontset-font t 'latin "Noto Sans")
-
-  ;; East Asia: 你好, 早晨, こんにちは, 안녕하세요
-  ;;
-  ;; Make sure you use the right font. See
-  ;; https://www.google.com/get/noto/help/cjk/.
-  ;;
-  ;; This font requires "Regular". Other Noto fonts dont.
-  ;; ¯\_(ツ)_/¯
-  (set-fontset-font t 'han "Noto Sans CJK SC Regular")
-  (set-fontset-font t 'kana "Noto Sans CJK JP Regular")
-  (set-fontset-font t 'hangul "Noto Sans CJK KR Regular")
-  (set-fontset-font t 'cjk-misc "Noto Sans CJK KR Regular")
-
-  ;;(setq default-font-family "Fira Code Nerd Font")
-  ;;(set-face-attribute 'default nil :family default-font-family)
-
-  (when (eq system-type 'darwin)
-    (setq fonts '("SF Mono" "冬青黑体简体中文"))
-    (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend)
-    (set-face-attribute 'default nil :font
-                        (format "%s:pixelsize=%d" (car fonts) 16)))
-
-  (when (eq system-type 'windows-nt)
-    (setq fonts '("Consolas" "微软雅黑"))
-    (set-fontset-font t 'unicode "Segoe UI Emoji" nil 'prepend)
-    (set-face-attribute 'default nil :font
-                        (format "%s:pixelsize=%d" (car fonts) 16)))
-
-  ;;(when (eq system-type 'gnu/linux)
-  ;;  (setq fonts '("SF Mono" "Noto Sans Mono CJK SC"))
-  ;;  (set-fontset-font t 'unicode "Noto Color Emoji" nil 'prepend)
-  ;;  (set-face-attribute 'default nil :font
-  ;;                      (format "%s:pixelsize=%d" (car fonts) 24)))
-
-  ;;(if (display-graphic-p)
-  ;;    (dolist (charset '(kana han symbol cjk-misc bopomofo))
-  ;;      (set-fontset-font (frame-parameter nil 'font) charset
-  ;;                        (font-spec :family (car (cdr fonts))))))
-#+end_src
-
 ** frame
 *** Title
 #+begin_src emacs-lisp
@@ -387,6 +339,7 @@ Display emojis in Emacs
     (use-package flycheck-status-emoji)
 #+end_src
 ** line numbers and whitespace indicators
+*** line number
 *Display line numbers (buffer-local)*
   I seldom use line numbers, but here it is.  This toggles the setting for the local buffer and also activates /hl-line-mode/.
 *Display invisible characters (whitespace)*
@@ -425,7 +378,9 @@ As for /delete-trailing-whitespace/, I prefer to call it manually because someti
         (hl-line-mode -1)
         (setq-local truncate-lines nil)))
     :bind ("<f11>" . my/display-line-numbers-mode))
-  
+  #+end_src
+*** whitespace
+  #+begin_src emacs-lisp
   ;; trailing-whitespace: 拖尾空格，结尾空格
   (use-package whitespace
     :config
@@ -547,8 +502,8 @@ As for /delete-trailing-whitespace/, I prefer to call it manually because someti
 #+begin_src emacs-lisp
 ;;(setq tab-bar-close-button-show nil)
 #+end_src
-** cursor, mark and regoin
-*** cursor
+** point, mark and region
+*** point
 #+begin_src emacs-lisp
   ;; 设置光标颜色
   ;;(set-cursor-color "green2")
@@ -592,10 +547,10 @@ Never lose your cursor again
   :hook (after-init . beacon-mode))
 #+end_src
 *** mark
-The mark ring
-每次你跳转了光标(文本搜索或者按下了 M-<或 M->)，
-Emacs使用mark标记下你的前一个位置.
-C-x C-x exchange-point-and-mark
+~The mark ring~
+每次你跳转了光标(文本搜索或者按下了 M-<或 M->)，Emacs使用mark标记下你的前一个位置.
+| C-x C-x | exchange-point-and-mark | 交换 point 和 mark |
+| C-x h   | mark-whole-buffer       | 选定整个 buffer    |
 *** expand region
 #+begin_src emacs-lisp
   ;; Expand selected region by semantic units
@@ -605,6 +560,9 @@ C-x C-x exchange-point-and-mark
     (pending-delete-mode t)
      :bind ("C-=" . er/expand-region))
 #+end_src
+*** region-rectangle
+| C-x SPC   | rectangle-mark-mode | 将 region 转换为 Rectangle |
+| C-x r t   | string-rectangle    | 替换矩形文本 |
 ** Highlight
 #+begin_src emacs-lisp
   ;; Parenthesis
@@ -638,10 +596,23 @@ activations.
 #+end_src
 ** bookmark
 ** register
-** mode
-#+begin_src emacs-lisp
-  (global-auto-revert-mode 1)
-#+end_src
+** killing
+*** yanking
+‘M-y’
+     Either replace the text just yanked with an earlier batch of killed
+     text (‘yank-pop’), or allow to select from the list of
+     previously-killed batches of text.
+  You can understand this operation mode of ‘M-y’ in terms of a
+last-yank pointer which points at an entry in the kill ring.  Each time
+you kill, the last-yank pointer moves to the newly made entry at the
+front of the ring.  ‘C-y’ yanks the entry which the last-yank pointer
+points to.  ‘M-y’ after a ‘C-y’ or another ‘M-y’ moves the last-yank
+pointer to the previous entry, and the text in the buffer changes to
+match.  Enough ‘M-y’ commands one after another can move the pointer to
+any entry in the ring, so you can get any entry into the buffer.
+Eventually the pointer reaches the end of the ring; the next ‘M-y’ loops
+back around to the first entry again.
+
 ** Undo
 #+BEGIN_SRC emacs-lisp
 ;; Undo-tree
@@ -659,8 +630,15 @@ activations.
   :defer t
   :diminish 'undo-tree-mode)
 #+END_SRC
-
-** recent file
+** File Handling
+*** auto revert
+Keeping buffers automatically up-to-date.
+By default, Auto Revert mode works using *“file notifications”*,
+By default, Auto Revert mode will *poll files* for changes periodically even when file notifications are used.
+#+begin_src emacs-lisp
+  (global-auto-revert-mode 1)
+#+end_src
+*** recent file
 Opening recent files is always an easy and fast shortcut. Some files should be ignored though. That
 leads to this configuration
 
@@ -681,17 +659,20 @@ leads to this configuration
   (add-hook 'delete-terminal-functions (lambda (terminal) (recentf-save-list))))
 
 #+END_SRC
-** backupps file
+*** backups file
   When Emacs makes a backup file, its name is normally constructed by
   appending ‘~’ to the file name being edited; thus, the backup file for
   ‘eval.c’ would be ‘eval.c~’.
 #+begin_src emacs-lisp
   (setq make-backup-files nil)
 #+end_src
-** auto-save
-  Normally, the auto-save file name is made by appending ‘#’ to the
+*** auto-save
+Normally, the auto-save file name is made by appending ‘#’ to the
 front and rear of the visited file name.  Thus, a buffer visiting file
 ‘foo.c’ is auto-saved in a file ‘#foo.c#’.
+     M-x recover-file <RET> foo.c <RET>
+     yes <RET>
+     C-x C-s
   #+begin_src emacs-lisp
     ;;The variable ‘auto-save-interval’ specifies how many characters there are between auto-saves.
     (setq-default auto-save-interval 100);;By default, it is 300.
@@ -715,6 +696,17 @@ All commands which operate on the keyboard macro ring use the same
 Note that Emacs treats the head of the macro ring as the last defined
 keyboard macro.  For instance, <F4> will execute that macro, and ‘C-x
 C-k n’ will give it a name.
+** follow mode
+Follow mode lets two windows scroll as one.
+To use Follow mode, go to a frame with just one window, split it into two side-by-side
+windows using ‘C-x 3’, and then type ‘M-x follow-mode’. 
+To turn off Follow mode, type ‘M-x follow-mode’ a second time.
+** View Mode
+Viewing read-only buffers.
+‘M-x view-buffer’ prompts for an existing Emacs buffer, switches to
+it, and enables View mode.  ‘M-x view-file’ prompts for a file and
+visits it with View mode enabled.
+
 ** fringe mode
 The fringes are areas to the right and left side of an Emacs frame. They can be used to show status-related or contextual feedback
 such as line truncation indicators, continuation lines, code linting markers, etc.
@@ -878,18 +870,8 @@ The C-z binding is disabled elsewhere in this document.  It minimises
   (capitalize-word (- arg)))
 #+end_src
 
-
-* org
-| command                       | keyboard | help                             |
-|-------------------------------+----------+----------------------------------|
-| org-agenda-list               | C-c a    | 打开一周的 agenda 计划表         |
-| org-metaup                    | M-up     | 将当前标题（或列表）及子项上移   |
-| org-metadown                  | M-down   | 将当前标题（或列表）及子项下移   |
-| org-metaleft                  | M-left   | 增加当前标题层级，或改变列表前缀 |
-| org-metaright                 | M-right  | 减小当前标题层级，或改变列表前缀 |
-| org-insert-structure-template | C-c C-,  | Insert a block structure         |
-| org-edit-src-code             |          | edit source block               |
-
+* Org Mode
+[[https://orgmode.org/features.html]]
 ** Global
 #+begin_src emacs-lisp
   (use-package org
@@ -902,16 +884,130 @@ The C-z binding is disabled elsewhere in this document.  It minimises
            org-show-siblings '((default))
            org-src-fontify-natively t
            org-src-tab-acts-natively t
-           org-hide-emphasis-markers t))
+           org-hide-emphasis-markers nil))
   (global-set-key (kbd "C-c l") #'org-store-link)
-  (global-set-key (kbd "C-c a") #'org-agenda)
-  (global-set-key (kbd "C-c c") #'org-capture)
-  
-  ;; add bullets to prettify the org mode stars
-  (use-package org-bullets
-    :after org
-    :hook
-    (org-mode . org-bullets-mode))
+#+end_src
+** Keyboard
+*** C-c
+| keyboard  |        command                  | Description               |
+|-----------+---------------------------------+---------------------------|
+|  C-c C-n  | org-next-visible-heading        | 跳到下一个标题（可跨层级）|
+|  C-c C-p  | org-previous-visible-heading    | 跳到上一个标题（可跨层级）|
+|  C-c C-f  | org-forward-heading-same-level  | 跳到下一个标题（同层级）  |
+|  C-c C-b  | org-backward-heading-same-level | 跳到上一个标题（同层级）  |
+|  C-c C-u  | outline-up-heading              | 跳到上一级标题（upper）   |
+|  C-c C-k  | org-kill-note-or-show-branches  | 隐藏当前节点的内容，只保留标题（任意位置） |
+*** Meta
+| M-up      | org-metaup         | 将当前标题（或列表）及子项上移   |
+| M-down    | org-metadown       | 将当前标题（或列表）及子项下移   |
+| M-left    | org-metaleft       | 增加当前标题层级                 |
+| M-right   | org-metaright      | 减小当前标题层级                 |
+| M-S-left  | org-shiftmetaleft  | 增加当前标题层级                 |
+| M-S-right | org-shiftmetaright | 递归调整当前标题层级             |
+*** insert
+| M-RET    | org-meta-return                    | Insert a new heading |
+| C-RET    | org-insert-heading-respect-content | Insert a new heading |
+*** search
+| C-c /    | org-sparse-tree |选择匹配的方式 |
+
+** Table
+*** create
+~org-table-create~ 然后输入行列数
+*** convert
+~~C-c |~ 调用 ~org-table-create-or-convert-from-region~
+*** table head
+#+begin_example
+|Name|Phone|Age|
+|-
+#+end_example
+*** edit
+| M-S-left  | org-table-move-column-left  | 将当前列向左移动 |
+| M-S-right | org-table-move-colunn-right | 将当前列向右移动 |
+| M-DOWN    | org-table-move-row-down     | 将当前行向下移动 |
+** Clocking
+Creating Timestamps：
+| command                       | keyboard | Description                      |
+|-------------------------------+----------+----------------------------------|
+| org-time-stamp                |C-c .     |                                  |
+| org-time-stamp-inactive       |C-c !     |                                  |
+| org-timestamp-down-day        |S-left    |                                  |
+| org-timestamp-down-day        |S-right   |                                  |
+** Todo
+| C-c C-t | org-todo | Change the TODO state of an item  |
+#+begin_comment
+TODO [#A] make a todo list
+Some notes here about how to do it
+SCHEDULED: <2015-12-08 Tue>
+DEADLINE: <2015-12-10 Thu>
+#+end_comment
+
+#+begin_src emacs-lisp
+;;set priority range from A to C with default A
+(setq org-highest-priority ?A)
+(setq org-lowest-priority ?C)
+(setq org-default-priority ?A)
+
+;;set colours for priorities
+(setq org-priority-faces '((?A . (:foreground "#F0DFAF" :weight bold))
+                           (?B . (:foreground "LightSteelBlue"))
+                           (?C . (:foreground "OliveDrab"))))
+#+end_src
+** Capture
+#+begin_src emacs-lisp
+  (setq org-capture-templates
+          '(("g" "General To-Do"
+             entry (file+headline "~/org/todo/todo.org" "General Tasks")
+             "* TODO [#A] %?\n:Created: %T\n "
+             :empty-lines 0)
+
+            ("c" "Code To-Do"
+             entry (file+headline "~/org/todo/todo.org" "Code Related Tasks")
+             "* TODO [#A] %?\n:Created: %T\n%i\n%a\nProposed Solution: "
+             :empty-lines-before 0)
+
+            ("j" "Work Log Entry"
+             entry (file+datetree "~/org/todo/work.org")
+             "* %?"
+             :empty-lines 0)))
+  (global-set-key (kbd "C-c c") 'org-capture)
+#+end_src
+** Agenda
+#+begin_src emacs-lisp
+  (global-set-key (kbd "C-c a") 'org-agenda)
+  (setq org-agenda-files (directory-files-recursively "~/org/todo/" "\\.org$"))
+
+;; org-mode agenda options
+;;open agenda in current window
+(setq org-agenda-window-setup (quote current-window))
+;;warn me of any deadlines in next 7 days
+(setq org-deadline-warning-days 7)
+;;show me tasks scheduled or due in next fortnight
+(setq org-agenda-span (quote fortnight))
+;;don't show tasks as scheduled if they are already shown as a deadline
+(setq org-agenda-skip-scheduled-if-deadline-is-shown t)
+;;don't give awarning colour to tasks with impending deadlines
+;;if they are scheduled to be done
+(setq org-agenda-skip-deadline-prewarning-if-scheduled (quote pre-scheduled))
+;;don't show tasks that are scheduled or have deadlines in the
+;;normal todo list
+(setq org-agenda-todo-ignore-deadlines (quote all))
+(setq org-agenda-todo-ignore-scheduled (quote all))
+;;sort tasks in order of when they are due and then by priority
+(setq org-agenda-sorting-strategy
+  (quote
+   ((agenda deadline-up priority-down)
+    (todo priority-down category-keep)
+    (tags priority-down category-keep)
+    (search category-keep))))
+#+end_src
+** Export
+~C-c C-e~
+*** HTML
+#+begin_src emacs-lisp :tangle no
+  (use-package htmlize
+    :config
+    (setq org-html-htmlize-output-type 'css)
+    (setq org-html-head-include-default-style nil))
 #+end_src
 ** Taking Note with Org Roam
 #+begin_src emacs-lisp :tangle no
@@ -1089,9 +1185,7 @@ Evil Nerd Commenter, a tool that helps you comment code efficiently.
     (("C-c M-;" . c-toggle-comment-style)
      ("M-;" . evilnc-comment-or-uncomment-lines)))
 #+END_SRC
-** region-rectangle
-C-x <SPC> rectangle-mark-mode
-C-x r t string-rectangle
+
 ** multiple cursors
 #+begin_src emacs-lisp
 (use-package multiple-cursors
@@ -1175,7 +1269,8 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
     :config
     (setq highlight-indent-guides-method 'character));;fill, column, character, bitmap
 #+end_src
-
+** Emoji
+C-x 8 C-h
 * Writing
 ** Inspiration helpers
   As I write papers, it is useful to have some helper to start to have the inspiration.
@@ -1237,7 +1332,7 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
   :config (pyim-basedict-enable))
 #+END_SRC
 
-* reading
+* Reading
 ** Info
 - Access
   C-h i (Info)
@@ -1264,7 +1359,7 @@ We can globally reformat the buffer relying on external tool. =format-all= is he
     (setq olivetti-recall-visual-line-mode-entry-state t))
 #+end_src
 
-* Language checking
+* Checking
 *** Spelling
 Configuration of the (fly) spelling for emacs. For spelling, I am using aspell.
 
@@ -1320,6 +1415,11 @@ M-x langtool-check-done
     ;;(setq langtool-language-tool-server-jar "~/work/tools/src/languagetool/languagetool/languagetool-server.jar"))
     (setq langtool-default-language "en-US")
 #+END_SRC
+*** company-english-helper
+#+begin_src emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/site-lisp/company-english-helper/")
+  (require 'company-english-helper)
+#+end_src
 * Templating
 ** Edition templates
 The default configuration of yasnippet consists of activating it and plugging it with company.
@@ -1611,19 +1711,6 @@ The name of the currently active backend is shown in the mode line and in the ou
   ;; Disable checking doc
   (use-package flycheck
     :commands (flycheck-error-list-set-filter flycheck-next-error flycheck-previous-error flycheck-first-error)
-    :hydra
-    (hydra-flycheck (:pre (progn (setq hydra-hint-display-type t) (flycheck-list-errors))
-                     :post (progn (setq hydra-hint-display-type nil) (quit-windows-on "*Flycheck errors*"))
-                     :color teal :hint nil)
-                    "Errors"
-                    ("f"  flycheck-error-list-set-filter                            "Filter")
-                    ("j"  flycheck-next-error                                       "Next")
-                    ("k"  flycheck-previous-error                                   "Previous")
-                    ("gg" flycheck-first-error                                      "First")
-                    ("G"  (progn (goto-char (point-max)) (flycheck-previous-error)) "Last")
-                    ("<" hydra-project/body "back")
-                    ("q"   nil "cancel" :color blue))
-
     :config
     (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 
@@ -1885,7 +1972,6 @@ lsp-find-references
   (use-package dap-mode
     :config
     (dap-mode 1)
-    (require 'dap-hydra)
     (require 'dap-gdb-lldb)	; download and expand lldb-vscode to the =~/.extensions/webfreak.debug=
     (use-package dap-ui
       :ensure nil
