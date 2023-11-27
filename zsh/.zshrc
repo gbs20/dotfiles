@@ -228,11 +228,14 @@ myman() {
 }
 #alias man=myman
 
+# emacs
+alias emacsdemon='nohup emacs --debug-init > ~/.emacs.d/log.log 2>&1 &'
+alias emacs='emacs -nw'
 #############################################################################################################
 #### Basics
 ############################################################################################################
 export EDITOR=vim
 
 
-export NEMU_HOME=/home/gbshen/ics2021/nemu
-export AM_HOME=/home/gbshen/ics2021/abstract-machine
+export NEMU_HOME=$HOME/ics2021/nemu
+export AM_HOME=$HOME/ics2021/abstract-machine

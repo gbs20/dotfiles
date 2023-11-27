@@ -31,7 +31,6 @@ specificity here is that the TLS algorithm is specific for 26.2.1.
                                       ("melpa"        . 10)
                                       ("gnu"     . 5))
         package-check-signature nil)
-
   (package-initialize)
 #+END_SRC
 
@@ -72,6 +71,25 @@ Set hooks that will cause package to load
 Set autoloaded commands that will cause package to load
 :mode
 Activate mode when particular file types are opened
+
+** straight
+Next-generation, purely functional package manager for the Emacs hacker.
+If raw.githubusercontent.com is blocked by your ISP, try replacing the URL
+with https://radian-software.github.io/straight.el/install.el. 
+#+begin_src emacs-lisp
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 6))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+end_src
 ** diminish
 Diminished modes are minor modes with no modeline display
 #+begin_src emacs-lisp
@@ -148,7 +166,7 @@ M-x describe-font
     (when (eq system-type 'gnu/linux)
       (setq fonts '("Sarasa Term SC Nerd" "STKaiti"))
       (set-face-attribute 'default nil :font
-                          (format "%s:pixelsize=%d" (car fonts) 18))
+                          (format "%s:pixelsize=%d" (car fonts) 15))
       (setq face-font-rescale-alist '(("STKaiti". 1.0))))
 
     (dolist (charset '(kana han symbol cjk-misc bopomofo))
@@ -158,10 +176,11 @@ M-x describe-font
 #+END_SRC
 ** theme
 #+begin_src emacs-lisp
-  (use-package kaolin-themes
+  (use-package ef-themes
+    :ensure t
     :init
     :config
-    (load-theme 'kaolin-light t))
+    (load-theme 'ef-spring t))
 #+end_src
 
 ** mode line
@@ -319,24 +338,13 @@ the key commands C-c left and C-c right.
 *** Emoji
 Display emojis in Emacs
 #+begin_src emacs-lisp
-    (use-package emojify
-      :ensure t
-      :functions (emojify-set-emoji-data)
-      :hook (after-init . global-emojify-mode)
-      :config
+  (use-package emojify
+    :ensure t
+    :hook ((text-mode org-mode) . global-emojify-mode))
 
-      (setq emojify-user-emojis
-            '(("(heart)" . (("name" . "Heart")
-                            ("image" . "~/.emacs.d/emojis/emojione-v2.2.6-22/2665.png")
-                            ("style" . "github")))))
+  (use-package company-emoji)
 
-      ;; If emojify is already loaded refresh emoji data
-      (when (featurep 'emojify)
-        (emojify-set-emoji-data)))
-
-    (use-package company-emoji)
-
-    (use-package flycheck-status-emoji)
+  (use-package flycheck-status-emoji)
 #+end_src
 ** line numbers and whitespace indicators
 *** line number
@@ -872,6 +880,15 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 
 * Org Mode
 [[https://orgmode.org/features.html]]
+Org主要应用：
+1. 做笔记
+2. 管理日程
+3. 作为文本标记语言
+   标题：
+   STARS KEYWORD PRIORITY TITLE TAGS
+   #+begin_comment
+   *** TODO [#2] 优先级为2的待办事项 :家庭作业: 
+   #+end_comment
 ** Global
 #+begin_src emacs-lisp
   (use-package org
@@ -879,12 +896,13 @@ The C-z binding is disabled elsewhere in this document.  It minimises
       (setq
            org-startup-indented t
            org-startup-folded t
+           org-special-ctrl-a/e t
            org-show-following-heading t
            org-show-hierarchy-above t
            org-show-siblings '((default))
            org-src-fontify-natively t
            org-src-tab-acts-natively t
-           org-hide-emphasis-markers nil))
+           org-hide-emphasis-markers t))
   (global-set-key (kbd "C-c l") #'org-store-link)
 #+end_src
 ** Keyboard
@@ -924,7 +942,20 @@ The C-z binding is disabled elsewhere in this document.  It minimises
 | M-S-left  | org-table-move-column-left  | 将当前列向左移动 |
 | M-S-right | org-table-move-colunn-right | 将当前列向右移动 |
 | M-DOWN    | org-table-move-row-down     | 将当前行向下移动 |
+
+** picture
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook (lambda () (org-display-inline-images t)))
+  
+  ;; Always redisplay inline images after executing SRC block
+  (eval-after-load 'org
+    (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images))
+
+  ;;可以让图片显示的大小固定为屏幕宽度的三分之一。  
+  (setq org-image-actual-width (/ (display-pixel-width) 3))
+#+end_src
 ** Clocking
+时间戳由尖括号 <> 或方括号 [] 表示，前者为激活时间，后者为非激活时间（不加入日程表的时间）。
 Creating Timestamps：
 | command                       | keyboard | Description                      |
 |-------------------------------+----------+----------------------------------|
@@ -933,7 +964,9 @@ Creating Timestamps：
 | org-timestamp-down-day        |S-left    |                                  |
 | org-timestamp-down-day        |S-right   |                                  |
 ** Todo
-| C-c C-t | org-todo | Change the TODO state of an item  |
+| C-c C-t | org-todo     | Change the TODO state of an item |
+| C-c C-s | org-schedule | Insert a SCHEDULED of an item    |
+| C-c C-d | org-deadline | Insert a DEADLINE of an item     |
 #+begin_comment
 TODO [#A] make a todo list
 Some notes here about how to do it
@@ -942,15 +975,27 @@ DEADLINE: <2015-12-10 Thu>
 #+end_comment
 
 #+begin_src emacs-lisp
-;;set priority range from A to C with default A
-(setq org-highest-priority ?A)
-(setq org-lowest-priority ?C)
-(setq org-default-priority ?A)
+  ;; !: 切换到该状态时会自动添加时间戳
+  ;; @: 切换到该状态时要求输入文字说明
+  (setq org-todo-keywords
+      '((sequence "TODO(t!)" "SOMEDAY(s)" "PROCESS(p)" "|" "DONE(d!)" "CANCELED(c @/!)")
+       ))
+  (setq org-todo-keyword-faces
+     '(("TODO" .      (:foreground "red" :weight bold))
+       ("SOMEDAY" .   (:foreground "red" :weight bold))
+       ("PROCESS" .   (:foreground "yellow" :weight bold))
+       ("DONE" .      (:foreground "green" :weight bold))
+       ("CANCELED" .  (:background "gray" :foreground "black"))
+  ))
+  ;; set priority range from A to C with default A
+  (setq org-highest-priority ?A)
+  (setq org-lowest-priority ?C)
+  (setq org-default-priority ?A)
 
-;;set colours for priorities
-(setq org-priority-faces '((?A . (:foreground "#F0DFAF" :weight bold))
-                           (?B . (:foreground "LightSteelBlue"))
-                           (?C . (:foreground "OliveDrab"))))
+  ;;set colours for priorities
+  (setq org-priority-faces '((?A . (:foreground "#F0DFAF" :weight bold))
+                             (?B . (:foreground "LightSteelBlue"))
+                             (?C . (:foreground "OliveDrab"))))
 #+end_src
 ** Capture
 #+begin_src emacs-lisp
@@ -1292,19 +1337,26 @@ C-x 8 C-h
 ** Translation
 *** WordReference
 #+begin_src emacs-lisp
+  ;; 多语种、释义准确、有论坛
   (use-package wordreference
     :ensure nil
     :config
     :load-path default-plugin-dir
     :commands (wordreference wordreference-at-point))
-  
-  ;; Merriam-Webster Thesaurus
+
+  ;; Merriam-Webster Thesaurus 同义词词典 
   (use-package mw-thesaurus
     :ensure t
     :config
     :commands (mw-thesaurus-lookup-dwim))
 #+end_src
-
+** insert-translated-name
+"Error: Connection refused"
+Crow Translate using Google, Yandex Bing, LibreTranslate and Lingva.
+#+begin_src emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/site-lisp/insert-translated-name/")
+  (require 'insert-translated-name)
+#+end_src
 ** Chinese input
 *** pyim
 #+BEGIN_SRC emacs-lisp
@@ -1317,13 +1369,16 @@ C-x 8 C-h
   (pyim-page-tooltip 'posframe)
   (pyim-page-length 9)
   :config
+ (setq-default pyim-english-input-switch-functions
+               '(pyim-probe-dynamic-english
+                 pyim-probe-isearch-mode
+                 pyim-probe-program-mode
+                 pyim-probe-org-structure-template))
+
+ (setq-default pyim-punctuation-half-width-functions
+               '(pyim-probe-punctuation-line-beginning
+                 pyim-probe-punctuation-after-punctuation))
   (pyim-isearch-mode 1)
-  (setq-default pyim-english-input-switch-functions
-                '(pyim-probe-isearch-mode
-                  pyim-probe-org-structure-template))
-  (setq-default pyim-punctuation-half-width-functions
-                '(pyim-probe-punctuation-line-beginning
-                  pyim-probe-punctuation-after-punctuation))
   :bind
   ("M-j" . pyim-convert-string-at-point)) ; M-j 强制将光标前的拼音字符串转换为中文。
 
@@ -1484,6 +1539,15 @@ M-x *auto-insert*
 
 
 * Completion
+** Smex
+A smart M-x enhancement for Emacs.
+#+begin_src emacs-lisp :tangle no
+  (use-package smex
+    :ensure t
+    :config
+    (smex-initialize) 
+    :bind (("M-x" . smex)))
+#+end_src
 ** consult
 #+begin_src emacs-lisp
 ;; Consulting completing-read
@@ -2076,11 +2140,27 @@ sudo pacman -S global
 #+END_SRC
 
 * Language scheme
+[[https://kchousos.github.io/posts/sicp-in-emacs/][Setting up Scheme]]
+racket-mode
+racket-run: Racket REPL
 #+BEGIN_SRC emacs-lisp
-  (use-package geiser
-    :ensure t
-    :config
-    (setq geiser-active-implementations '(mit guile)))
+;;  when using the REPL, we need to first evaluate (require sicp) before evaluating anything else. 
+  (use-package racket-mode
+    :ensure t)
+  (use-package ob-racket
+  :after org
+  :config
+  (add-hook 'ob-racket-pre-runtime-library-load-hook
+              #'ob-racket-raco-make-runtime-library)
+  :straight (ob-racket
+               :type git :host github :repo "hasu/emacs-ob-racket"
+               :files ("*.el" "*.rkt")))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (racket . t)
+     ;;(scribble . t) ;; if Scribble support is available
+     ))
 #+END_SRC
 
 * Language python

@@ -1,4 +1,5 @@
 
+emacs/.emacs.d/straight/
 emacs/.emacs.d/abbrev_defs
 emacs/.emacs.d/.lsp-session*
 emacs/.emacs.d/.cache/
