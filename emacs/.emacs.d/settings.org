@@ -1,7 +1,6 @@
 #+TITLE: My emacs configure
 #+KEYWORDS: emacs configure, org-mode
 #+OPTIONS: num:nil \n:t
-#+STARTUP: hideblocks
 
 This is my version of an configuration file for GNU Emacs.
 
@@ -342,7 +341,7 @@ Display emojis in Emacs
     :ensure t
     :hook ((text-mode org-mode) . global-emojify-mode))
 
-  (use-package company-emoji)
+  ;;(use-package company-emoji)
 
   (use-package flycheck-status-emoji)
 #+end_src
@@ -622,7 +621,7 @@ Eventually the pointer reaches the end of the ring; the next ‘M-y’ loops
 back around to the first entry again.
 
 ** Undo
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp 
 ;; Undo-tree
 (use-package undo-tree
   :config
@@ -807,22 +806,6 @@ The use of *setq-default* is necessary, otherwise these values become buffer-loc
 (global-set-key "\M-n" 'scroll-half-page-up)
 (global-set-key "\M-p" 'scroll-half-page-down)
 
-(global-set-key (kbd "C-S-n")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (next-line 5))))
-(global-set-key (kbd "C-S-p")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (previous-line 5))))
-(global-set-key (kbd "C-S-f")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (forword-char 5))))
-(global-set-key (kbd "C-S-b")
-                (lambda()
-                  (interactive)
-                  (ignore-errors (backward-char 5))))
 ;;
 ;; Copy or Cut one line if no content selected
 ;;
@@ -877,7 +860,42 @@ The C-z binding is disabled elsewhere in this document.  It minimises
   (interactive "p")
   (capitalize-word (- arg)))
 #+end_src
-
+* self customize
+#+begin_src emacs-lisp
+  (use-package sgb20
+    :load-path (lambda ()
+         (concat user-emacs-directory
+                 "site-lisp"))
+    :ensure nil
+    :bind
+    (("C-<f5>" . my/switch-to-scratch-buffer)
+     ("<f5>" . my/switch-to-scratch-other-window))
+    :config
+    (global-set-key (kbd "C-S-n")
+                    (lambda()
+                      (interactive)
+                      (ignore-errors (next-line 5))))
+    (global-set-key (kbd "C-S-p")
+                    (lambda()
+                      (interactive)
+                      (ignore-errors (previous-line 5))))
+    (global-set-key (kbd "C-S-f")
+                    (lambda()
+                      (interactive)
+                      (ignore-errors (forword-char 5))))
+    (global-set-key (kbd "C-S-b")
+                    (lambda()
+                      (interactive)
+                      (ignore-errors (backward-char 5))))
+    (defun my/switch-to-scratch-buffer ()
+        (interactive)
+        (switch-to-buffer "*scratch*")
+        (delete-other-windows))
+    (defun my/switch-to-scratch-other-window ()
+        (interactive)
+        (switch-to-buffer-other-window "*scratch*"))
+    )
+#+end_src
 * Org Mode
 [[https://orgmode.org/features.html]]
 Org主要应用：
@@ -904,6 +922,11 @@ Org主要应用：
            org-src-tab-acts-natively t
            org-hide-emphasis-markers t))
   (global-set-key (kbd "C-c l") #'org-store-link)
+
+  ;; enable automatic cut a long line into many lines on screen
+  ;; when edit a *.org file.
+  (add-hook 'org-mode-hook 
+    (lambda () (setq truncate-lines nil))) 
 #+end_src
 ** Keyboard
 *** C-c
@@ -1054,6 +1077,78 @@ DEADLINE: <2015-12-10 Thu>
     (setq org-html-htmlize-output-type 'css)
     (setq org-html-head-include-default-style nil))
 #+end_src
+*** PDF
+#+begin_src emacs-lisp
+  ;; for export latex
+  (require 'ox-latex)  
+  (add-to-list 'org-latex-classes
+               '("ctexart"
+                 "\\documentclass[UTF8,a4paper]{ctexart}"
+                 ;;"\\documentclass[fontset=none,UTF8,a4paper,zihao=-4]{ctexart}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+                 )
+               )
+
+
+  (add-to-list 'org-latex-classes
+                 '("ctexrep"
+                  "\\documentclass[UTF8,a4paper]{ctexrep}"
+                  ("\\part{%s}" . "\\part*{%s}")
+                  ("\\chapter{%s}" . "\\chapter*{%s}")
+                  ("\\section{%s}" . "\\section*{%s}")
+                  ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 )
+                 )
+
+  (add-to-list 'org-latex-classes
+                 '("ctexbook"
+                  "\\documentclass[UTF8,a4paper]{ctexbook}"
+                  ;;("\\part{%s}" . "\\part*{%s}")
+                  ("\\chapter{%s}" . "\\chapter*{%s}")
+                  ("\\section{%s}" . "\\section*{%s}")
+                  ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 )
+                 )
+
+  (add-to-list 'org-latex-classes
+                 '("beamer"
+                  "\\documentclass{beamer}
+                 \\usepackage[fontset=none,UTF8,a4paper,zihao=-4]{ctex}"
+                 org-beamer-sectioning)
+                 )
+	       
+  (setq org-latex-default-class "ctexart")
+
+  (setq org-latex-pdf-process
+        '("xelatex -interaction nonstopmode -output-directory %o %f"
+         "xelatex -interaction nonstopmode -output-directory %o %f"
+         "xelatex -interaction nonstopmode -output-directory %o %f"))
+
+  ;; for math.
+  (defun my/insert-inline-formulas()
+    (interactive)
+    (insert "\\(  \\)")
+    (backward-char 3))
+   
+  (define-key org-mode-map (kbd "M-$") 'my/insert-inline-formulas)
+  
+  ;; 生成PDF后清理辅助文件
+  ;; https://answer-id.com/53623039
+  (setq org-latex-logfiles-extensions 
+    (quote ("lof" "lot" "tex~" "tex" "aux" 
+      "idx" "log" "out" "toc" "nav" 
+      "snm" "vrb" "dvi" "fdb_latexmk" 
+      "blg" "brf" "fls" "entoc" "ps" 
+      "spl" "bbl" "xdv")))
+#+end_src
+* Note Taking
+First you should install sqlite3, which is used to index the links.
 ** Taking Note with Org Roam
 #+begin_src emacs-lisp :tangle no
 ;; User Manual: https://www.orgroam.com/manual.html
@@ -1091,6 +1186,7 @@ DEADLINE: <2015-12-10 Thu>
         org-roam-ui-update-on-save t
         org-roam-ui-open-on-start t))
 #+end_src
+
 * Editing
 ** Editing as root
 Defining a simple helper to edit file as root using tramp
@@ -1144,18 +1240,34 @@ Preview line when executing goto-line command.
     :bind
     (("M-g g" . goto-line-preview)))
 #+END_SRC
-*** Ace jump
-#+BEGIN_SRC emacs-lisp
-  (use-package ace-jump-mode
-    :config
-    (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
-#+END_SRC
 *** Avy
 #+begin_src emacs-lisp
   (use-package avy
     :config
     (global-set-key (kbd "M-g w") 'avy-goto-word-1))
 #+end_src
+*** Ace jump
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package ace-jump-mode
+    :config
+    (define-key global-map (kbd "C-c SPC") 'ace-jump-mode))
+#+END_SRC
+*** move-text
+#+BEGIN_SRC emacs-lisp
+  ;; Bind ‘move-text-up’ and ‘move-text-down’ to M-up & M-down.
+  (use-package move-text
+    :config
+    (move-text-default-bindings))
+#+END_SRC
+*** mwim
+Move Where I Mean.
+Move to the beginning/end of line, code or comment.
+#+BEGIN_SRC emacs-lisp
+   (use-package mwim
+     :bind
+     ("C-a" . mwim-beginning-of-code-or-line)
+     ("C-e" . mwim-end-of-code-or-line))
+#+END_SRC
 *** Remember last jump
 An Emacs package to move point through buffer-undo-list positions.
 #+BEGIN_SRC emacs-lisp
@@ -1233,29 +1345,26 @@ Evil Nerd Commenter, a tool that helps you comment code efficiently.
 
 ** multiple cursors
 #+begin_src emacs-lisp
-(use-package multiple-cursors
-  :ensure t
-  :bind (("C-S-c C-S-c"   . mc/edit-lines)
-         ("C->"           . mc/mark-next-like-this)
-         ("C-<"           . mc/mark-previous-like-this)
-         ("C-c C-<"       . mc/mark-all-like-this)
-         ("C-M->"         . mc/skip-to-next-like-this)
-         ("C-M-<"         . mc/skip-to-previous-like-this)
-         ("s-<mouse-1>"   . mc/add-cursor-on-click)
-         ("C-S-<mouse-1>" . mc/add-cursor-on-click)
-         :map mc/keymap
-         ("C-|" . mc/vertical-align-with-space)))
+;; You can mark a region, and C-S-c C-S-c to start edit every line in this region. That’s amazing.
+  (use-package multiple-cursors
+    :ensure t
+    :bind (("C-S-c C-S-c"   . mc/edit-lines)
+           ("C->"           . mc/mark-next-like-this)
+           ("C-<"           . mc/mark-previous-like-this)
+           ("C-c C-<"       . mc/mark-all-like-this)
+           ("C-M->"         . mc/skip-to-next-like-this)
+           ("C-M-<"         . mc/skip-to-previous-like-this)))
 
-;; Smartly select region, rectangle, multi cursors
-;;(use-package smart-region
-;;  :ensure t
-;;  :hook (after-init . smart-region-on))
+  ;; Smartly select region, rectangle, multi cursors
+  ;;(use-package smart-region
+  ;;  :ensure t
+  ;;  :hook (after-init . smart-region-on))
 
-;; Edit multiple regions simultaneously in a buffer or a region
-;;(use-package iedit
-;;  :ensure t
-;;  :config
-;;  (delete-selection-mode t))
+  ;; Edit multiple regions simultaneously in a buffer or a region
+  ;;(use-package iedit
+  ;;  :ensure t
+  ;;  :config
+  ;;  (delete-selection-mode t))
 #+end_src
 ** Smart parents
 #+begin_src emacs-lisp :tangle no
@@ -1339,16 +1448,69 @@ C-x 8 C-h
 #+begin_src emacs-lisp
   ;; 多语种、释义准确、有论坛
   (use-package wordreference
-    :ensure nil
-    :config
-    :load-path default-plugin-dir
-    :commands (wordreference wordreference-at-point))
+  :commands (wordreference-search
+             my/wr-enzh)
+  :config
+  (defun my/wr-enzh ()
+    (interactive)
+    (let ((wordreference-source-lang "en")
+          (wordreference-target-lang "zh"))
+      (wordreference-search))))
 
   ;; Merriam-Webster Thesaurus 同义词词典 
   (use-package mw-thesaurus
     :ensure t
     :config
     :commands (mw-thesaurus-lookup-dwim))
+#+end_src
+*** sdcv
+Install sdcv program: sudo pacman -S stardict sdcv
+https://github.com/manateelazycat/sdcv
+#+begin_src emacs-lisp
+  (use-package sdcv
+  :load-path (lambda ()
+           (concat user-emacs-directory
+                   "site-lisp/sdcv"))
+  :bind
+  ("C-M-z" . sdcv-search-input)
+  ("M-g s" . sdcv-search-pointer)
+  ("M-g S" . sdcv-search-pointer+)
+  :config
+  (require 'sdcv)
+  (setq sdcv-say-word-p t)
+  ;; set your local dictionaries path
+  (setq sdcv-dictionary-data-dir (file-truename
+                                  (concat user-emacs-directory
+                                          "site-lisp/sdcv-dict")))
+  (setq sdcv-dictionary-simple-list
+        '("懒虫简明英汉词典"))
+  (setq sdcv-dictionary-complete-list
+        '(
+          "牛津英汉双解美化版"
+          "懒虫简明英汉词典"
+          "英汉汉英专业词典"
+          "XDICT英汉辞典"
+          "stardict1.3英汉辞典"
+          "WordNet"
+          "XDICT汉英辞典"
+          "Jargon"
+          "懒虫简明汉英词典"
+          "FOLDOC"
+          "新世纪英汉科技大词典"
+          "KDic11万英汉词典"
+          "朗道汉英字典5.0"
+          "CDICT5英汉辞典"
+          "新世纪汉英科技大词典"
+          "21世纪双语科技词典"
+          "quick_eng-zh_CN"
+          ))
+  (defun my/sdcv-call-process-advice (orig-fun &rest args)
+    (let ((default-process-coding-system '(utf-8 . gbk)))
+      (apply orig-fun args)))
+
+  (advice-add 'sdcv-call-process
+              :around
+              #'my/sdcv-call-process-advice))
 #+end_src
 ** insert-translated-name
 "Error: Connection refused"
@@ -1359,7 +1521,7 @@ Crow Translate using Google, Yandex Bing, LibreTranslate and Lingva.
 #+end_src
 ** Chinese input
 *** pyim
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package pyim
   :init
   (use-package posframe :defer t)
@@ -1386,7 +1548,23 @@ Crow Translate using Google, Yandex Bing, LibreTranslate and Lingva.
   :after pyim
   :config (pyim-basedict-enable))
 #+END_SRC
+*** rime
+#+begin_src emacs-lisp
+  (use-package rime
+    :init
+    ;;~/.config/fcitx/rime/: 这个目录主要是 Emacs 的 emacs-rime 插件会读取
+    ;;~/.local/share/fcitx5/rime: 这个目录是 Fcitx 读取的， 用于外部软件使用雾凇输入法
+    (setq rime-user-data-dir "~/.config/fcitx/rime"))
+  
+  (setq rime-posframe-properties
+        (list :background-color "#333333"
+              :foreground-color "#dcdccc"
+              :font "WenQuanYi Micro Hei Mono-14"
+              :internal-border-width 10))
 
+  (setq default-input-method "rime"
+        rime-show-candidate 'posframe)
+#+end_src
 * Reading
 ** Info
 - Access
@@ -1408,10 +1586,27 @@ Crow Translate using Google, Yandex Bing, LibreTranslate and Lingva.
 ** olivetti
 #+begin_src emacs-lisp
   (use-package olivetti
-    :config
-    (setq olivetti-body-width 0.7)
-    (setq olivetti-minimum-body-width 80)
-    (setq olivetti-recall-visual-line-mode-entry-state t))
+  :diminish olivetti-mode
+  :custom
+  (olivetti-body-width (+ fill-column 10))
+  :hook ((elfeed-show-mode
+          eww-mode
+          Info-mode
+          woman-mode
+          fanyi-mode)
+             . olivetti-mode)
+  :config
+  (add-hook 'cnfonts-set-font-finish-hook
+            (lambda (args)
+              (let ((frame-width (* (+ fill-column 7)
+                                    (frame-char-width))))
+                (setq org-image-actual-width `(,frame-width))
+                (setq markdown-max-image-size org-image-actual-width)
+                (when (bound-and-true-p org-inline-image-overlays)
+                  (org-redisplay-inline-images))
+                (when (bound-and-true-p markdown-inline-image-overlays)
+                  (markdown-remove-inline-images)
+                  (markdown-display-inline-images))))))
 #+end_src
 
 * Checking
@@ -1434,18 +1629,14 @@ sudo pacman -S aspell
     (add-hook 'text-mode-hook 'flyspell-mode)
 
     (setq flyspell-prog-text-faces '(font-lock-comment-face font-lock-doc-face))
-      (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-      :diminish 'flyspell-mode)
+    (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+    
+    :diminish 'flyspell-mode)
 
   (use-package flyspell-correct
    :ensure t
    :after flyspell
    :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
-
-  ;; Replace with flyspell-correct-helm if you are a helm person.
-  (use-package flyspell-correct-ivy
-    :ensure t
-    :after flyspell-correct)
 #+end_src
 *** English checking
 lang-tool is actually supported by emacs through a dedicated mode which allows to have syntax and
@@ -1472,9 +1663,11 @@ M-x langtool-check-done
 #+END_SRC
 *** company-english-helper
 #+begin_src emacs-lisp
-  (add-to-list 'load-path "~/.emacs.d/site-lisp/company-english-helper/")
-  (require 'company-english-helper)
+  ;;(add-to-list 'load-path "~/.emacs.d/site-lisp/company-english-helper/")
+  ;;(require 'company-english-helper)
+  (message "hello")
 #+end_src
+
 * Templating
 ** Edition templates
 The default configuration of yasnippet consists of activating it and plugging it with company.
@@ -1486,9 +1679,9 @@ Ivy-yasnippet is used for snippet discovery.
     :config
 
     ;; Adding yasnippet support to company
-    (eval-after-load 'company
-      '(lambda ()
-         (add-to-list 'company-backends 'company-yasnippet)))
+    ;;(eval-after-load 'company
+    ;;  '(lambda ()
+    ;;     (add-to-list 'company-backends 'company-yasnippet)))
 
     ;; Add third parties snippets
     (defvar third-parties-snippet-dir (format "%s/third_parties/snippets" user-emacs-directory)
@@ -1539,39 +1732,50 @@ M-x *auto-insert*
 
 
 * Completion
-** Smex
-A smart M-x enhancement for Emacs.
-#+begin_src emacs-lisp :tangle no
-  (use-package smex
-    :ensure t
-    :config
-    (smex-initialize) 
-    :bind (("M-x" . smex)))
+** marginalia
+#+begin_src emacs-lisp
+;; Enable rich annotations using the Marginalia package
+(use-package marginalia
+  ;; Either bind `marginalia-cycle' globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
+
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
 #+end_src
+
 ** consult
 #+begin_src emacs-lisp
-;; Consulting completing-read
+;; Example configuration for Consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
-  :bind (;; C-c bindings (mode-specific-map)
+  :bind (;; C-c bindings in `mode-specific-map'
+         ("C-c M-x" . consult-mode-command)
          ("C-c h" . consult-history)
-         ("C-c m" . consult-mode-command)
          ("C-c k" . consult-kmacro)
-         ;; C-x bindings (ctl-x-map)
+         ("C-c m" . consult-man)
+         ("C-c i" . consult-info)
+         ([remap Info-search] . consult-info)
+         ;; C-x bindings in `ctl-x-map'
          ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
          ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
          ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
          ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+         ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
          ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
          ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
          ;; Custom M-# bindings for fast register access
-         ;; ("M-#" . consult-register-load)
-         ;; ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
-         ;; ("C-M-#" . consult-register)
+         ("M-#" . consult-register-load)
+         ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ("C-M-#" . consult-register)
          ;; Other custom bindings
          ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-         ("<help> a" . consult-apropos)            ;; orig. apropos-command
-         ;; M-g bindings (goto-map)
+         ;; M-g bindings in `goto-map'
          ("M-g e" . consult-compile-error)
          ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
          ("M-g g" . consult-goto-line)             ;; orig. goto-line
@@ -1581,15 +1785,14 @@ A smart M-x enhancement for Emacs.
          ("M-g k" . consult-global-mark)
          ("M-g i" . consult-imenu)
          ("M-g I" . consult-imenu-multi)
-         ;; M-s bindings (search-map)
-         ("M-s d" . consult-find)
-         ("M-s D" . consult-locate)
+         ;; M-s bindings in `search-map'
+         ("M-s d" . consult-find)                  ;; Alternative: consult-fd
+         ("M-s c" . consult-locate)
          ("M-s g" . consult-grep)
          ("M-s G" . consult-git-grep)
          ("M-s r" . consult-ripgrep)
          ("M-s l" . consult-line)
          ("M-s L" . consult-line-multi)
-         ("M-s m" . consult-multi-occur)
          ("M-s k" . consult-keep-lines)
          ("M-s u" . consult-focus-lines)
          ;; Isearch integration
@@ -1632,8 +1835,8 @@ A smart M-x enhancement for Emacs.
   ;; Optionally configure preview. The default value
   ;; is 'any, such that any key triggers the preview.
   ;; (setq consult-preview-key 'any)
-  ;; (setq consult-preview-key (kbd "M-."))
-  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+  ;; (setq consult-preview-key "M-.")
+  ;; (setq consult-preview-key '("S-<down>" "S-<up>"))
   ;; For some commands and buffer sources it is useful to configure the
   ;; :preview-key on a per-command basis using the `consult-customize' macro.
   (consult-customize
@@ -1642,12 +1845,12 @@ A smart M-x enhancement for Emacs.
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
-   ;; :preview-key (kbd "M-.")
+   ;; :preview-key "M-."
    :preview-key '(:debounce 0.4 any))
 
   ;; Optionally configure the narrowing key.
   ;; Both < and C-+ work reasonably well.
-  (setq consult-narrow-key "<") ;; (kbd "C-+")
+  (setq consult-narrow-key "<") ;; "C-+"
 
   ;; Optionally make narrowing help available in the minibuffer.
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
@@ -1655,16 +1858,17 @@ A smart M-x enhancement for Emacs.
 
   ;; By default `consult-project-function' uses `project-root' from project.el.
   ;; Optionally configure a different project root function.
-  ;; There are multiple reasonable alternatives to chose from.
   ;;;; 1. project.el (the default)
   ;; (setq consult-project-function #'consult--default-project--function)
-  ;;;; 2. projectile.el (projectile-project-root)
+  ;;;; 2. vc.el (vc-root-dir)
+  ;; (setq consult-project-function (lambda (_) (vc-root-dir)))
+  ;;;; 3. locate-dominating-file
+  ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
+  ;;;; 4. projectile.el (projectile-project-root)
   ;; (autoload 'projectile-project-root "projectile")
   ;; (setq consult-project-function (lambda (_) (projectile-project-root)))
-  ;;;; 3. vc.el (vc-root-dir)
-  ;; (setq consult-project-function (lambda (_) (vc-root-dir)))
-  ;;;; 4. locate-dominating-file
-  ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
+  ;;;; 5. No project support
+  ;; (setq consult-project-function nil)
 ) 
 #+end_src
 
@@ -1696,79 +1900,88 @@ A smart M-x enhancement for Emacs.
   (completion-styles '(orderless basic))
   (completion-category-overrides '((file (styles basic partial-completion)))))
 #+end_src
-** marginalia
+** cape
 #+begin_src emacs-lisp
-;; Enable rich annotations using the Marginalia package
-(use-package marginalia
-  ;; Either bind `marginalia-cycle' globally or only in the minibuffer
-  :bind (("M-A" . marginalia-cycle)
-         :map minibuffer-local-map
-         ("M-A" . marginalia-cycle))
-
-  ;; The :init configuration is always executed (Not lazy!)
+;; Add extensions
+(use-package cape
+  ;; Bind dedicated completion commands
+  ;; Alternative prefix keys: C-c p, M-p, M-+, ...
+  :bind (("C-c p p" . completion-at-point) ;; capf
+         ("C-c p t" . complete-tag)        ;; etags
+         ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
+         ("C-c p h" . cape-history)
+         ("C-c p f" . cape-file)
+         ("C-c p k" . cape-keyword)
+         ("C-c p s" . cape-elisp-symbol)
+         ("C-c p e" . cape-elisp-block)
+         ("C-c p a" . cape-abbrev)
+         ("C-c p l" . cape-line)
+         ("C-c p w" . cape-dict)
+         ("C-c p :" . cape-emoji)
+         ("C-c p \\" . cape-tex)
+         ("C-c p _" . cape-tex)
+         ("C-c p ^" . cape-tex)
+         ("C-c p &" . cape-sgml)
+         ("C-c p r" . cape-rfc1345))
   :init
-
-  ;; Must be in the :init section of use-package such that the mode gets
-  ;; enabled right away. Note that this forces loading the package.
-  (marginalia-mode))
+  ;; Add to the global default value of `completion-at-point-functions' which is
+  ;; used by `completion-at-point'.  The order of the functions matters, the
+  ;; first function returning a result wins.  Note that the list of buffer-local
+  ;; completion functions takes precedence over the global list.
+  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+  ;;(add-to-list 'completion-at-point-functions #'cape-history)
+  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;;(add-to-list 'completion-at-point-functions #'cape-tex)
+  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+  ;;(add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
+  ;;(add-to-list 'completion-at-point-functions #'cape-line)
+)
 #+end_src
-** Company
-In order to have inline completion, really important for coding, I use company. However I adapted
-some facing attributes. Each language is also adding its backend when needed. Therefore, only global
-configuration here.
-
-All of the Company frontends can be categorized by the type of the output into the three groups: tooltip-, preview-, and echo- frontends.
-
-Quick Access a Candidate: By default, quick-access key bindings utilize a modifier META and one of the digits,
-
-The name of the currently active backend is shown in the mode line and in the output of the command M-x company-diag.
-
+** corfu
 #+begin_src emacs-lisp
-(use-package company
-  :ensure t
-  :diminish company-mode
-  :hook
-  (emacs-lisp-mode . (lambda () (add-to-list (make-local-variable 'company-backends) '(company-elisp))))
+(use-package emacs
+  :init
+  ;; TAB cycle if there are only few candidates
+  (setq completion-cycle-threshold 2)
+
+  ;; Enable indentation+completion using the TAB key.
+  ;; `completion-at-point' is often bound to M-TAB.
+  (setq tab-always-indent t))
+  
+(use-package corfu
+  :defer 1
+  :bind
+  (:map
+   corfu-map
+   ("M-h" . backward-kill-word))
   :config
-
-  ;; Global
-  (setq company-idle-delay (lambda () (if (company-in-string-or-comment) nil 0.3))
-        company-minimum-prefix-length 1
-        company-show-numbers t
-        company-tooltip-limit 20)
-
-  ;; using child frame
-  (use-package company-posframe
-    :ensure t
-    :diminish company-posframe-mode
-    :hook (company-mode . company-posframe-mode))
-
-  ;; Facing
-  (unless (face-attribute 'company-tooltip :background)
-    (set-face-attribute 'company-tooltip nil :background "black" :foreground "gray40")
-    (set-face-attribute 'company-tooltip-selection nil :inherit 'company-tooltip :background "gray15")
-    (set-face-attribute 'company-preview nil :background "black")
-    (set-face-attribute 'company-preview-common nil :inherit 'company-preview :foreground "gray40")
-    (set-face-attribute 'company-scrollbar-bg nil :inherit 'company-tooltip :background "gray20")
-    (set-face-attribute 'company-scrollbar-fg nil :background "gray40"))
-
-  ;; Default backends
-  (setq company-backends '(company-capf company-files))
-
-  ;; Activating globally
-  (global-company-mode t))
-
-(use-package company-quickhelp
-  :ensure t
-  :after company
+  (require 'cape)
+  (setq corfu-auto t
+        corfu-fancy t
+        corfu-count 5
+        corfu-min-width 30
+        corfu-max-width 60
+        corfu-auto-delay 0.01
+        corfu-preview-current t
+        corfu-auto-prefix 2
+        corfu-quit-no-match 'separator
+        corfu-popupinfo-delay '(1.0 . 0.5)
+        corfu--state-vars corfu--initial-state)
+  (global-corfu-mode)
+  (corfu-popupinfo-mode)
+  (corfu-prescient-mode)
+  (corfu-history-mode 1)
+  (savehist-mode 1)
+  (add-to-list 'savehist-additional-variables 'corfu-history))
+(use-package corfu-prescient
+  :commands (corfu-prescient-mode)
   :config
-  (company-quickhelp-mode 1))
-
-;; A company front-end with icons
-(use-package company-box
-  :ensure t
-  :hook (company-mode . company-box-mode)
-  :diminish company-box-mode)
+  (setq corfu-prescient-override-sorting t))
 #+end_src
 * Syntax checking
 #+begin_src emacs-lisp
@@ -1788,7 +2001,7 @@ The name of the currently active backend is shown in the mode line and in the ou
       :modes (text-mode markdown-mode gfm-mode org-mode))
     )
 #+end_src
-* Terminal
+* Shell/Terminal
 #+begin_src emacs-lisp
     (use-package vterm
     :config
@@ -2049,63 +2262,103 @@ sudo pacman -S global
 #+end_src
 
 #+BEGIN_SRC emacs-lisp
-;; C/C++ Mode
+  (use-package clang-format)
+
+  ;; C/C++ Mode
+  ;;(use-package cc-mode
+  ;;  :ensure nil
+  ;;  :bind (:map c-mode-base-map
+  ;;              ("C-c c" . compile))
+  ;;  :hook (c-mode-common . (lambda ()
+  ;;                           (c-set-style "linux")
+  ;;                           (setq tab-width 4)
+  ;;                           (setq c-basic-offset 4))))
 (use-package cc-mode
   :ensure nil
-  :bind (:map c-mode-base-map
-              ("C-c c" . compile))
-  :hook (c-mode-common . (lambda ()
-                           (c-set-style "linux")
-                           (setq tab-width 4)
-                           (setq c-basic-offset 4))))
-
-(use-package modern-cpp-font-lock
-  :diminish
-  :init (modern-c++-font-lock-global-mode t))
-
-;; counsel-etags for code navigation
-(use-package counsel-etags
-  :bind (("C-]" . counsel-etags-find-tag-at-point))
-  :init
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (add-hook 'after-save-hook
-                        'counsel-etags-virtual-update-tags 'append 'local)))
+  :custom   (c-default-style
+             '((java-mode . "java")
+               (awk-mode . "awk")
+               (c-mode . "cc-mode")
+               (c++-mode . "stroustrup++")
+               (other . "k&r")))
+  :defines c++-mode-map
+  :bind (:map
+         c++-mode-map
+         ("C-<tab>" . clang-format))
   :config
-  (setq counsel-etags-update-interval 60)
-  (push "build" counsel-etags-ignore-directories))
-
-;;company-ctags for code completion
-;;usage: find . -name "*.[ch]" | ctags -e -L -
-(use-package company-ctags  ;; LSP server: (lsp-enable-completion-at-point t)
-  :disabled t
-  :after company
-  :config
-  (company-ctags-auto-setup))
-
-;; Emacs frontend to GNU GLobal source code tagging system
-;; 1. Code navigation : ggtags-find-tag-dwim
-
-(use-package ggtags
-  :init
-  (ggtags-mode 1)
+  (require 'clang-format)
+  (add-to-list 'auto-mode-alist '("\\.c\\'" . c-mode))
+  (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
   (add-hook 'c-mode-common-hook
             (lambda ()
-              (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-                (ggtags-mode 1))))
-  :config
-  (dolist (map (list ggtags-mode-map dired-mode-map))
-    (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
-    (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
-    (define-key map (kbd "C-c g r") 'ggtags-find-reference)
-    (define-key map (kbd "C-c g f") 'ggtags-find-file)
-    (define-key map (kbd "C-c g c") 'ggtags-create-tags)
-    (define-key map (kbd "C-c g u") 'ggtags-update-tags)
-    (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
-    (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
-    (define-key map (kbd "M-,") 'pop-tag-mark)
-    (define-key map (kbd "C-c <") 'ggtags-prev-mark)
-    (define-key map (kbd "C-c >") 'ggtags-next-mark)))
+              ;;(c-set-style "gnu")
+              ;;(c-toggle-auto-newline 0)
+              ;;(c-toggle-auto-hungry-state 0)
+              ;;(c-toggle-syntactic-indentation 1)
+              ;;(highlight-indentation-mode 1)
+              (local-set-key "\C-co" 'ff-find-other-file)))
+  ;; +   `c-basic-offset' times 1
+  ;; -   `c-basic-offset' times -1
+  ;; ++  `c-basic-offset' times 2
+  ;; --  `c-basic-offset' times -2
+  ;; *   `c-basic-offset' times 0.5
+  ;; /   `c-basic-offset' times -0.5
+  (c-add-style "stroustrup++"
+               '("stroustrup"
+                 (c-basic-offset . 4)
+                 (c-offsets-alist
+                  (topmost-intro . 0)
+                  (inclass . +)
+                  (innamespace . -)
+                  (access-label . /)))))
+  
+  (use-package modern-cpp-font-lock
+    :diminish
+    :init (modern-c++-font-lock-global-mode t))
+
+  ;; counsel-etags for code navigation
+  (use-package counsel-etags
+    :bind (("C-]" . counsel-etags-find-tag-at-point))
+    :init
+    (add-hook 'prog-mode-hook
+              (lambda ()
+                (add-hook 'after-save-hook
+                          'counsel-etags-virtual-update-tags 'append 'local)))
+    :config
+    (setq counsel-etags-update-interval 60)
+    (push "build" counsel-etags-ignore-directories))
+
+  ;;company-ctags for code completion
+  ;;usage: find . -name "*.[ch]" | ctags -e -L -
+  ;;(use-package company-ctags  ;; LSP server: (lsp-enable-completion-at-point t)
+  ;;  :disabled t
+  ;;  :after company
+  ;;  :config
+  ;;  (company-ctags-auto-setup))
+
+  ;; Emacs frontend to GNU GLobal source code tagging system
+  ;; 1. Code navigation : ggtags-find-tag-dwim
+
+  (use-package ggtags
+    :init
+    (ggtags-mode 1)
+    (add-hook 'c-mode-common-hook
+              (lambda ()
+                (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+                  (ggtags-mode 1))))
+    :config
+    (dolist (map (list ggtags-mode-map dired-mode-map))
+      (define-key map (kbd "C-c g s") 'ggtags-find-other-symbol)
+      (define-key map (kbd "C-c g h") 'ggtags-view-tag-history)
+      (define-key map (kbd "C-c g r") 'ggtags-find-reference)
+      (define-key map (kbd "C-c g f") 'ggtags-find-file)
+      (define-key map (kbd "C-c g c") 'ggtags-create-tags)
+      (define-key map (kbd "C-c g u") 'ggtags-update-tags)
+      (define-key map (kbd "C-c g a") 'helm-gtags-tags-in-this-function)
+      (define-key map (kbd "M-.") 'ggtags-find-tag-dwim)
+      (define-key map (kbd "M-,") 'pop-tag-mark)
+      (define-key map (kbd "C-c <") 'ggtags-prev-mark)
+      (define-key map (kbd "C-c >") 'ggtags-next-mark)))
 #+END_SRC
 
 * Language elisp
