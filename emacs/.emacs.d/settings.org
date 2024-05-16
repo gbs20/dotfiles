@@ -950,7 +950,12 @@ Org主要应用：
 | C-RET    | org-insert-heading-respect-content | Insert a new heading |
 *** search
 | C-c /    | org-sparse-tree |选择匹配的方式 |
-
+** Beautify
+*** modern
+#+begin_src emacs-lisp
+  (message "Hello")
+#+end_src
+*** prettify
 ** Table
 *** create
 ~org-table-create~ 然后输入行列数
@@ -1443,75 +1448,6 @@ C-x 8 C-h
     :bind
     ("M-`" . powerthesaurus-lookup-word-dwim))
   #+end_src
-** Translation
-*** WordReference
-#+begin_src emacs-lisp
-  ;; 多语种、释义准确、有论坛
-  (use-package wordreference
-  :commands (wordreference-search
-             my/wr-enzh)
-  :config
-  (defun my/wr-enzh ()
-    (interactive)
-    (let ((wordreference-source-lang "en")
-          (wordreference-target-lang "zh"))
-      (wordreference-search))))
-
-  ;; Merriam-Webster Thesaurus 同义词词典 
-  (use-package mw-thesaurus
-    :ensure t
-    :config
-    :commands (mw-thesaurus-lookup-dwim))
-#+end_src
-*** sdcv
-Install sdcv program: sudo pacman -S stardict sdcv
-https://github.com/manateelazycat/sdcv
-#+begin_src emacs-lisp
-  (use-package sdcv
-  :load-path (lambda ()
-           (concat user-emacs-directory
-                   "site-lisp/sdcv"))
-  :bind
-  ("C-M-z" . sdcv-search-input)
-  ("M-g s" . sdcv-search-pointer)
-  ("M-g S" . sdcv-search-pointer+)
-  :config
-  (require 'sdcv)
-  (setq sdcv-say-word-p t)
-  ;; set your local dictionaries path
-  (setq sdcv-dictionary-data-dir (file-truename
-                                  (concat user-emacs-directory
-                                          "site-lisp/sdcv-dict")))
-  (setq sdcv-dictionary-simple-list
-        '("懒虫简明英汉词典"))
-  (setq sdcv-dictionary-complete-list
-        '(
-          "牛津英汉双解美化版"
-          "懒虫简明英汉词典"
-          "英汉汉英专业词典"
-          "XDICT英汉辞典"
-          "stardict1.3英汉辞典"
-          "WordNet"
-          "XDICT汉英辞典"
-          "Jargon"
-          "懒虫简明汉英词典"
-          "FOLDOC"
-          "新世纪英汉科技大词典"
-          "KDic11万英汉词典"
-          "朗道汉英字典5.0"
-          "CDICT5英汉辞典"
-          "新世纪汉英科技大词典"
-          "21世纪双语科技词典"
-          "quick_eng-zh_CN"
-          ))
-  (defun my/sdcv-call-process-advice (orig-fun &rest args)
-    (let ((default-process-coding-system '(utf-8 . gbk)))
-      (apply orig-fun args)))
-
-  (advice-add 'sdcv-call-process
-              :around
-              #'my/sdcv-call-process-advice))
-#+end_src
 ** insert-translated-name
 "Error: Connection refused"
 Crow Translate using Google, Yandex Bing, LibreTranslate and Lingva.
@@ -1565,6 +1501,10 @@ Crow Translate using Google, Yandex Bing, LibreTranslate and Lingva.
   (setq default-input-method "rime"
         rime-show-candidate 'posframe)
 #+end_src
+*** IPA
+International Phonetic Alphabet
+C-u C-\  ipa
+C-h I    describe-input-method
 * Reading
 ** Info
 - Access
@@ -1610,7 +1550,7 @@ Crow Translate using Google, Yandex Bing, LibreTranslate and Lingva.
 #+end_src
 
 * Checking
-*** Spelling
+** English Spelling
 Configuration of the (fly) spelling for emacs. For spelling, I am using aspell.
 
 #+begin_src shell :tangle no
@@ -1638,7 +1578,112 @@ sudo pacman -S aspell
    :after flyspell
    :bind (:map flyspell-mode-map ("C-;" . flyspell-correct-wrapper)))
 #+end_src
-*** English checking
+** English Translation
+*** WordReference
+#+begin_src emacs-lisp
+  ;; 多语种、释义准确、有论坛
+  (use-package wordreference
+  :commands (wordreference-search
+             my/wr-enzh)
+  :config
+  (defun my/wr-enzh ()
+    (interactive)
+    (let ((wordreference-source-lang "en")
+          (wordreference-target-lang "zh"))
+      (wordreference-search))))
+
+  ;; Merriam-Webster Thesaurus 同义词词典 
+  (use-package mw-thesaurus
+    :ensure t
+    :config
+    :commands (mw-thesaurus-lookup-dwim))
+#+end_src
+*** sdcv
+Install sdcv program: sudo pacman -S stardict sdcv
+https://github.com/manateelazycat/sdcv
+#+begin_src emacs-lisp
+(add-to-list 'load-path "~/.emacs.d/site-lisp/sdcv/")
+(require 'sdcv)
+
+(setq sdcv-say-word-p t)               ;say word after translation
+
+;;(setq sdcv-dictionary-data-dir "startdict_dictionary_directory") ;setup directory of stardict dictionary
+(setq sdcv-dictionary-data-dir (file-truename
+                                  (concat user-emacs-directory
+                                          "site-lisp/sdcv-dict")))
+(setq sdcv-dictionary-simple-list    ;setup dictionary list for simple search
+      '("懒虫简明英汉词典"
+        "懒虫简明汉英词典"
+        "KDic11万英汉词典"))
+
+(setq sdcv-dictionary-complete-list     ;setup dictionary list for complete search
+      '(
+        "懒虫简明英汉词典"
+        "英汉汉英专业词典"
+        "XDICT英汉辞典"
+        "stardict1.3英汉辞典"
+        "WordNet"
+        "XDICT汉英辞典"
+        "Jargon"
+        "懒虫简明汉英词典"
+        "FOLDOC"
+        "新世纪英汉科技大词典"
+        "KDic11万英汉词典"
+        "朗道汉英字典5.0"
+        "CDICT5英汉辞典"
+        "新世纪汉英科技大词典"
+        "牛津英汉双解美化版"
+        "21世纪双语科技词典"
+        "quick_eng-zh_CN"
+        ))
+#+end_src  
+#+begin_src emacs-lisp :tangle no  
+  (use-package sdcv
+  :load-path (lambda ()
+           (concat user-emacs-directory
+                   "site-lisp/sdcv"))
+  :bind
+  ("C-M-z" . sdcv-search-input)
+  ("M-g s" . sdcv-search-pointer)
+  ("M-g S" . sdcv-search-pointer+)
+  :config
+  (require 'sdcv)
+  (setq sdcv-say-word-p t)
+  ;; set your local dictionaries path
+  (setq sdcv-dictionary-data-dir (file-truename
+                                  (concat user-emacs-directory
+                                          "site-lisp/sdcv-dict/")))
+  (setq sdcv-dictionary-simple-list
+        '("懒虫简明英汉词典"))
+  (setq sdcv-dictionary-complete-list
+        '(
+          "牛津英汉双解美化版"
+          "懒虫简明英汉词典"
+          "英汉汉英专业词典"
+          "XDICT英汉辞典"
+          "stardict1.3英汉辞典"
+          "WordNet"
+          "XDICT汉英辞典"
+          "Jargon"
+          "懒虫简明汉英词典"
+          "FOLDOC"
+          "新世纪英汉科技大词典"
+          "KDic11万英汉词典"
+          "朗道汉英字典5.0"
+          "CDICT5英汉辞典"
+          "新世纪汉英科技大词典"
+          "21世纪双语科技词典"
+          "quick_eng-zh_CN"
+          ))
+  (defun my/sdcv-call-process-advice (orig-fun &rest args)
+    (let ((default-process-coding-system '(utf-8 . gbk)))
+      (apply orig-fun args)))
+
+  (advice-add 'sdcv-call-process
+              :around
+              #'my/sdcv-call-process-advice))
+#+end_src
+** English checking
 lang-tool is actually supported by emacs through a dedicated mode which allows to have syntax and
 typography checking.
 something likes: grammarly
@@ -1661,14 +1706,15 @@ M-x langtool-check-done
     ;;(setq langtool-language-tool-server-jar "~/work/tools/src/languagetool/languagetool/languagetool-server.jar"))
     (setq langtool-default-language "en-US")
 #+END_SRC
-*** company-english-helper
+** English helper
+基于Company 的英文助手
 #+begin_src emacs-lisp
   ;;(add-to-list 'load-path "~/.emacs.d/site-lisp/company-english-helper/")
   ;;(require 'company-english-helper)
   (message "hello")
 #+end_src
 
-* Templating
+* Template
 ** Edition templates
 The default configuration of yasnippet consists of activating it and plugging it with company.
 Ivy-yasnippet is used for snippet discovery.
@@ -2018,7 +2064,7 @@ M-x *auto-insert*
     (define-key vterm-mode-map (kbd "<f11>") nil)
     (define-key vterm-mode-map (kbd "<f12>") nil)
     :custom
-    ;;(vterm-shell "bash" "Set to bash instead of the default $SHELL so that vterm from TRAMP uses bash.")
+    (vterm-shell "bash" "Set to bash instead of the default $SHELL so that vterm from TRAMP uses bash.")
     (vterm-kill-buffer-on-exit t)
     :hook
     (vterm-mode . goto-address-mode))
